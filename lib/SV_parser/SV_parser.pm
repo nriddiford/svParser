@@ -463,7 +463,7 @@ sub get_variant {
 	printf "%-20s %-20s %-s\n", "INFO", "VALUE", "EXPLAINER";
 	say "____________________________________________________________________________________";
 
-	for (sort keys $information{$id_lookup}){
+	for (sort keys %{$information{$id_lookup}}){
 		printf "%-20s %-20s %-s\n", $_, $information{$id_lookup}{$_}, $info_long{$_};
 	}
 	say "____________________________________________________________________________________";
