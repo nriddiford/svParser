@@ -554,7 +554,7 @@ sub dump_variants {
 			printf "%-20s %-20s %-s\n", "INFO", "VALUE", "EXPLAINER";
 			say "____________________________________________________________________________________";
 
-			for (sort keys $information{$id}){
+			for (sort keys %{$information{$id}}){
 				printf "%-20s %-20s %-s\n", $_, $information{$id}{$_}, $info_long{$_};
 			}
 			say "____________________________________________________________________________________";
