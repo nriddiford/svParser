@@ -325,7 +325,6 @@ sub delly {
 	   }
  	  		
 		if ($start > $stop){
-			warn "Start bigger than stop - shouldn't be here!!!! Swapping start and stop values";
 			my $old_start = $start;
 			my $old_stop = $stop;
 			$start = $old_stop;
@@ -425,7 +424,7 @@ sub get_variant {
 		
 	my @samples = @{ $samples };
 	
-	if (scalar @filter_reasons > 0 and $filter_flag){
+	if (scalar @filter_reasons > 0 ){
 	say "\n______________________________________________";	
 	say "Variant '$id' was filtered for the following reasons:";
 	say "* $_" foreach @filter_reasons;
