@@ -11,15 +11,15 @@ Usage: sv_parse.1.0.pl [options]
   --id = extract information for a given variant
   --dump = cycle through all variants (can be combined with both -f and -c)
   --filter = apply filters and mark filtered variants
-  --print = write out variants that pass filters
+  --output = write out variants that pass filters to specified dir
   --chromosome = used in conjunction with --dump will cycle though variants on chromosome speciified in -c
   --help
 
 Examples:
-  Print to screen all vars on chromosome '2L': perl script/sv_parse.1.0.pl -v [file.vcf] -d -c 2L
-  Print to screen all vars on chromosome '2L' within range 100000-200000: perl script/sv_parse.1.0.pl -v [file.vcf] -d -c 2L:100000-200000
-  Print to screen all vars that pass the fitleres on chromosome '2L' within range 100000-200000: perl script/sv_parse.1.0.pl -v [file.vcf] -f -d -c 2L:100000-200000
-  Filter vars and write to file: perl script/sv_parse.1.0.pl -v [file.vcf] -f -p
+o Browse all variants that passed filter within a speicifc window on X chromosome:
+->  perl script/sv_parse.1.0.pl -v data/HUM-7.tagged.SC.lumpy.gt_all.vcf -f -d -c X:3000000-3500000
+o Filter vars and write to file in cwd:
+->  perl script/sv_parse.1.0.pl -v data/HUM-7.tagged.SC.lumpy.gt_all.vcf -f -o .
 
 Nick Riddiford 2017
 ```
@@ -65,6 +65,6 @@ Nick Riddiford 2017
 
 ## Print variants (-p)
 
-* Print all variants that passed filter (-p)
+* Print all variants that passed filter (-o)
 
-`perl script/sv_parse.1.0.pl -v data/HUM-7.tagged.SC.lumpy.gt_all.vcf -f -p`
+`perl script/sv_parse.1.0.pl -v data/HUM-7.tagged.SC.lumpy.gt_all.vcf -f -o .`
