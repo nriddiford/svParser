@@ -24,6 +24,8 @@ my $id;
 my $dump;
 my $filter;
 my $chromosome;
+
+# Change to write to cwd by default (-o . is messy and confusing)
 my $output_dir;
 
 GetOptions( 'vcf=s'	        	=>		\$vcf_file,
@@ -41,6 +43,7 @@ if (not $vcf_file) {
 	 exit usage();
 } 
 
+# Need to make sure this is stable
 $output_dir =~ s!/*$!/! if $output_dir; # Add a trailing slash
 
 my ($name, $extention) = split(/\.([^.]+)$/, basename($vcf_file), 2);
