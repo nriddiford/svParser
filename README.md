@@ -2,7 +2,7 @@
 
 Parse VCF output from structural variant callers Lumpy and Delly.
 
-Run without options or with --help or -h to print usage statement
+Run without options or with `--help` or `-h` to print usage statement
 
 ```
 ********** SV_parser ***********
