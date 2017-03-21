@@ -5,8 +5,8 @@ Parse VCF output from structural variant callers Lumpy and Delly.
 Run without options or with `--help` or `-h` to print usage statement
 
 ```
-********** SV_parser ***********
-Usage: script/sv_parse.1.0.pl [options]
+********** sv_parse.1.0.pl ***********
+Usage: sv_parse.1.0.pl [options]
   --vcf = VCF file for parsing
   --id = extract information for a given variant
   --dump = cycle through all variants (can be combined with both -f and -c)
