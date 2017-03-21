@@ -69,9 +69,10 @@ sub usage {
 	say "  --help\n";
 	
 	say "Examples: ";
-	say "  Print to screen all vars on chromosome '2L': perl $0 -v [file.vcf] -d -c 2L";
-	say "  Print to screen all vars on chromosome '2L' within range 100000-200000: perl $0 -v [file.vcf] -d -c 2L:100000-200000";
-	say "  Print to screen all vars that pass the fitleres on chromosome '2L' within range 100000-200000: perl $0 -v [file.vcf] -f -d -c 2L:100000-200000";
-	say "  Filter vars and write to file: perl $0 -v [file.vcf] -f -p\n";	
+	say "o Browse all variants that passed filter within a speicifc window on X chromosome:"; 
+
+	say "->  perl script/sv_parse.1.0.pl -v data/HUM-7.tagged.SC.lumpy.gt_all.vcf -f -d -c X:3000000-3500000";
+	say "o Filter vars and write to file:";
+	say "->  perl $0 -v data/HUM-7.tagged.SC.lumpy.gt_all.vcf -f -p\n";	
 	say "Nick Riddiford 2017";
 }
