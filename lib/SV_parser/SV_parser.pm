@@ -485,6 +485,8 @@ sub dump_variants {
 		
 		($chromosome, $query_region) = split(/:/, $chromosome);
 		($query_start, $query_stop) = split(/-/, $query_region);
+		$query_start =~ s/,//g;
+		$query_stop =~ s/,//g;
 				
 		say "Limiting search to SVs within region '$query_start-$query_stop' on chromosome '$chromosome'";
 		
