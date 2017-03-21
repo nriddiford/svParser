@@ -508,7 +508,7 @@ sub dump_variants {
 		
 		if ( $specified_region ){
 			
-			if ( ($start < $query_start and $stop < $query_start) or ($start > $query_stop and $stop > $query_stop) ){
+			if ( ( $start < $query_start or $start > $query_stop ) and ( $stop < $query_stop or $stop > $query_stop ) ){
 				next;
 			}
 			
