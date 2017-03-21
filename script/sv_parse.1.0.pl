@@ -40,21 +40,21 @@ if (not $vcf_file) {
 
 
 # Retun SV and info hashes 
-my ( $SVs, $info, $filtered_vars ) = VCF_1_0::typer($vcf_file);
+my ( $SVs, $info, $filtered_vars ) = SV_parser::typer($vcf_file);
 
 # Print all infor for specified id
 
 
-VCF_1_0::summarise_variants( $SVs, $filter ) unless $id or $dump;
+SV_parser::summarise_variants( $SVs, $filter ) unless $id or $dump;
 
 # Print all infor for specified id
 
-VCF_1_0::get_variant( $id, $SVs, $info, $filter ) if $id;
+SV_parser::get_variant( $id, $SVs, $info, $filter ) if $id;
 
 # Dump all variants to screen
-VCF_1_0::dump_variants( $SVs, $info, $filter, $chromosome ) if $dump;
+SV_parser::dump_variants( $SVs, $info, $filter, $chromosome ) if $dump;
 
-VCF_1_0::print_variants ( $SVs, $filtered_vars ) if $print;
+SV_parser::print_variants ( $SVs, $filtered_vars ) if $print;
 
 sub usage {
 	say "********** SV_parser ***********";
