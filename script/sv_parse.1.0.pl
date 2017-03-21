@@ -4,14 +4,15 @@ use strict;
 use warnings;
 
 use FindBin;
+use FindBin '$Script';
+
 use File::Spec;
 use lib File::Spec->catdir($FindBin::Bin, '..', 'lib/SV_parser');
- 
+
 use SV_parser;
 
 use feature qw/ say /;
 use Data::Dumper;
-
 use Getopt::Long qw/ GetOptions /;
 
 my $vcf_file; 
@@ -57,8 +58,8 @@ SV_parser::dump_variants( $SVs, $info, $filter, $chromosome ) if $dump;
 SV_parser::print_variants ( $SVs, $filtered_vars ) if $print;
 
 sub usage {
-	say "********** SV_parser ***********";
-    say "Usage: $0 [options]";
+	say "********** $Script ***********";
+    say "Usage: $Script [options]";
 	say "  --vcf = VCF file for parsing";
 	say "  --id = extract information for a given variant";
 	say "  --dump = cycle through all variants (can be combined with both -f and -c)";
