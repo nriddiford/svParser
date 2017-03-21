@@ -68,7 +68,7 @@ sub usage {
 	say "  --id = extract information for a given variant";
 	say "  --dump = cycle through all variants (can be combined with both -f and -c)";
 	say "  --filter = apply filters and mark filtered variants";
-	say "  --output = write out variants that pass filters to specified dir [default: working dir]";
+	say "  --output = write out variants that pass filters to specified dir";
 	say "  --chromosome = used in conjunction with --dump will cycle though variants on chromosome speciified in -c";
 	say "  --help\n";
 	
@@ -76,7 +76,7 @@ sub usage {
 	say "o Browse all variants that passed filter within a speicifc window on X chromosome:"; 
 
 	say "->  perl script/sv_parse.1.0.pl -v data/HUM-7.tagged.SC.lumpy.gt_all.vcf -f -d -c X:3000000-3500000";
-	say "o Filter vars and write to file:";
-	say "->  perl $0 -v data/HUM-7.tagged.SC.lumpy.gt_all.vcf -f -p\n";	
+	say "o Filter vars and write to file in cwd:";
+	say "->  perl $0 -v data/HUM-7.tagged.SC.lumpy.gt_all.vcf -f -o .\n";	
 	say "Nick Riddiford 2017";
 }
