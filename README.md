@@ -41,10 +41,6 @@ Nick Riddiford 2017
 
 `perl script/sv_parse.1.0.pl -v data/HUM-7.tagged.SC.lumpy.gt_all.vcf -i 4706`
 
-* Investigate a specific variant (by ID) and see if it's filtered:
-
-`perl script/sv_parse.1.0.pl -v data/HUM-7.tagged.SC.lumpy.gt_all.vcf -i 4706 -f`
-
 
 ## Browse variants (-d)
 
