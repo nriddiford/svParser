@@ -34,6 +34,10 @@ Nick Riddiford 2017
 
 `perl script/sv_parse.1.0.pl -v data/HUM-7.tagged.SC.lumpy.gt_all.vcf`
 
+* See summary of variants that passed filter: 
+
+`perl script/sv_parse.1.0.pl -v data/HUM-7.tagged.SC.lumpy.gt_all.vcf -f`
+
 
 ## Get variant (-i)
 
