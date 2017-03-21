@@ -325,7 +325,11 @@ sub delly {
 	   }
  	  		
 		if ($start > $stop){
-			die "Start bigger than stop - shouldn't be here!!!!";
+			warn "Start bigger than stop - shouldn't be here!!!! Swapping start and stop values";
+			my $old_start = $start;
+			my $old_stop = $stop;
+			$start = $old_stop;
+			$stop = $old_start;
 		}
 		
 		my ($chr2) = 0;
@@ -473,7 +477,21 @@ sub get_variant {
 sub dump_variants {
 	
 	my ( $SVs, $info, $filter_flag, $chromosome ) = @_;
-			
+	
+	my ( $query_region, $query_start, $query_stop );
+	
+	my $specified_region = 0;
+	
+	if ( $chromosome =~ /:/ ){
+		
+		($chromosome, $query_region) = split(/:/, $chromosome);
+		($query_start, $query_stop) = split(/-/, $query_region);
+				
+		say "Limiting search to SVs within region '$query_start-$query_stop' on chromosome '$chromosome'";
+		
+		$specified_region = 1;
+	}
+				
 	say "Enter any key to start cycling through calls or enter 'q' to exit";
 	say "Running in filter mode - not displaying filtered calls" if $filter_flag;
 	
@@ -483,12 +501,21 @@ sub dump_variants {
 		
 		my ( $chr, $start, $id, $ref, $alt, $quality_score, $filt, $info_block, $format_block, $tumour_info_block, $normal_info_block, $sv_type, $SV_length, $stop, $chr2, $SR, $PE, $filters, $samples ) = @{ $SVs->{$_} };
 		
-		if ($chromosome){
+		
+		if ( $chromosome ){		
 			next if $chr ne $chromosome;
 		}
 		
+		if ( $specified_region ){
+			
+			if ( ($start < $query_start and $stop < $query_start) or ($start > $query_stop and $stop > $query_stop) ){
+				next;
+			}
+			
+		}
+							
 		my (@format) 		= @{ $info->{$_}->[0]};
-		my (%format_long) 	= @{ $info->{$_}->[1]}; #
+		my (%format_long) 	= @{ $info->{$_}->[1]};
 		my (%info_long)		= @{ $info->{$_}->[2]};
 	
 		my (@tumour_parts) 	= @{ $info->{$_}->[3]};
@@ -502,7 +529,7 @@ sub dump_variants {
 				
 		my @samples = @{ $samples };
 		
-		if (scalar @filter_reasons > 0 ){
+		if ( scalar @filter_reasons > 0 ){
 			next if $filter_flag;
 		}
 		
@@ -512,7 +539,7 @@ sub dump_variants {
 		if ( $next_line ){
 			chomp($next_line);
 			exit if $next_line eq 'q';
-			
+						
 			if (scalar @filter_reasons > 0 ){
 				say "______________________________________________";	
 				say "Variant '$id' was filtered for the following reasons:";
