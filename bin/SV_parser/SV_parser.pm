@@ -168,10 +168,13 @@ sub parse {
 }
 
 sub print_variants {
-	open my $out, '>', 'filtered_vars.vcf' or die $!;
 	
-	my ( $SVs, $filtered_SVs ) = @_;
+	my ( $SVs, $filtered_SVs, $name, $output_dir ) = @_;
 	
+	open my $out, '>', $output_dir . $name . ".filtered.vcf" or die $!;
+
+	say "Writing output to " . "'$output_dir" . $name . ".filtered.vcf'";
+		
 	my %filtered_SVs = %{ $filtered_SVs };
 	my $sv_count = 0;
 	for (sort {$a <=> $b} keys %filtered_SVs){

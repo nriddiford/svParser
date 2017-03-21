@@ -15,20 +15,22 @@ use feature qw/ say /;
 use Data::Dumper;
 use Getopt::Long qw/ GetOptions /;
 
+use File::Basename;
+
+
 my $vcf_file; 
 my $help;
 my $id;
 my $dump;
 my $filter;
 my $chromosome;
-my $print;
+my $output_dir;
 
-# Should add score threshold option
 GetOptions( 'vcf=s'	        	=>		\$vcf_file,
 			'id=s'				=>		\$id,
 			'dump'				=>		\$dump,
 			'filter'			=>		\$filter,
-			'print'				=>		\$print,
+            'output_dir=s'     	=>      \$output_dir,
 			'chromosome=s'		=>		\$chromosome,
 			'help'              =>      \$help
 	  ) or die usage();
@@ -39,12 +41,14 @@ if (not $vcf_file) {
 	 exit usage();
 } 
 
+$output_dir =~ s!/*$!/! if $output_dir; # Add a trailing slash
+
+my ($name, $extention) = split(/\.([^.]+)$/, basename($vcf_file), 2);
 
 # Retun SV and info hashes 
 my ( $SVs, $info, $filtered_vars ) = SV_parser::typer($vcf_file);
 
-# Print all infor for specified id
-
+# Print all info for specified id
 
 SV_parser::summarise_variants( $SVs, $filter ) unless $id or $dump;
 
@@ -55,7 +59,7 @@ SV_parser::get_variant( $id, $SVs, $info, $filter ) if $id;
 # Dump all variants to screen
 SV_parser::dump_variants( $SVs, $info, $filter, $chromosome ) if $dump;
 
-SV_parser::print_variants ( $SVs, $filtered_vars ) if $print;
+SV_parser::print_variants ( $SVs, $filtered_vars, $name, $output_dir ) if $output_dir;
 
 sub usage {
 	say "********** $Script ***********";
@@ -64,7 +68,7 @@ sub usage {
 	say "  --id = extract information for a given variant";
 	say "  --dump = cycle through all variants (can be combined with both -f and -c)";
 	say "  --filter = apply filters and mark filtered variants";
-	say "  --print = write out variants that pass filters";
+	say "  --output = write out variants that pass filters to specified dir [default: working dir]";
 	say "  --chromosome = used in conjunction with --dump will cycle though variants on chromosome speciified in -c";
 	say "  --help\n";
 	
