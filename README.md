@@ -56,11 +56,11 @@ Nick Riddiford 2017
 
 * Browse all variants within a speicifc window on X chromosome: 
 
-`perl script/sv_parse.1.0.pl -v data/HUM-7.tagged.SC.lumpy.gt_all.vcf -d -c X:20000-100000`
+`perl script/sv_parse.1.0.pl -v data/HUM-7.tagged.SC.lumpy.gt_all.vcf -d -c X:3000000-3500000`
 
 * Browse all variants that passed filter within a speicifc window on X chromosome: 
 
-`perl script/sv_parse.1.0.pl -v data/HUM-7.tagged.SC.lumpy.gt_all.vcf -d -f -c X:20000-100000`
+`perl script/sv_parse.1.0.pl -v data/HUM-7.tagged.SC.lumpy.gt_all.vcf -f -d -c X:3000000-3500000`
 
 
 ## Print variants (-p)
