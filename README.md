@@ -30,18 +30,18 @@ Nick Riddiford 2017
 
 ## Summarise variants
 
-### Read vcf file from lumpy or delly and see summary of variants called: 
+#### Read vcf file from lumpy or delly and see summary of variants called: 
 
 `perl script/sv_parse.1.0.pl -v data/HUM-7.tagged.SC.lumpy.gt_all.vcf`
 
 
 ## Get variant (-i)
 
-### Investigate a specific variant (by ID):
+#### Investigate a specific variant (by ID):
 
 `perl script/sv_parse.1.0.pl -v data/HUM-7.tagged.SC.lumpy.gt_all.vcf -i 4706`
 
-### Investigate a specific variant (by ID) and see if it's filtered:
+#### Investigate a specific variant (by ID) and see if it's filtered:
 
 `perl script/sv_parse.1.0.pl -v data/HUM-7.tagged.SC.lumpy.gt_all.vcf -i 4706 -f`
 
@@ -50,21 +50,21 @@ Nick Riddiford 2017
 
 `perl script/sv_parse.1.0.pl -v data/HUM-7.tagged.SC.lumpy.gt_all.vcf -d`
 
-### Browse all variants that passed filter on X chromosome (-c -f): 
+#### Browse all variants that passed filter on X chromosome (-c -f): 
  
 `perl script/sv_parse.1.0.pl -v data/HUM-7.tagged.SC.lumpy.gt_all.vcf -f -d -c X`
 
-### Browse all variants within a speicifc window on X chromosome: 
+#### Browse all variants within a speicifc window on X chromosome: 
 
 `perl script/sv_parse.1.0.pl -v data/HUM-7.tagged.SC.lumpy.gt_all.vcf -d -c X:20000-100000`
 
-### Browse all variants that passed filter within a speicifc window on X chromosome: 
+#### Browse all variants that passed filter within a speicifc window on X chromosome: 
 
 `perl script/sv_parse.1.0.pl -v data/HUM-7.tagged.SC.lumpy.gt_all.vcf -d -f -c X:20000-100000`
 
 
 ## Print variants (-p)
 
-### Print all variants that passed filter (-p)
+#### Print all variants that passed filter (-p)
 
 `perl script/sv_parse.1.0.pl -v data/HUM-7.tagged.SC.lumpy.gt_all.vcf -f -p`
