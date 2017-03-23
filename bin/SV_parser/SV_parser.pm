@@ -351,7 +351,7 @@ sub delly {
 sub summarise_variants {
 	my ($SVs, $filter_flag) = @_;
 	
-	my ($dels, $dups, $trans, $invs, $filtered) = (0,0,0,0);
+	my ($dels, $dups, $trans, $invs, $filtered) = (0,0,0,0,0);
 	
 	my %support_by_chrom;
 	
