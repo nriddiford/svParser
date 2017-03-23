@@ -488,7 +488,7 @@ sub dump_variants {
 	
 	my $specified_region = 0;
 	
-	if ( $chromosome =~ /:/ ){
+	if ( $chromosome and $chromosome =~ /:/ ){
 		
 		($chromosome, $query_region) = split(/:/, $chromosome);
 		($query_start, $query_stop) = split(/-/, $query_region);
