@@ -122,9 +122,10 @@ sub parse {
 			}
 		}
 		
-		my %information;
+		###################
 		
-					
+		my %information;
+						
 		foreach(@info_parts){
 			
 			my ($info_key, $info_value);
@@ -221,14 +222,11 @@ sub lumpy {
 		# Create temp pseudo counts to avoid illegal division by 0
 		my $sc_tumour_read_support = $tumour_read_support + 0.001;
 		
-		
-
 		# Anything with less than 4 supporting reads is filtered
 		if ( $tumour_read_support < 4 ){
 			push @filter_reasons, 'tumour_reads<4=' . $tumour_read_support;
-
 		}
-			
+					
 		# for precise variants:
 		if ($info_block !~ /IMPRECISE;/){
 						
@@ -247,6 +245,7 @@ sub lumpy {
 			}
 		}
 		
+		my $sc_direct_control_read_support = 0;
 		# for imprecise variants:
 		if ($info_block =~ /IMPRECISE;/){
 						
@@ -258,10 +257,41 @@ sub lumpy {
 			$c_SR =  $sample_info{$id}{$control}{'SR'};
 	
 			my $direct_control_read_support = ( $c_PE + $c_SR );
-			my $sc_direct_control_read_support = $direct_control_read_support + 0.001;
+			$sc_direct_control_read_support = $direct_control_read_support + 0.001;
 			
 			if ( $direct_control_read_support > 1 ){
 				push @filter_reasons, "imprecise_var_with_$control\_read_support>1=" . $direct_control_read_support;
+			}
+			
+		}
+		
+		######################
+		# Read depth filters #
+		######################
+				
+		if ( exists $sample_info{$id}{$tumour}{'DP'} ){
+			
+			my $t_DP =  $sample_info{$id}{$tumour}{'DP'};
+			my $c_DP =  $sample_info{$id}{$control}{'DP'};
+			
+			# Flag if either control or tumour has depth < 10 at site
+			if ( $t_DP <= 10 ){
+				push @filter_reasons, 'tumour_depth<10=' . $t_DP;
+			}
+
+			if ( $c_DP <= 10 ){
+				push @filter_reasons, 'control_depth<10=' . $c_DP;
+			}
+			
+			# Subtract control reads from tumour reads
+			# If this number of SU is less than 10% of tumour read_depth then filter
+			# if ( ( $tumour_read_support - $sc_direct_control_read_support ) / ( $t_DP + 0.01 ) < 0.1 ){ # Maybe this is too harsh...
+			
+			if ( $tumour_read_support / ( $t_DP + 0.01 ) < 0.1 ){
+				# Unless there are both PE and SR supporting variant
+				unless ($t_PE > 0 and $t_SR > 0){
+					push @filter_reasons, 'tumour_reads/tumour_depth<10%=' . $tumour_read_support . "/" . $t_DP;
+				}
 			}
 			
 		}
@@ -277,27 +307,7 @@ sub lumpy {
 				push @filter_reasons, "SQ=" . $sample_info{$id}{$tumour}{'SQ'};
 			}
 		}
-
-		
-		######################
-		# Read depth filters #
-		######################
-		
-		if ( exists $sample_info{$id}{$tumour}{'DP'} ){
-			
-			my $t_DP =  $sample_info{$id}{$tumour}{'DP'};
-			my $c_DP =  $sample_info{$id}{$control}{'DP'};
-			
-			# Flag if either control or tumour has depth < 10 at site
-			if ( $t_DP <= 10 ){
-				push @filter_reasons, 'tumour_depth<10=' . $t_DP;
-			}
-
-			if ( $c_DP <= 10 ){
-				push @filter_reasons, 'control_depth<10=' . $c_DP;
-			}
-		}
-				
+						
 		my ($chr2, $stop) = 0,0;
 
 		if ($SV_type eq 'BND'){
