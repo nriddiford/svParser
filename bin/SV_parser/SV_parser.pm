@@ -408,9 +408,19 @@ sub summarise_variants {
 	say "$invs inversions";
 	
 	my $top_count = 0;
+	my %connected_bps;
 	print "\nTop 5 SVs by read count:\n";
 	for ( sort { $support_by_chrom{$b}[0] <=> $support_by_chrom{$a}[0] } keys %support_by_chrom ){
+		
+		my $bp_id = $_;
+		if ($bp_id =~ /_/){
+			($bp_id) = $bp_id =~ /(.+)?_/;
+		}
+		
+		# flatten connected bps into 1 id for summary	
+		next if $connected_bps{$bp_id}++;
 		$top_count++;
+		
 		print join("\n", "ID: $_", "TYPE: $support_by_chrom{$_}[1]", "CHROM: $support_by_chrom{$_}[2]", "READS: $support_by_chrom{$_}[0]", "LENGTH: $support_by_chrom{$_}[3]\n");
 		print "\n";
 		last if $top_count >= 5;
