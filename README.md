@@ -24,12 +24,6 @@ o Filter vars and write to file in cwd:
 Nick Riddiford 2017
 ```
 
-# To do
-- [ ] User-controlled filter params 
-- [ ] Custom sorting of vcf summary (in `summarise_variants`), e.g. by SQ value
-- [ ] Write output for specified params (rather than for post-filter)
-
-
 # Examples 
 
 
@@ -73,3 +67,10 @@ Nick Riddiford 2017
 * Print all variants that passed filter (-o)
 
 `perl script/sv_parse.1.0.pl -v data/HUM-7.tagged.SC.lumpy.gt_all.vcf -f -o .`
+
+
+# To do
+- [ ] User-controlled filter params 
+- [ ] Custom sorting of vcf summary (in `summarise_variants`), e.g. by SQ value
+- [ ] Write output for specified params (rather than for post-filter)
+
