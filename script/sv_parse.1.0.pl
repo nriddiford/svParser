@@ -7,7 +7,7 @@ use FindBin;
 use FindBin '$Script';
 
 use File::Spec;
-use lib File::Spec->catdir($FindBin::Bin, '..', 'bin/SV_parser');
+use lib File::Spec->catdir($FindBin::Bin, '..', 'bin/');
 
 use SV_parser;
 
