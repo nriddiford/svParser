@@ -21,11 +21,11 @@ sub typer {
 		$type = 'delly';
 		parse($file, $type);
 	}
-	# elsif (`grep "VarScan" $file`){
-	# 	say "Recognised $file as VarScan2 input";
-	# 	$type = 'varscan2';
-	# 	parse($file, $type);
-	# }
+	elsif (`grep "VarScan" $file`){
+		say "Recognised $file as VarScan2 input";
+		$type = 'varscan2';
+		parse($file, $type);
+	}
 	
 	else {
 		die "This VCF is not from lumpy or delly. Abort";
@@ -542,15 +542,15 @@ sub dump_variants {
 			
 		}
 							
-		my (@format) 		= @{ $info->{$_}->[0]};
-		my (%format_long) 	= @{ $info->{$_}->[1]};
-		my (%info_long)		= @{ $info->{$_}->[2]};
+		my (@format) 		= @{ $info->{$_}->[0] };
+		my (%format_long) 	= @{ $info->{$_}->[1] };
+		my (%info_long)		= @{ $info->{$_}->[2] };
 	
-		my (@tumour_parts) 	= @{ $info->{$_}->[3]};
-		my (@normal_parts) 	= @{ $info->{$_}->[4]};
+		my (@tumour_parts) 	= @{ $info->{$_}->[3] };
+		my (@normal_parts) 	= @{ $info->{$_}->[4] };
 	
-		my (%information)	= @{ $info->{$_}->[5]};
-		my (%sample_info)	= @{ $info->{$_}->[6]};
+		my (%information)	= @{ $info->{$_}->[5] };
+		my (%sample_info)	= @{ $info->{$_}->[6] };
 	
 		
 		my @filter_reasons = @{ $filters };
