@@ -9,6 +9,8 @@ use 5.18.2;
 use feature qw/ say /;
 use Data::Dumper;
 
+use Data::Printer;
+
 sub typer {
 	my $file = shift;
 	my $type;
@@ -57,6 +59,7 @@ sub parse {
 
 	my @samples;
 	
+	my $replacement_id = 1;
 	while(<$in>){
 		chomp;
 
@@ -94,8 +97,9 @@ sub parse {
 				
 	    my ($chr, $start, $id, $ref, $alt, $quality_score, $filt, $info_block, $format_block, @sample_info) = @fields;
 		
+		# NovoBreak doesn't assign ids
 		if ($id eq 'N' or $id eq '.'){
-			$id = $.;
+			$id = $replacement_id++;
 		}
 		
  		my %sample_parts;
@@ -165,8 +169,11 @@ sub parse {
 			( $SV_length, $chr2, $stop, $t_SR, $t_PE, $filters ) = delly( $info_block, $start, $SV_type, \@filter_reasons );
 		}
 		
-		elsif ($type eq 'novobreak'){			
-			( $SV_length, $chr2, $stop, $t_SR, $t_PE, $filters  ) = novobreak( $info_block, $start, $SV_type, \@filter_reasons );
+		elsif ($type eq 'novobreak'){
+			my ($sample_info_novo, $format_novo);
+			( $SV_length, $chr2, $stop, $t_SR, $t_PE, $filters, $sample_info_novo, $format_novo ) = novobreak( $id, $info_block, $start, $SV_type, \@filter_reasons, \@sample_info );
+			%sample_info = %{ $sample_info_novo };
+			@format = @{ $format_novo };
 		}
 		
 		$filters = chrom_filter( $chr, $chr2, $filters );
@@ -210,9 +217,32 @@ sub print_variants {
 }
 
 sub novobreak {
-	my ($info_block, $start, $SV_type, $filters) = @_;
+	my ( $id, $info_block, $start, $SV_type, $filters, $info ) = @_;
 	
 	my @filter_reasons = @{ $filters };
+	
+	my @info = @{ $info };
+	
+	my %sample_info;
+
+	# my $reads = $info[0];
+	
+	my $tumour_read_support = $info[4];
+	
+	my @tumour_parts = @info[6..10, 16..20];
+	my @normal_parts = @info[11..15, 21..25];
+	
+	my @format = qw /  
+	bkpt1_depth bkpt1_sp_reads bkpt1_qual bkpt1_high_qual_sp_reads bkpt1_high_qual_qual
+	bkpt2_depth bkpt2_sp_reads bkpt2_qual bkpt2_high_qual_sp_reads bkpt2_high_qual_qual
+	/;
+		
+	$sample_info{$id}{'tumour'}{$format[$_]} = $tumour_parts[$_] for 0..$#format;
+	$sample_info{$id}{'normal'}{$format[$_]} = $normal_parts[$_] for 0..$#format;
+	
+	if ( $tumour_read_support < 4 ){
+		push @filter_reasons, 'tumour_reads<4=' . $tumour_read_support;
+	}
 	
     my ($stop) = $info_block =~ /;END=(.*?);/;
 		
@@ -236,8 +266,8 @@ sub novobreak {
 		}
 			
 		my ($chr2) = $info_block =~ /CHR2=(.*?);/;
-		
-	return ($SV_length, $chr2, $stop, $t_SR, $t_PE, \@filter_reasons );
+			
+	return ($SV_length, $chr2, $stop, $t_SR, $t_PE, \@filter_reasons, \%sample_info, @format );
 }
 
 sub lumpy {
