@@ -526,7 +526,7 @@ sub get_variant {
 	}
 	
 	my (@format) 		= @{ $info->{$id_lookup}->[0]};
-	my (%format_long) 	= @{ $info->{$id_lookup}->[1]}; #
+	my (%format_long) 	= @{ $info->{$id_lookup}->[1]};
 	my (%info_long)		= @{ $info->{$id_lookup}->[2]};
 	
 	my (@tumour_parts) 	= @{ $info->{$id_lookup}->[3]};
