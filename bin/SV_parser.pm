@@ -438,7 +438,6 @@ sub summarise_variants {
 		
 	}
 	
-	
 	my %support_by_chrom;
 	
 	my $read_support;
@@ -476,7 +475,7 @@ sub summarise_variants {
 		}
 			
 	   $read_support = ( $SR + $PE );
-	   $support_by_chrom{$id} = [ $read_support, $sv_type, $chr, $SV_length ];
+	   $support_by_chrom{$id} = [ $read_support, $sv_type, $chr, $SV_length, $start ];
 	  
 	   $dels++ if $sv_type eq 'DEL';
 	   $dups++ if $sv_type eq 'DUP';
@@ -511,8 +510,8 @@ sub summarise_variants {
 		next if $connected_bps{$bp_id}++;
 		$top_count++;
 		
-		print join("\n", "ID: $_", "TYPE: $support_by_chrom{$_}[1]", "CHROM: $support_by_chrom{$_}[2]", "READS: $support_by_chrom{$_}[0]", "LENGTH: $support_by_chrom{$_}[3]\n");
-		print "\n";
+		print join("\n", "ID: $_", "TYPE: $support_by_chrom{$_}[1]", "CHROM: $support_by_chrom{$_}[2]", "START: $support_by_chrom{$_}[4]", "READS: $support_by_chrom{$_}[0]", "LENGTH: $support_by_chrom{$_}[3]\n") . "\n";
+
 		last if $top_count >= 5;
 	}	
 }
