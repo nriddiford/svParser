@@ -627,6 +627,8 @@ sub get_variant {
 	say "____________________________________________________________________________________";
 
 	for (sort keys %{$information{$id_lookup}}){
+		# turn off warnings for badly formatted novobreak vcf
+		no warnings;
 		printf "%-20s %-20s %-s\n", $_, $information{$id_lookup}{$_}, $info_long{$_};
 	}
 	say "____________________________________________________________________________________";
