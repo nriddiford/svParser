@@ -154,9 +154,10 @@ sub parse {
 				($info_key) = $_ =~ /(.*)/;
 				$info_value = "TRUE";
 			}
+						
 			$information{$id}{$info_key} = $info_value;
 		}
-						
+					
 	    my ($SV_type) = $info_block =~ /SVTYPE=(.*?);/;
 				
 		my ($SV_length, $chr2, $stop, $t_SR, $t_PE, $filters);
@@ -667,7 +668,7 @@ sub dump_variants {
 	say "Enter any key to start cycling through calls or enter 'q' to exit";
 	say "Running in filter mode - not displaying filtered calls" if $filter_flag;
 	
-	for (sort { @{ $SVs->{$a}}[0] cmp @{ $SVs->{$b}}[0] or
+	for ( sort { @{ $SVs->{$a}}[0] cmp @{ $SVs->{$b}}[0] or
 				@{ $SVs->{$a}}[1] <=> @{ $SVs->{$b}}[1] 
 			}  keys %{ $SVs } ){
 		
@@ -690,14 +691,13 @@ sub dump_variants {
 		my (@format) 		= @{ $info->{$_}->[0] };
 		my (%format_long) 	= @{ $info->{$_}->[1] };
 		my (%info_long)		= @{ $info->{$_}->[2] };
-	
+		
 		my (@tumour_parts) 	= @{ $info->{$_}->[3] };
 		my (@normal_parts) 	= @{ $info->{$_}->[4] };
 	
 		my (%information)	= @{ $info->{$_}->[5] };
 		my (%sample_info)	= @{ $info->{$_}->[6] };
-	
-		
+			
 		my @filter_reasons = @{ $filters };
 				
 		my @samples = @{ $samples };
@@ -755,6 +755,8 @@ sub dump_variants {
 			say "____________________________________________________________________________________";
 
 			for (sort keys %{$information{$id}}){
+				# turn off warnings for badly formatted novobreak vcf
+				no warnings;
 				printf "%-20s %-20s %-s\n", $_, $information{$id}{$_}, $info_long{$_};
 			}
 			say "____________________________________________________________________________________";
