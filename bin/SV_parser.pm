@@ -21,11 +21,6 @@ sub typer {
 		$type = 'delly';
 		parse($file, $type);
 	}
-	elsif (`grep "VarScan" $file`){
-		say "Recognised $file as VarScan2 input";
-		$type = 'varscan2';
-		parse($file, $type);
-	}
 	
 	else {
 		die "This VCF is not from lumpy or delly. Abort";
