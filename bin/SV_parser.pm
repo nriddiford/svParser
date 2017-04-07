@@ -170,10 +170,12 @@ sub parse {
 		}
 		
 		elsif ($type eq 'novobreak'){
-			my ($sample_info_novo, $format_novo);
-			( $SV_length, $chr2, $stop, $t_SR, $t_PE, $filters, $sample_info_novo, $format_novo ) = novobreak( $id, $info_block, $start, $SV_type, \@filter_reasons, \@sample_info );
+			@samples = qw/tumour normal/;
+			my ( $sample_info_novo, $format_novo, $format_long_novo );
+			( $SV_length, $chr2, $stop, $t_SR, $t_PE, $filters, $sample_info_novo, $format_novo, $format_long_novo ) = novobreak( $id, $info_block, $start, $SV_type, \@filter_reasons, \@sample_info );
 			%sample_info = %{ $sample_info_novo };
 			@format = @{ $format_novo };
+			%format_long = %{ $format_long_novo };
 		}
 		
 		$filters = chrom_filter( $chr, $chr2, $filters );
@@ -181,7 +183,7 @@ sub parse {
 		$SVs{$id} = [ @fields[0..10], $SV_type, $SV_length, $stop, $chr2, $t_SR, $t_PE, $filters, \@samples ];
 
 		$info{$id} = [ [@format], [%format_long], [%info_long], [@tumour_parts], [@normal_parts], [%information], [%sample_info] ];
-		
+				
 		if (scalar @{$filters} == 0){
 			$filtered_SVs{$.} = $_;
 		}
@@ -224,19 +226,30 @@ sub novobreak {
 	my @info = @{ $info };
 	
 	my %sample_info;
-
-	# my $reads = $info[0];
+	my %format_long;
 	
 	my $tumour_read_support = $info[4];
 	
 	my @tumour_parts = @info[6..10, 16..20];
 	my @normal_parts = @info[11..15, 21..25];
 	
-	my @format = qw /  
-	bkpt1_depth bkpt1_sp_reads bkpt1_qual bkpt1_high_qual_sp_reads bkpt1_high_qual_qual
-	bkpt2_depth bkpt2_sp_reads bkpt2_qual bkpt2_high_qual_sp_reads bkpt2_high_qual_qual
-	/;
-		
+	my @short_format = (
+	"Breakpoint 1 depth",
+	"Breakpoint 1 split reads",
+	"Breakpoint 1 quality score",
+	"Breakpoint 1 high quality split reads",
+	"Breakpoint 1 high quality quality score",
+	"Breakpoint 2 depth",
+	"Breakpoint 2 split reads",
+	"Breakpoint 2 quality score",
+	"Breakpoint 2 high quality split reads",
+	"Breakpoint 2 high quality quality score"
+	);
+	
+	my @format = qw / DP1 SR1 Q1 HCSR1 HCQ1 DP2 SR2 Q2 HCSR2 HCQ2 /;
+	
+	$format_long{$format[$_]} = $short_format[$_] for 0..$#format;
+	
 	$sample_info{$id}{'tumour'}{$format[$_]} = $tumour_parts[$_] for 0..$#format;
 	$sample_info{$id}{'normal'}{$format[$_]} = $normal_parts[$_] for 0..$#format;
 	
@@ -267,7 +280,7 @@ sub novobreak {
 			
 		my ($chr2) = $info_block =~ /CHR2=(.*?);/;
 			
-	return ($SV_length, $chr2, $stop, $t_SR, $t_PE, \@filter_reasons, \%sample_info, @format );
+	return ($SV_length, $chr2, $stop, $t_SR, $t_PE, \@filter_reasons, \%sample_info, \@format, \%format_long );
 }
 
 sub lumpy {
