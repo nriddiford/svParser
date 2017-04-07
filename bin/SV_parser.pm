@@ -596,6 +596,11 @@ sub dump_variants {
 	if ( $chromosome and $chromosome =~ /:/ ){
 		
 		($chromosome, $query_region) = split(/:/, $chromosome);
+		
+		if ( $query_region !~ /-/ ){
+			die "Error parsing the specified region.\nPlease specify chromosome regions using the folloing format:\tchrom:start-stop\n";
+		}
+		
 		($query_start, $query_stop) = split(/-/, $query_region);
 		$query_start =~ s/,//g;
 		$query_stop =~ s/,//g;
