@@ -9,6 +9,8 @@ use 5.18.2;
 use feature qw/ say /;
 use Data::Dumper;
 
+use Data::Printer;
+
 sub typer {
 	my $file = shift;
 	my $type;
@@ -57,6 +59,7 @@ sub parse {
 
 	my @samples;
 	
+	my $replacement_id = 1;
 	while(<$in>){
 		chomp;
 
@@ -94,8 +97,9 @@ sub parse {
 				
 	    my ($chr, $start, $id, $ref, $alt, $quality_score, $filt, $info_block, $format_block, @sample_info) = @fields;
 		
+		# NovoBreak doesn't assign ids
 		if ($id eq 'N' or $id eq '.'){
-			$id = $.;
+			$id = $replacement_id++;
 		}
 		
  		my %sample_parts;
@@ -150,9 +154,10 @@ sub parse {
 				($info_key) = $_ =~ /(.*)/;
 				$info_value = "TRUE";
 			}
+						
 			$information{$id}{$info_key} = $info_value;
 		}
-						
+					
 	    my ($SV_type) = $info_block =~ /SVTYPE=(.*?);/;
 				
 		my ($SV_length, $chr2, $stop, $t_SR, $t_PE, $filters);
@@ -165,8 +170,13 @@ sub parse {
 			( $SV_length, $chr2, $stop, $t_SR, $t_PE, $filters ) = delly( $info_block, $start, $SV_type, \@filter_reasons );
 		}
 		
-		elsif ($type eq 'novobreak'){			
-			( $SV_length, $chr2, $stop, $t_SR, $t_PE, $filters  ) = novobreak( $info_block, $start, $SV_type, \@filter_reasons );
+		elsif ($type eq 'novobreak'){
+			@samples = qw/tumour normal/;
+			my ( $sample_info_novo, $format_novo, $format_long_novo );
+			( $SV_length, $chr2, $stop, $t_SR, $t_PE, $filters, $sample_info_novo, $format_novo, $format_long_novo ) = novobreak( $id, $info_block, $start, $SV_type, \@filter_reasons, \@sample_info );
+			%sample_info = %{ $sample_info_novo };
+			@format = @{ $format_novo };
+			%format_long = %{ $format_long_novo };
 		}
 		
 		$filters = chrom_filter( $chr, $chr2, $filters );
@@ -174,7 +184,7 @@ sub parse {
 		$SVs{$id} = [ @fields[0..10], $SV_type, $SV_length, $stop, $chr2, $t_SR, $t_PE, $filters, \@samples ];
 
 		$info{$id} = [ [@format], [%format_long], [%info_long], [@tumour_parts], [@normal_parts], [%information], [%sample_info] ];
-		
+				
 		if (scalar @{$filters} == 0){
 			$filtered_SVs{$.} = $_;
 		}
@@ -210,34 +220,66 @@ sub print_variants {
 }
 
 sub novobreak {
-	my ($info_block, $start, $SV_type, $filters) = @_;
+	my ( $id, $info_block, $start, $SV_type, $filters, $info ) = @_;
 	
 	my @filter_reasons = @{ $filters };
+	
+	my @info = @{ $info };
+	
+	my %sample_info;
+	my %format_long;
+	
+	my $tumour_read_support = $info[4];
+	
+	my @tumour_parts = @info[6..10, 16..20];
+	my @normal_parts = @info[11..15, 21..25];
+	
+	my @short_format = (
+	"Breakpoint 1 depth",
+	"Breakpoint 1 split reads",
+	"Breakpoint 1 quality score",
+	"Breakpoint 1 high quality split reads",
+	"Breakpoint 1 high quality quality score",
+	"Breakpoint 2 depth",
+	"Breakpoint 2 split reads",
+	"Breakpoint 2 quality score",
+	"Breakpoint 2 high quality split reads",
+	"Breakpoint 2 high quality quality score"
+	);
+	
+	my @format = qw / DP1 SR1 Q1 HCSR1 HCQ1 DP2 SR2 Q2 HCSR2 HCQ2 /;
+	
+	$format_long{$format[$_]} = $short_format[$_] for 0..$#format;
+	
+	$sample_info{$id}{'tumour'}{$format[$_]} = $tumour_parts[$_] for 0..$#format;
+	$sample_info{$id}{'normal'}{$format[$_]} = $normal_parts[$_] for 0..$#format;
+	
+	##########################
+	# Filter on tumour reads #
+	##########################
+	
+	if ( $tumour_read_support < 4 ){
+		push @filter_reasons, 'tumour_reads<4=' . $tumour_read_support;
+	}
 	
     my ($stop) = $info_block =~ /;END=(.*?);/;
 		
 	my ($SV_length) = ($stop - $start);
 	
-		my ($t_SR, $t_PE) = (0,0);
-		
-		if ($info_block =~ /;SR=(\d+);/){
-	   		$t_SR = $1;
-	   	}
-	   
-	   if ($info_block =~ /;PE=(\d+);/){
-	   		$t_PE = $1;
-	   }
- 	  		
-		if ($start > $stop){
-			my $old_start = $start;
-			my $old_stop = $stop;
-			$start = $old_stop;
-			$stop = $old_start;
-		}
+	my ($t_SR, $t_PE) = (0,0);
+	
+	$t_SR = $tumour_read_support;
+		  		
+	if ($start > $stop){
+		my $old_start = $start;
+		my $old_stop = $stop;
+		$start = $old_stop;
+		$stop = $old_start;
+	}
 			
-		my ($chr2) = $info_block =~ /CHR2=(.*?);/;
-		
-	return ($SV_length, $chr2, $stop, $t_SR, $t_PE, \@filter_reasons );
+	my ($chr2) = $info_block =~ /CHR2=(.*?);/;
+			
+	return ($SV_length, $chr2, $stop, $tumour_read_support, $t_PE, \@filter_reasons, \%sample_info, \@format, \%format_long );
 }
 
 sub lumpy {
@@ -583,6 +625,8 @@ sub get_variant {
 	say "____________________________________________________________________________________";
 
 	for (sort keys %{$information{$id_lookup}}){
+		# turn off warnings for badly formatted novobreak vcf
+		no warnings;
 		printf "%-20s %-20s %-s\n", $_, $information{$id_lookup}{$_}, $info_long{$_};
 	}
 	say "____________________________________________________________________________________";
@@ -624,7 +668,7 @@ sub dump_variants {
 	say "Enter any key to start cycling through calls or enter 'q' to exit";
 	say "Running in filter mode - not displaying filtered calls" if $filter_flag;
 	
-	for (sort { @{ $SVs->{$a}}[0] cmp @{ $SVs->{$b}}[0] or
+	for ( sort { @{ $SVs->{$a}}[0] cmp @{ $SVs->{$b}}[0] or
 				@{ $SVs->{$a}}[1] <=> @{ $SVs->{$b}}[1] 
 			}  keys %{ $SVs } ){
 		
@@ -647,14 +691,13 @@ sub dump_variants {
 		my (@format) 		= @{ $info->{$_}->[0] };
 		my (%format_long) 	= @{ $info->{$_}->[1] };
 		my (%info_long)		= @{ $info->{$_}->[2] };
-	
+		
 		my (@tumour_parts) 	= @{ $info->{$_}->[3] };
 		my (@normal_parts) 	= @{ $info->{$_}->[4] };
 	
 		my (%information)	= @{ $info->{$_}->[5] };
 		my (%sample_info)	= @{ $info->{$_}->[6] };
-	
-		
+			
 		my @filter_reasons = @{ $filters };
 				
 		my @samples = @{ $samples };
@@ -712,6 +755,8 @@ sub dump_variants {
 			say "____________________________________________________________________________________";
 
 			for (sort keys %{$information{$id}}){
+				# turn off warnings for badly formatted novobreak vcf
+				no warnings;
 				printf "%-20s %-20s %-s\n", $_, $information{$id}{$_}, $info_long{$_};
 			}
 			say "____________________________________________________________________________________";
