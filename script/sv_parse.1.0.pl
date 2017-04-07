@@ -53,7 +53,7 @@ my ( $SVs, $info, $filtered_vars ) = SV_parser::typer($vcf_file);
 
 # Print all info for specified id
 
-SV_parser::summarise_variants( $SVs, $filter ) unless $id or $dump;
+SV_parser::summarise_variants( $SVs, $filter, $chromosome ) unless $id or $dump;
 
 # Print all infor for specified id
 
