@@ -4,6 +4,8 @@ package SV_parser;
 use strict;
 use warnings;
 
+use 5.18.2;
+
 use feature qw/ say /;
 use Data::Dumper;
 
@@ -19,6 +21,17 @@ sub typer {
 	elsif (`grep "DELLY" $file`){
 		say "Recognised $file as Delly input";
 		$type = 'delly';
+		parse($file, $type);
+	}
+	elsif (`grep "VarScan" $file`){
+		say "Recognised $file as VarScan2 input";
+		$type = 'varscan2';
+		parse($file, $type);
+	}
+	
+	elsif (`grep "bamsurgeon spike-in" $file`){
+		say "Recognised $file as novoBreak input";
+		$type = 'novobreak';
 		parse($file, $type);
 	}
 	
@@ -80,7 +93,11 @@ sub parse {
 		my @fields = split;
 				
 	    my ($chr, $start, $id, $ref, $alt, $quality_score, $filt, $info_block, $format_block, @sample_info) = @fields;
-
+		
+		if ($id eq 'N' or $id eq '.'){
+			$id = $.;
+		}
+		
  		my %sample_parts;
 
  		push @{$sample_parts{$samples[$_]}}, split(/:/, $sample_info[$_]) for 0..$#samples;
@@ -100,7 +117,7 @@ sub parse {
 			}
 			
 		}
-								
+										
  		my @normals = @samples[1..$#samples];
 		
 		my @filter_reasons;
@@ -135,7 +152,7 @@ sub parse {
 			}
 			$information{$id}{$info_key} = $info_value;
 		}
-				
+						
 	    my ($SV_type) = $info_block =~ /SVTYPE=(.*?);/;
 				
 		my ($SV_length, $chr2, $stop, $t_SR, $t_PE, $filters);
@@ -148,20 +165,24 @@ sub parse {
 			( $SV_length, $chr2, $stop, $t_SR, $t_PE, $filters ) = delly( $info_block, $start, $SV_type, \@filter_reasons );
 		}
 		
+		elsif ($type eq 'novobreak'){			
+			( $SV_length, $chr2, $stop, $t_SR, $t_PE, $filters  ) = novobreak( $info_block, $start, $SV_type, \@filter_reasons );
+		}
+		
 		$filters = chrom_filter( $chr, $chr2, $filters );
 				
 		$SVs{$id} = [ @fields[0..10], $SV_type, $SV_length, $stop, $chr2, $t_SR, $t_PE, $filters, \@samples ];
-		
+
 		$info{$id} = [ [@format], [%format_long], [%info_long], [@tumour_parts], [@normal_parts], [%information], [%sample_info] ];
 		
 		if (scalar @{$filters} == 0){
 			$filtered_SVs{$.} = $_;
 		}
-
 			
 	}	
-	return (\%SVs, \%info, \%filtered_SVs);
+	return (\%SVs, \%info, \%filtered_SVs);	
 }
+
 
 sub print_variants {
 	
@@ -187,7 +208,38 @@ sub print_variants {
 	}	
 	say "$sv_count variants passed all filters";
 }
+
+sub novobreak {
+	my ($info_block, $start, $SV_type, $filters) = @_;
+	
+	my @filter_reasons = @{ $filters };
+	
+    my ($stop) = $info_block =~ /;END=(.*?);/;
 		
+	my ($SV_length) = ($stop - $start);
+	
+		my ($t_SR, $t_PE) = (0,0);
+		
+		if ($info_block =~ /;SR=(\d+);/){
+	   		$t_SR = $1;
+	   	}
+	   
+	   if ($info_block =~ /;PE=(\d+);/){
+	   		$t_PE = $1;
+	   }
+ 	  		
+		if ($start > $stop){
+			my $old_start = $start;
+			my $old_stop = $stop;
+			$start = $old_stop;
+			$stop = $old_start;
+		}
+			
+		my ($chr2) = $info_block =~ /CHR2=(.*?);/;
+		
+	return ($SV_length, $chr2, $stop, $t_SR, $t_PE, \@filter_reasons );
+}
+
 sub lumpy {
 	my ( $id, $info_block, $SV_type, $alt, $start, $sample_info, $tumour, $control, $samples, $normals, $filters ) = @_;
 	
@@ -354,31 +406,9 @@ sub delly {
 }
 
 sub summarise_variants {
-	my ( $SVs, $filter_flag, $chromosome ) = @_;
+	my ($SVs, $filter_flag) = @_;
 	
 	my ($dels, $dups, $trans, $invs, $filtered) = (0,0,0,0,0);
-	
-	my ( $query_region, $query_start, $query_stop );
-	
-	my $specified_region = 0;
-	
-	if ( $chromosome and $chromosome =~ /:/ ){
-		
-		($chromosome, $query_region) = split(/:/, $chromosome);
-		
-		if ( $query_region !~ /-/ ){
-			die "Error parsing the specified region.\nPlease specify chromosome regions using the folloing format:\tchrom:start-stop\n";
-		}
-		
-		($query_start, $query_stop) = split(/-/, $query_region);
-		
-		$query_start =~ s/,//g;
-		$query_stop =~ s/,//g;
-				
-		say "Limiting search to SVs within region '$query_start-$query_stop' on chromosome '$chromosome'";
-		
-		$specified_region = 1;
-	}
 	
 	my %support_by_chrom;
 	
@@ -390,16 +420,8 @@ sub summarise_variants {
    	   
        my ( $chr, $start, $id, $ref, $alt, $quality_score, $filt, $info_block, $format_block, $tumour_info_block, $normal_info_block, $sv_type, $SV_length, $stop, $chr2, $SR, $PE, $filters ) = @{ $SVs->{$_} };
 	   
-		if ( $chromosome ){		
-			next if $chr ne $chromosome;
-		}
-	
-		if ( $specified_region ){
-		
-			if ( ( $start < $query_start or $start > $query_stop ) and ( $stop < $query_stop or $stop > $query_stop ) ){
-				next;
-			}
-		}
+	   # Need this re-assignment for novobreak - should be harmless for lumpy and delly
+	   $id = $_;
 	   
 	   my @filter_reasons = @{ $filters };
 	   	   	   
@@ -415,7 +437,7 @@ sub summarise_variants {
 			
 	   $read_support = ( $SR + $PE );
 	   $support_by_chrom{$id} = [ $read_support, $sv_type, $chr, $SV_length ];
-	  	   	   	   
+	  
 	   $dels++ if $sv_type eq 'DEL';
 	   $dups++ if $sv_type eq 'DUP';
 	   $trans++ if $sv_type eq 'BND' or $sv_type eq 'TRA';
@@ -437,7 +459,7 @@ sub summarise_variants {
 	
 	my $top_count = 0;
 	my %connected_bps;
-	print "\nTop SVs by read count:\n";
+	print "\nTop 5 SVs by read count:\n";
 	for ( sort { $support_by_chrom{$b}[0] <=> $support_by_chrom{$a}[0] } keys %support_by_chrom ){
 		
 		my $bp_id = $_;
@@ -482,12 +504,12 @@ sub get_variant {
 	
 	if (scalar @filter_reasons > 0 ){
 	say "\n______________________________________________";	
-	say "Variant '$id' was filtered for the following reasons:";
+	say "Variant '$id_lookup' was filtered for the following reasons:";
 	say "* $_" foreach @filter_reasons;
 	say "______________________________________________\n";
 	}
 	
-	printf "%-10s %-s\n",  			"ID:", 		$id;
+	printf "%-10s %-s\n",  			"ID:", 		$id_lookup;
 	printf "%-10s %-s\n", 			"TYPE:", 	$sv_type;
 	$chr2 ? printf "%-10s %-s\n",  	"CHROM1:", 	$chr : printf "%-10s %-s\n",  "CHROM:",  $chr;
 	printf "%-10s %-s\n", 			"CHROM2:", 	$chr2 if $chr2;	
@@ -557,6 +579,7 @@ sub dump_variants {
 		
 		my ( $chr, $start, $id, $ref, $alt, $quality_score, $filt, $info_block, $format_block, $tumour_info_block, $normal_info_block, $sv_type, $SV_length, $stop, $chr2, $SR, $PE, $filters, $samples ) = @{ $SVs->{$_} };
 		
+		$id = $_;
 		
 		if ( $chromosome ){		
 			next if $chr ne $chromosome;
