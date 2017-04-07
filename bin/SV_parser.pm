@@ -555,7 +555,7 @@ sub get_variant {
 	printf "%-10s %-s\n", 			"CHROM2:", 	$chr2 if $chr2;	
 	printf "%-10s %-s\n",   		"START:", 	$start;
 	printf "%-10s %-s\n",   		"STOP:",  	$stop;
-	$chr2 ? printf "%-10s %-s\n",   "IGV:",   	"$chr:$start" : printf "%-10s %-s\n", "IGV:", "$chr:$start-$stop";
+	$chr2 ? printf "%-10s %-s\n",   "IGV:",   	"$chr:$start-$stop" : printf "%-10s %-s\n", "IGV:", "$chr:$start";
 	printf "%-10s %-s\n", 			"LENGTH:", 	$SV_length;
 	printf "%-10s %-s\n",   		"PE:",    	$PE;
 	printf "%-10s %-s\n",   		"SR:",		$SR;
@@ -684,7 +684,7 @@ sub dump_variants {
 			printf "%-10s %-s\n", 			"CHROM2:", 	$chr2 if $chr2;	
 			printf "%-10s %-s\n",   		"START:", 	$start;
 			printf "%-10s %-s\n",   		"STOP:",  	$stop;
-			$chr2 ? printf "%-10s %-s\n",   "IGV:",   	"$chr:$start" : printf "%-10s %-s\n", "IGV:", "$chr:$start-$stop";
+			$chr2 ? printf "%-10s %-s\n",   "IGV:",   	"$chr:$start-$stop" : printf "%-10s %-s\n", "IGV:", "$chr:$start";
 			printf "%-10s %-s\n", 			"LENGTH:", 	$SV_length;
 			printf "%-10s %-s\n",   		"PE:",    	$PE;
 			printf "%-10s %-s\n",   		"SR:",		$SR;
