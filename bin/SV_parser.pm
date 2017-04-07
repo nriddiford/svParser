@@ -254,6 +254,10 @@ sub novobreak {
 	$sample_info{$id}{'tumour'}{$format[$_]} = $tumour_parts[$_] for 0..$#format;
 	$sample_info{$id}{'normal'}{$format[$_]} = $normal_parts[$_] for 0..$#format;
 	
+	##########################
+	# Filter on tumour reads #
+	##########################
+	
 	if ( $tumour_read_support < 4 ){
 		push @filter_reasons, 'tumour_reads<4=' . $tumour_read_support;
 	}
@@ -262,26 +266,20 @@ sub novobreak {
 		
 	my ($SV_length) = ($stop - $start);
 	
-		my ($t_SR, $t_PE) = (0,0);
-		
-		if ($info_block =~ /;SR=(\d+);/){
-	   		$t_SR = $1;
-	   	}
-	   
-	   if ($info_block =~ /;PE=(\d+);/){
-	   		$t_PE = $1;
-	   }
- 	  		
-		if ($start > $stop){
-			my $old_start = $start;
-			my $old_stop = $stop;
-			$start = $old_stop;
-			$stop = $old_start;
-		}
+	my ($t_SR, $t_PE) = (0,0);
+	
+	$t_SR = $tumour_read_support;
+		  		
+	if ($start > $stop){
+		my $old_start = $start;
+		my $old_stop = $stop;
+		$start = $old_stop;
+		$stop = $old_start;
+	}
 			
-		my ($chr2) = $info_block =~ /CHR2=(.*?);/;
+	my ($chr2) = $info_block =~ /CHR2=(.*?);/;
 			
-	return ($SV_length, $chr2, $stop, $t_SR, $t_PE, \@filter_reasons, \%sample_info, \@format, \%format_long );
+	return ($SV_length, $chr2, $stop, $tumour_read_support, $t_PE, \@filter_reasons, \%sample_info, \@format, \%format_long );
 }
 
 sub lumpy {
