@@ -406,9 +406,33 @@ sub delly {
 }
 
 sub summarise_variants {
+	my ( $SVs, $filter_flag, $chromosome ) = @_;
 	my ($SVs, $filter_flag) = @_;
-	
+
 	my ($dels, $dups, $trans, $invs, $filtered) = (0,0,0,0,0);
+
+	my ( $query_region, $query_start, $query_stop );
+
+	my $specified_region = 0;
+
+	if ( $chromosome and $chromosome =~ /:/ ){
+	
+		($chromosome, $query_region) = split(/:/, $chromosome);
+	
+		if ( $query_region !~ /-/ ){
+			die "Error parsing the specified region.\nPlease specify chromosome regions using the folloing format:\tchrom:start-stop\n";
+		}
+	
+		($query_start, $query_stop) = split(/-/, $query_region);
+	
+		$query_start =~ s/,//g;
+		$query_stop =~ s/,//g;
+			
+		say "Limiting search to SVs within region '$query_start-$query_stop' on chromosome '$chromosome'";
+	
+		$specified_region = 1;
+	}
+	
 	
 	my %support_by_chrom;
 	
@@ -420,6 +444,17 @@ sub summarise_variants {
    	   
        my ( $chr, $start, $id, $ref, $alt, $quality_score, $filt, $info_block, $format_block, $tumour_info_block, $normal_info_block, $sv_type, $SV_length, $stop, $chr2, $SR, $PE, $filters ) = @{ $SVs->{$_} };
 	   
+	   if ( $chromosome ){		
+	   		next if $chr ne $chromosome;
+	   }
+	
+	   if ( $specified_region ){
+		
+	   		if ( ( $start < $query_start or $start > $query_stop ) and ( $stop < $query_stop or $stop > $query_stop ) ){
+	   			next;
+	   		}
+	   	}
+			
 	   # Need this re-assignment for novobreak - should be harmless for lumpy and delly
 	   $id = $_;
 	   
@@ -459,7 +494,7 @@ sub summarise_variants {
 	
 	my $top_count = 0;
 	my %connected_bps;
-	print "\nTop 5 SVs by read count:\n";
+	print "\nTop SVs by read count:\n";
 	for ( sort { $support_by_chrom{$b}[0] <=> $support_by_chrom{$a}[0] } keys %support_by_chrom ){
 		
 		my $bp_id = $_;
