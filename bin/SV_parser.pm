@@ -407,7 +407,6 @@ sub delly {
 
 sub summarise_variants {
 	my ( $SVs, $filter_flag, $chromosome ) = @_;
-	my ($SVs, $filter_flag) = @_;
 
 	my ($dels, $dups, $trans, $invs, $filtered) = (0,0,0,0,0);
 
