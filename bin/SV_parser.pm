@@ -414,22 +414,28 @@ sub summarise_variants {
 
 	my $specified_region = 0;
 
-	if ( $chromosome and $chromosome =~ /:/ ){
-	
-		($chromosome, $query_region) = split(/:/, $chromosome);
-	
-		if ( $query_region !~ /-/ ){
-			die "Error parsing the specified region.\nPlease specify chromosome regions using the folloing format:\tchrom:start-stop\n";
+	if ( $chromosome ){
+		
+		if ( $chromosome =~ /:/ ){
+		
+			($chromosome, $query_region) = split(/:/, $chromosome);
+				
+			if ( $query_region !~ /-/ ){
+				die "Error parsing the specified region.\nPlease specify chromosome regions using the folloing format:\tchrom:start-stop\n";
+			}
+		
+			($query_start, $query_stop) = split(/-/, $query_region);
+			$query_start =~ s/,//g;
+			$query_stop =~ s/,//g;
+				
+			say "Limiting search to SVs within region '$chromosome:$query_start-$query_stop'";
+		
+			$specified_region = 1;
 		}
-	
-		($query_start, $query_stop) = split(/-/, $query_region);
-	
-		$query_start =~ s/,//g;
-		$query_stop =~ s/,//g;
-			
-		say "Limiting search to SVs within region '$query_start-$query_stop' on chromosome '$chromosome'";
-	
-		$specified_region = 1;
+		else {
+			say "Limiting search to SVs on chromosome '$chromosome'";
+		}
+		
 	}
 	
 	
@@ -591,22 +597,29 @@ sub dump_variants {
 	my ( $query_region, $query_start, $query_stop );
 	
 	my $specified_region = 0;
-	
-	if ( $chromosome and $chromosome =~ /:/ ){
 		
-		($chromosome, $query_region) = split(/:/, $chromosome);
+	if ( $chromosome ){
 		
-		if ( $query_region !~ /-/ ){
-			die "Error parsing the specified region.\nPlease specify chromosome regions using the folloing format:\tchrom:start-stop\n";
+		if ( $chromosome =~ /:/ ){
+		
+			($chromosome, $query_region) = split(/:/, $chromosome);
+				
+			if ( $query_region !~ /-/ ){
+				die "Error parsing the specified region.\nPlease specify chromosome regions using the folloing format:\tchrom:start-stop\n";
+			}
+		
+			($query_start, $query_stop) = split(/-/, $query_region);
+			$query_start =~ s/,//g;
+			$query_stop =~ s/,//g;
+				
+			say "Limiting search to SVs within region '$chromosome:$query_start-$query_stop'";
+		
+			$specified_region = 1;
+		}
+		else {
+			say "Limiting search to SVs on chromosome '$chromosome'";
 		}
 		
-		($query_start, $query_stop) = split(/-/, $query_region);
-		$query_start =~ s/,//g;
-		$query_stop =~ s/,//g;
-				
-		say "Limiting search to SVs within region '$query_start-$query_stop' on chromosome '$chromosome'";
-		
-		$specified_region = 1;
 	}
 				
 	say "Enter any key to start cycling through calls or enter 'q' to exit";
