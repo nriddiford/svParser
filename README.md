@@ -73,4 +73,5 @@ Nick Riddiford 2017
 - [ ] User-controlled filter params 
 - [ ] Custom sorting of vcf summary (in `summarise_variants`), e.g. by SQ value
 - [ ] Write output for specified params (rather than for post-filter)
+- [ ] Specify file listing chromosomes to filter for
 
