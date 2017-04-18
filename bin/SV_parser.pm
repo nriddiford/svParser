@@ -766,6 +766,7 @@ sub dump_variants {
 	
 }
 
+# Only for Drosophila so far... 
 sub chrom_filter {
 	my ( $chr, $chr2, $filters ) = @_;
 	
