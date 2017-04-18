@@ -9,8 +9,6 @@ use 5.18.2;
 use feature qw/ say /;
 use Data::Dumper;
 
-use Data::Printer;
-
 sub typer {
 	my $file = shift;
 	my $type;
