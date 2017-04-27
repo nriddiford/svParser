@@ -13,27 +13,48 @@ use Data::Printer;
 
 sub typer {
 	my $file = shift;
-	my $type = shift || 0;
-	if ($type eq 'l' || `grep "source=LUMPY" $file`){
-		say "Recognised $file as Lumpy input";
+	my $type = shift;
+	
+	if ( $type eq 'l' ){
+		say "Specified $file as Lumpy output";
 		$type = 'lumpy';
 		parse($file, $type);
 	}
 	
-	elsif ($type eq 'd' || `grep "DELLY" $file`){
-		say "Recognised $file as Delly input";
+	elsif ( $type eq 'd' ){
+		say "Specified $file as Delly output";
 		$type = 'delly';
 		parse($file, $type);
 	}
 		
 	elsif ($type eq 'n' || `grep "bamsurgeon spike-in" $file`){
-		say "Recognised $file as novoBreak input";
+		say "Specified $file as novoBreak output";
 		$type = 'novobreak';
 		parse($file, $type);
 	}
 	
+	elsif ($type eq 'guess'){
+		
+		if ( `grep "source=LUMPY" $file` ){
+			say "Recognised $file as Lumpy input";
+			$type = 'lumpy';
+			parse($file, $type);
+		}
+		elsif ( `grep "DELLY" $file` ){
+			say "Recognised $file as Delly input";
+			$type = 'delly';
+			parse($file, $type);	
+		}
+		elsif (`grep "bamsurgeon spike-in" $file`){
+			say "Recognised $file as novoBreak input";
+			$type = 'novobreak';
+			parse($file, $type);
+		}
+		
+	}
+	
 	else {
-		die "This VCF is not from lumpy or delly. Abort";
+		die "This VCF can not be parsed. Abort";
 	}
 }
 
