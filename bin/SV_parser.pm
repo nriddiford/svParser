@@ -12,25 +12,24 @@ use Data::Dumper;
 use Data::Printer;
 
 sub typer {
-	my $file = shift;
-	my $type = shift;
-	
+	my ($file, $type, %filters) = @_;
+
 	if ( $type eq 'l' ){
 		say "Specified $file as Lumpy output";
 		$type = 'lumpy';
-		parse($file, $type);
+		parse($file, $type, \%filters);
 	}
 	
 	elsif ( $type eq 'd' ){
 		say "Specified $file as Delly output";
 		$type = 'delly';
-		parse($file, $type);
+		parse($file, $type, \%filters);
 	}
 		
 	elsif ( $type eq 'n' ){
 		say "Specified $file as novoBreak output";
 		$type = 'novobreak';
-		parse($file, $type);
+		parse($file, $type, \%filters);
 	}
 	
 	elsif ($type eq 'guess'){
@@ -38,17 +37,17 @@ sub typer {
 		if ( `grep "source=LUMPY" $file` ){
 			say "Recognised $file as Lumpy input";
 			$type = 'lumpy';
-			parse($file, $type);
+			parse($file, $type, \%filters);
 		}
 		elsif ( `grep "DELLY" $file` ){
 			say "Recognised $file as Delly input";
 			$type = 'delly';
-			parse($file, $type);	
+			parse($file, $type, \%filters);	
 		}
 		elsif (`grep "bamsurgeon spike-in" $file`){
 			say "Recognised $file as novoBreak input";
 			$type = 'novobreak';
-			parse($file, $type);
+			parse($file, $type, \%filters);
 		}
 		
 	}
@@ -59,10 +58,12 @@ sub typer {
 }
 
 sub parse {
-	my ($file, $type) = @_;
+	my ($file, $type, $filter_flags ) = @_;
 	open my $in, '<', $file or die $!;
 
 	my @headers;
+		
+	# my %filter_flags = %{ $filter_flags };
 	
 	my (%SVs, %info, %filtered_SVs);
 	
@@ -179,7 +180,7 @@ sub parse {
 		my ($SV_length, $chr2, $stop, $t_SR, $t_PE, $filters);
 		
 		if ($type eq 'lumpy'){
-			( $SV_length, $chr2, $stop, $t_SR, $t_PE, $filters ) = lumpy( $id, $info_block, $SV_type, $alt, $start, \%sample_info, $tumour_name, $control_name, \@samples, \@normals, \@filter_reasons );
+			( $SV_length, $chr2, $stop, $t_SR, $t_PE, $filters ) = lumpy( $id, $info_block, $SV_type, $alt, $start, \%sample_info, $tumour_name, $control_name, \@samples, \@normals, \@filter_reasons, $filter_flags );
 		}
 		
 		elsif ($type eq 'delly'){
@@ -299,10 +300,17 @@ sub novobreak {
 }
 
 sub lumpy {
-	my ( $id, $info_block, $SV_type, $alt, $start, $sample_info, $tumour, $control, $samples, $normals, $filters ) = @_;
+	my ( $id, $info_block, $SV_type, $alt, $start, $sample_info, $tumour, $control, $samples, $normals, $filters, $filter_flags ) = @_;
 	
 	my @filter_reasons = @{ $filters };
 	my @normals = @{ $normals };
+	
+	my %filter_flags = %{ $filter_flags };
+	
+	if (not exists $filter_flags{'dp'}) {$filter_flags{'dp'} = 10}
+	if (not exists $filter_flags{'su'}) {$filter_flags{'su'} = 4}
+	if (not exists $filter_flags{'tnr'}) {$filter_flags{'tnr'} = 0.1}
+	if (not exists $filter_flags{'sq'}) {$filter_flags{'sq'} = 10}
 	
 	my @samples = @{ $samples };
 	
@@ -328,8 +336,8 @@ sub lumpy {
 	my $pc_direct_control_read_support = 0;
 	
 		# Anything with less than 4 supporting reads is filtered
-		if ( $tumour_read_support < 4 ){
-			push @filter_reasons, 'tumour_reads<4=' . $tumour_read_support;
+		if ( $tumour_read_support < $filter_flags{'su'} ){
+			push @filter_reasons, 'tumour_reads<' . $filter_flags{'su'} . '=' . $tumour_read_support;
 		}
 		
 		if (@samples > 1){ # In case there are no control samples...
@@ -387,19 +395,19 @@ sub lumpy {
 		
 			# Flag if either control or tumour has depth < 10 at site
 		
-			if ( $c_DP <= 10 ){
-				push @filter_reasons, 'control_depth<10=' . $c_DP;
+			if ( $c_DP <= $filter_flags{'dp'} ){
+				push @filter_reasons, 'control_depth<' . $filter_flags{'dp'} . '=' . $c_DP;
 			}
 		}
 		
-		if ( $t_DP <= 10 ){
-			push @filter_reasons, 'tumour_depth<10=' . $t_DP;
+		if ( $t_DP <= $filter_flags{'dp'} ){
+			push @filter_reasons, 'tumour_depth<' . $filter_flags{'dp'} . '=' . $t_DP;
 		}
 	
 	
 		# Subtract control reads from tumour reads
 		# If this number of SU is less than 10% of tumour read_depth then filter
-	    if ( ( $tumour_read_support - $pc_direct_control_read_support ) / ( $t_DP + 0.01 ) < 0.1 ){ # Maybe this is too harsh...
+	    if ( ( $tumour_read_support - $pc_direct_control_read_support ) / ( $t_DP + 0.01 ) < $filter_flags{'tnr'} ){ # Maybe this is too harsh...
 		
 		# if ( $tumour_read_support / ( $t_DP + 0.01 ) < 0.1 ){ # OLD
 			
@@ -420,8 +428,8 @@ sub lumpy {
 		if ( exists $sample_info{$id}{$tumour}{'SQ'} ){
 			$sample_info{$id}{$tumour}{'SQ'} = 0 if $sample_info{$id}{$tumour}{'SQ'} eq '.';
 
-			if ( $sample_info{$id}{$tumour}{'SQ'} <= 10 ){
-				push @filter_reasons, "SQ=" . $sample_info{$id}{$tumour}{'SQ'};
+			if ( $sample_info{$id}{$tumour}{'SQ'} <= $filter_flags{'sq'} ){
+				push @filter_reasons, "SQ<" . $filter_flags{'sq'} . '=' . $sample_info{$id}{$tumour}{'SQ'};
 			}
 		}
 						
@@ -610,6 +618,9 @@ sub get_variant {
 	my @filter_reasons = @{ $filters };
 		
 	my @samples = @{ $samples };
+	
+	
+	# Should change so that it will only print filter reasons if user specifies them
 	
 	if (scalar @filter_reasons > 0 ){
 	say "\n______________________________________________";	

@@ -89,7 +89,7 @@ my ($name, $extention) = split(/\.([^.]+)$/, basename($vcf_file), 2);
 print "\n";
 
 # Retun SV and info hashes 
-my ( $SVs, $info, $filtered_vars ) = SV_parser::typer($vcf_file, $type );
+my ( $SVs, $info, $filtered_vars ) = SV_parser::typer($vcf_file, $type, %filters);
 
 # Print all info for specified id
 
