@@ -27,7 +27,7 @@ sub typer {
 		parse($file, $type);
 	}
 		
-	elsif ($type eq 'n' || `grep "bamsurgeon spike-in" $file`){
+	elsif ( $type eq 'n' ){
 		say "Specified $file as novoBreak output";
 		$type = 'novobreak';
 		parse($file, $type);
