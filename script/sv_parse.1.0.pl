@@ -22,9 +22,22 @@ my $vcf_file;
 my $help;
 my $id;
 my $dump;
-my $filter;
 my $chromosome;
-my $type;
+my $type = "guess";
+
+my %filters;
+
+# my %filters = ("su" => 4,
+# 			   "dp" => 10,
+# 			   "tnr" => 0.1,
+# 			   "sq" => 10
+# 			   );
+			   
+			   
+# my $tumour_read_support_filter  			= 4;
+# my $depth_filter 							= 10;
+# my $tumour_normal_read_support_ratio		= 0.1;
+# my $SQ_quality_filter						= 10;
 
 # Change to write to cwd by default (-o . is messy and confusing)
 my $output_dir;
@@ -33,7 +46,7 @@ GetOptions( 'vcf=s'	        	=>		\$vcf_file,
 			'type=s'			=>		\$type,
 			'id=s'				=>		\$id,
 			'dump'				=>		\$dump,
-			'filter'			=>		\$filter,
+			'filter:s'			=>		\%filters,
             'output_dir=s'     	=>      \$output_dir,
 			'chromosome=s'		=>		\$chromosome,
 			'help'              =>      \$help
@@ -41,14 +54,43 @@ GetOptions( 'vcf=s'	        	=>		\$vcf_file,
 
 if ($help) { exit usage() } 
 
+
+
 if (not $vcf_file) {
 	 exit usage();
-} 
+}
+
+print "\n";
+
+# temp
+my $filter = 0;
+
+if ( scalar keys %filters > 0 ){
+	if (exists $filters{'a'}){
+		say "Running in filter mode, using all default filters:";
+		say "o Read support > 4";
+		say "o Read depth > 10";
+		say "o Ratio of tumour:normal read support > 0.1";
+		say "o SQ quality > 10";
+		$filter = 1;
+	}
+	elsif ( $filters{'su'} or $filters{'dp'} or $filters{'tnr'} or $filters{'sq'} ) {
+		say "Running in filter mode, using custom filters:";
+		say "o Read support > $filters{'su'}" if $filters{'su'};
+		say "o Read depth > $filters{'dp'}" if $filters{'dp'};
+		say "o Ratio of tumour:normal read support > $filters{'tnr'}" if $filters{'tnr'};
+		say "o SQ quality > $filters{'sq'}" if $filters{'sq'};
+		$filter = 1;
+	}
+	else { say "Illegal filter option used. Please specify filters to run with (or use '-f a' to run all defaults)"}
+}
 
 # Need to make sure this is stable
 $output_dir =~ s!/*$!/! if $output_dir; # Add a trailing slash
 
 my ($name, $extention) = split(/\.([^.]+)$/, basename($vcf_file), 2);
+
+print "\n";
 
 # Retun SV and info hashes 
 my ( $SVs, $info, $filtered_vars ) = SV_parser::typer($vcf_file, $type );
@@ -57,7 +99,7 @@ my ( $SVs, $info, $filtered_vars ) = SV_parser::typer($vcf_file, $type );
 
 SV_parser::summarise_variants( $SVs, $filter, $chromosome ) unless $id or $dump;
 
-# Print all infor for specified id
+# Print all info for specified id
 
 SV_parser::get_variant( $id, $SVs, $info, $filter ) if $id;
 
