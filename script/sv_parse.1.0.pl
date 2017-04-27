@@ -77,12 +77,49 @@ sub usage {
 	say "  --output = write out variants that pass filters to specified dir";
 	say "  --chromosome = used in conjunction with --dump will cycle though variants on chromosome speciified in -c";
 	say "  --help\n";
-	
+
 	say "Examples: ";
-	say "o Browse all variants that passed filter within a speicifc window on X chromosome:"; 
+	say "o Browse all variants that passed filter within a speicifc window on X chromosome:";
 
 	say "->  perl script/sv_parse.1.0.pl -v data/HUM-7.tagged.SC.lumpy.gt_all.vcf -t l -f -d -c X:3000000-3500000";
 	say "o Filter vars and write to file in cwd:";
-	say "->  perl $0 -v data/HUM-7.tagged.SC.lumpy.gt_all.vcf -t l-f -o .\n";	
+	say "->  perl $0 -v data/HUM-7.tagged.SC.lumpy.gt_all.vcf -t l-f -o .\n";
 	say "Nick Riddiford 2017";
 }
+
+# sub usage {
+# 	print
+# "
+# usage: $Script [-h] [-v FILE] [-o PATH] [-t STR] [-i STR] [-d] [-f] [-c STR]
+#
+# svParser
+# author: Nick Riddiford (nick.riddiford\@curie.fr)
+# version: v1.0
+# description: Browse vcf output from several SV callers LUMPY, DELLY and novobreak
+#
+# arguments:
+#   -h, --help            show this help message and exit
+#   -v FILE, --vcf FILE
+#                         VCF input [required]
+#   -o PATH, --output PATH
+#                         path to write filtered file to
+#   -t STRING, --type STRING
+#                         specify input source (default: guess from input)
+#                         -l = LUMPY
+#                         -d = DELLY
+#                         -n = novobreak
+#   -i STRING, --id STRING
+#                         breakpoint id to inspect
+#   -d, --dump            cycle through breakpoints
+#   -c STRING, --chromosome
+#                         limit search to chromosome and/or region (e.g. X:10000-20000)
+#                         can be used in conjunction with -d
+#   -f SRING, --filter    number of reads to sample from BAM file for building insert size distribution [1000000]
+#
+# examples: ;
+# o Browse all variants that passed filter within a speicifc window on X chromosome:
+# ->  perl script/sv_parse.1.0.pl -v data/HUM-7.tagged.SC.lumpy.gt_all.vcf -t l -f -d -c X:3000000-3500000
+# o Filter vars and write to file in cwd:
+# ->  perl $0 -v data/HUM-7.tagged.SC.lumpy.gt_all.vcf -t l-f -o .
+# "
+# }
