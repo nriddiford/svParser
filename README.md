@@ -8,6 +8,7 @@ Run without options or with `--help` or `-h` to print usage statement
 ********** sv_parse.1.0.pl ***********
 Usage: sv_parse.1.0.pl [options]
   --vcf = VCF file for parsing
+  --type = specifiy input type [LUMPY = l; DELLY = d; novobreak = n] or let sv_parse.1.0.pl guess
   --id = extract information for a given variant
   --dump = cycle through all variants (can be combined with both -f and -c)
   --filter = apply filters and mark filtered variants
@@ -17,9 +18,9 @@ Usage: sv_parse.1.0.pl [options]
 
 Examples:
 o Browse all variants that passed filter within a speicifc window on X chromosome:
-->  perl script/sv_parse.1.0.pl -v data/HUM-7.tagged.SC.lumpy.gt_all.vcf -f -d -c X:3000000-3500000
+->  perl script/sv_parse.1.0.pl -v data/HUM-7.tagged.SC.lumpy.gt_all.vcf -t l -f -d -c X:3000000-3500000
 o Filter vars and write to file in cwd:
-->  perl script/sv_parse.1.0.pl -v data/HUM-7.tagged.SC.lumpy.gt_all.vcf -f -o .
+->  perl script/sv_parse.1.0.pl -v data/HUM-7.tagged.SC.lumpy.gt_all.vcf -t l-f -o .
 
 Nick Riddiford 2017
 ```
@@ -29,7 +30,7 @@ Nick Riddiford 2017
 
 ## Summarise variants
 
-* Read vcf file from lumpy or delly and see summary of variants called: 
+* Read vcf file from lumpy or delly (or novobreak) and see summary of variants called: 
 
 `perl script/sv_parse.1.0.pl -v data/HUM-7.tagged.SC.lumpy.gt_all.vcf`
 
