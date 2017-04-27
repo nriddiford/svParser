@@ -9,27 +9,24 @@ use 5.18.2;
 use feature qw/ say /;
 use Data::Dumper;
 
+use Data::Printer;
+
 sub typer {
 	my $file = shift;
-	my $type;
-	if (`grep "source=LUMPY" $file`){
+	my $type = shift || 0;
+	if ($type eq 'l' || `grep "source=LUMPY" $file`){
 		say "Recognised $file as Lumpy input";
 		$type = 'lumpy';
 		parse($file, $type);
 	}
 	
-	elsif (`grep "DELLY" $file`){
+	elsif ($type eq 'd' || `grep "DELLY" $file`){
 		say "Recognised $file as Delly input";
 		$type = 'delly';
 		parse($file, $type);
 	}
-	elsif (`grep "VarScan" $file`){
-		say "Recognised $file as VarScan2 input";
-		$type = 'varscan2';
-		parse($file, $type);
-	}
-	
-	elsif (`grep "bamsurgeon spike-in" $file`){
+		
+	elsif ($type eq 'n' || `grep "bamsurgeon spike-in" $file`){
 		say "Recognised $file as novoBreak input";
 		$type = 'novobreak';
 		parse($file, $type);
@@ -105,7 +102,7 @@ sub parse {
  		push @{$sample_parts{$samples[$_]}}, split(/:/, $sample_info[$_]) for 0..$#samples;
 		
 		my @tumour_parts 	= split(/:/, $sample_info[0]);
-	    my @normal_parts 	= split(/:/, $sample_info[1]);
+	    my @normal_parts 	= split(/:/, $sample_info[1]) if @samples > 1; # In case there are no control samples
 						
 		my @format 		 	= split(/:/, $format_block);
 		my @info_parts		= split(/;/, $info_block);
@@ -290,98 +287,106 @@ sub lumpy {
 	
 	my %sample_info = %{ $sample_info };
 		
-		
 	my ($SV_length) = $info_block =~ /SVLEN=(.*?);/;
-	
+				
+	my ($t_PE, $t_SR, $all_c_PE, $all_c_SR, $c_PE, $c_SR) = (0,0,0,0,0,0);
 			
-		my ($t_PE, $t_SR, $all_c_PE, $all_c_SR, $c_PE, $c_SR) = (0,0,0,0,0,0);
-		
-		########################
-		# Read support filters #
-		########################
-		
-		# Get read support for tumour
-		$t_PE = $sample_info{$id}{$tumour}{'PE'};
-		$t_SR = $sample_info{$id}{$tumour}{'SR'};
-		
-		my $tumour_read_support = ( $t_PE + $t_SR );
-		
-		# Create temp pseudo counts to avoid illegal division by 0
-		my $sc_tumour_read_support = $tumour_read_support + 0.001;
+	########################
+	# Read support filters #
+	########################
+	
+	# Get read support for tumour
+	$t_PE = $sample_info{$id}{$tumour}{'PE'};
+	$t_SR = $sample_info{$id}{$tumour}{'SR'};
+	
+	my $tumour_read_support = ( $t_PE + $t_SR );
+	
+	# Create temp pseudo counts to avoid illegal division by 0
+	my $sc_tumour_read_support = $tumour_read_support + 0.001;
 		
 		# Anything with less than 4 supporting reads is filtered
 		if ( $tumour_read_support < 4 ){
 			push @filter_reasons, 'tumour_reads<4=' . $tumour_read_support;
 		}
-					
-		# for precise variants:
-		if ($info_block !~ /IMPRECISE;/){
-						
-			# We want to be strict, so include all controls used for genotyping (and sum read support)
-			for my $normal (@normals){
-				$sample_info{$id}{$normal}{'PE'} eq '.' ? $sample_info{$id}{$normal}{'PE'} = '0' : $all_c_PE += $sample_info{$id}{$normal}{'PE'};
-				$sample_info{$id}{$normal}{'SR'} eq '.' ? $sample_info{$id}{$normal}{'SR'} = '0' : $all_c_SR += $sample_info{$id}{$normal}{'SR'};			
-			}
-	
-			my $all_control_read_support = ( $all_c_PE + $all_c_SR );
-						
-			# Filter if # tumour reads supporting var is less than 5 * control reads
-			# Or if there are more than 2 control reads
-			if ( $all_control_read_support > 0 ){
-				push @filter_reasons, 'precise_var_with_normal_read_support=' . $all_control_read_support;
-			}
-		}
 		
-		my $sc_direct_control_read_support = 0;
-		# for imprecise variants:
-		if ($info_block =~ /IMPRECISE;/){
-						
-			# Filter if # tumour reads supporting var is less than 5 * control reads
-			# Or if there are more than 2 control reads
-			
-			# Get read support for direct control
-			$c_PE =  $sample_info{$id}{$control}{'PE'};
-			$c_SR =  $sample_info{$id}{$control}{'SR'};
-	
-			my $direct_control_read_support = ( $c_PE + $c_SR );
-			$sc_direct_control_read_support = $direct_control_read_support + 0.001;
-			
-			if ( $direct_control_read_support > 1 ){
-				push @filter_reasons, "imprecise_var_with_$control\_read_support>1=" . $direct_control_read_support;
-			}
-			
-		}
+		if (@samples > 1){ # Only if there are controls...
 		
-		######################
-		# Read depth filters #
-		######################
+			# for precise variants:
+			if ($info_block !~ /IMPRECISE;/){
+							
+				# We want to be strict, so include all controls used for genotyping (and sum read support)
+				for my $normal (@normals){
+					$sample_info{$id}{$normal}{'PE'} eq '.' ? $sample_info{$id}{$normal}{'PE'} = '0' : $all_c_PE += $sample_info{$id}{$normal}{'PE'};
+					$sample_info{$id}{$normal}{'SR'} eq '.' ? $sample_info{$id}{$normal}{'SR'} = '0' : $all_c_SR += $sample_info{$id}{$normal}{'SR'};			
+				}
+			
+				my $all_control_read_support = ( $all_c_PE + $all_c_SR );
+							
+				# Filter if # tumour reads supporting var is less than 5 * control reads
+				# Or if there are more than 2 control reads
+				if ( $all_control_read_support > 0 ){
+					push @filter_reasons, 'precise_var_with_normal_read_support=' . $all_control_read_support;
+				}
+			}
+		
+			my $sc_direct_control_read_support = 0;
+			# for imprecise variants:
+			if ($info_block =~ /IMPRECISE;/){
+							
+				# Filter if # tumour reads supporting var is less than 5 * control reads
+				# Or if there are more than 2 control reads
 				
-		if ( exists $sample_info{$id}{$tumour}{'DP'} ){
+				# Get read support for direct control
+				$c_PE =  $sample_info{$id}{$control}{'PE'};
+				$c_SR =  $sample_info{$id}{$control}{'SR'};
 			
-			my $t_DP =  $sample_info{$id}{$tumour}{'DP'};
-			my $c_DP =  $sample_info{$id}{$control}{'DP'};
-			
-			# Flag if either control or tumour has depth < 10 at site
-			if ( $t_DP <= 10 ){
-				push @filter_reasons, 'tumour_depth<10=' . $t_DP;
+				my $direct_control_read_support = ( $c_PE + $c_SR );
+				$sc_direct_control_read_support = $direct_control_read_support + 0.001;
+				
+				if ( $direct_control_read_support > 1 ){
+					push @filter_reasons, "imprecise_var_with_$control\_read_support>1=" . $direct_control_read_support;
+				}
+				
 			}
-
+		}
+		
+		
+	######################
+	# Read depth filters #
+	######################
+			
+	if ( exists $sample_info{$id}{$tumour}{'DP'} ){
+		
+		my $t_DP =  $sample_info{$id}{$tumour}{'DP'};
+		
+		if (@samples > 1){ # Only if there are controls...
+		
+			my $c_DP =  $sample_info{$id}{$control}{'DP'};
+		
+			# Flag if either control or tumour has depth < 10 at site
+		
 			if ( $c_DP <= 10 ){
 				push @filter_reasons, 'control_depth<10=' . $c_DP;
 			}
-			
-			# Subtract control reads from tumour reads
-			# If this number of SU is less than 10% of tumour read_depth then filter
-			# if ( ( $tumour_read_support - $sc_direct_control_read_support ) / ( $t_DP + 0.01 ) < 0.1 ){ # Maybe this is too harsh...
-			
-			if ( $tumour_read_support / ( $t_DP + 0.01 ) < 0.1 ){
-				# Unless there are both PE and SR supporting variant
-				unless ($t_PE > 0 and $t_SR > 0){
-					push @filter_reasons, 'tumour_reads/tumour_depth<10%=' . $tumour_read_support . "/" . $t_DP;
-				}
-			}
-			
 		}
+		
+		if ( $t_DP <= 10 ){
+			push @filter_reasons, 'tumour_depth<10=' . $t_DP;
+		}
+	
+	
+		# Subtract control reads from tumour reads
+		# If this number of SU is less than 10% of tumour read_depth then filter
+		# if ( ( $tumour_read_support - $sc_direct_control_read_support ) / ( $t_DP + 0.01 ) < 0.1 ){ # Maybe this is too harsh...
+		
+		if ( $tumour_read_support / ( $t_DP + 0.01 ) < 0.1 ){
+			# Unless there are both PE and SR supporting variant
+			unless ($t_PE > 0 and $t_SR > 0){
+				push @filter_reasons, 'tumour_reads/tumour_depth<10%=' . $tumour_read_support . "/" . $t_DP;
+			}
+		}
+		
+}
 		
 		##################
 		# Quality filter #
@@ -447,7 +452,7 @@ sub delly {
 
 sub summarise_variants {
 	my ( $SVs, $filter_flag, $chromosome ) = @_;
-
+	
 	my ($dels, $dups, $trans, $invs, $filtered) = (0,0,0,0,0);
 
 	my ( $query_region, $query_start, $query_stop );

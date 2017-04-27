@@ -24,14 +24,16 @@ my $id;
 my $dump;
 my $filter;
 my $chromosome;
+my $type;
 
 # Change to write to cwd by default (-o . is messy and confusing)
 my $output_dir;
 
 GetOptions( 'vcf=s'	        	=>		\$vcf_file,
+			'type=s'			=>		\$type,
 			'id=s'				=>		\$id,
 			'dump'				=>		\$dump,
-			'filter'			=>		\$filter,
+			'filter=s'			=>		\$filter,
             'output_dir=s'     	=>      \$output_dir,
 			'chromosome=s'		=>		\$chromosome,
 			'help'              =>      \$help
@@ -49,7 +51,7 @@ $output_dir =~ s!/*$!/! if $output_dir; # Add a trailing slash
 my ($name, $extention) = split(/\.([^.]+)$/, basename($vcf_file), 2);
 
 # Retun SV and info hashes 
-my ( $SVs, $info, $filtered_vars ) = SV_parser::typer($vcf_file);
+my ( $SVs, $info, $filtered_vars ) = SV_parser::typer($vcf_file, $type );
 
 # Print all info for specified id
 
