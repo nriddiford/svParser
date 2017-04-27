@@ -50,9 +50,6 @@ if (not $vcf_file) {
 }
 
 
-# temp
-my $filter = 0;
-
 if ( scalar keys %filters > 0 ){
 	print "\n";
 	if (exists $filters{'a'}){
@@ -68,7 +65,6 @@ if ( scalar keys %filters > 0 ){
 					"sq" => 10
 					);
 					
-		$filter = 1;
 	}
 	elsif ( $filters{'su'} or $filters{'dp'} or $filters{'rdr'} or $filters{'sq'} ) {
 		say "Running in filter mode, using custom filters:";
@@ -76,7 +72,6 @@ if ( scalar keys %filters > 0 ){
 		say "o Read depth > $filters{'dp'}" if $filters{'dp'};
 		say "o Read support / depth > $filters{'rdr'}" if $filters{'rdr'};
 		say "o SQ quality > $filters{'sq'}" if $filters{'sq'};
-		$filter = 1;
 	}
 	else { say "Illegal filter option used. Please specify filters to run with (or use '-f a' to run all defaults)"}
 }
