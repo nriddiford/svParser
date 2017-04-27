@@ -1,9 +1,7 @@
-#!/urs/bin/perl
+#!/usr/bin/perl
 
 use strict;
 use warnings;
-
-use SV_parser;
 
 use 5.18.2;
 
@@ -12,6 +10,8 @@ use FindBin '$Script';
 
 use File::Spec;
 use lib File::Spec->catdir($FindBin::Bin, '..', 'bin/');
+
+use SV_parser;
 
 use feature qw/ say /;
 use Data::Dumper;
@@ -27,22 +27,7 @@ my $chromosome;
 my $type = "guess";
 
 my %filters;
-
-# my %filters = ("su" => 4,
-# 			   "dp" => 10,
-# 			   "tnr" => 0.1,
-# 			   "sq" => 10
-# 			   );
 			   
-			   
-# my $tumour_read_support_filter  			= 4;
-# my $depth_filter 							= 10;
-# my $tumour_normal_read_support_ratio		= 0.1;
-# my $SQ_quality_filter						= 10;
-
-#
-my $tumour_read_support = 4;
-
 # Change to write to cwd by default (-o . is messy and confusing)
 my $output_dir;
 
@@ -64,18 +49,25 @@ if (not $vcf_file) {
 	 exit usage();
 }
 
-print "\n";
 
 # temp
 my $filter = 0;
 
 if ( scalar keys %filters > 0 ){
+	print "\n";
 	if (exists $filters{'a'}){
 		say "Running in filter mode, using all default filters:";
 		say "o Read support > 4";
 		say "o Read depth > 10";
 		say "o Ratio of tumour:normal read support > 0.1";
 		say "o SQ quality > 10";
+		
+		%filters = ("su" => 4,
+					"dp" => 10,
+					"tnr" => 0.1,
+					"sq" => 10
+					);
+					
 		$filter = 1;
 	}
 	elsif ( $filters{'su'} or $filters{'dp'} or $filters{'tnr'} or $filters{'sq'} ) {
