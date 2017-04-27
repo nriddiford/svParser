@@ -70,6 +70,7 @@ sub usage {
 	say "********** $Script ***********";
     say "Usage: $Script [options]";
 	say "  --vcf = VCF file for parsing";
+	say "  --type = specifiy input type [LUMPY = l; DELLY = d; novobreak = n] or let $Script guess";
 	say "  --id = extract information for a given variant";
 	say "  --dump = cycle through all variants (can be combined with both -f and -c)";
 	say "  --filter = apply filters and mark filtered variants";
@@ -80,8 +81,8 @@ sub usage {
 	say "Examples: ";
 	say "o Browse all variants that passed filter within a speicifc window on X chromosome:"; 
 
-	say "->  perl script/sv_parse.1.0.pl -v data/HUM-7.tagged.SC.lumpy.gt_all.vcf -f -d -c X:3000000-3500000";
+	say "->  perl script/sv_parse.1.0.pl -v data/HUM-7.tagged.SC.lumpy.gt_all.vcf -t l -f -d -c X:3000000-3500000";
 	say "o Filter vars and write to file in cwd:";
-	say "->  perl $0 -v data/HUM-7.tagged.SC.lumpy.gt_all.vcf -f -o .\n";	
+	say "->  perl $0 -v data/HUM-7.tagged.SC.lumpy.gt_all.vcf -t l-f -o .\n";	
 	say "Nick Riddiford 2017";
 }
