@@ -1,4 +1,4 @@
-#!/urs/bin/perl
+#!/usr/bin/perl
 
 package SV_parser;
 use strict;
