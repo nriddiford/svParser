@@ -302,8 +302,10 @@ sub lumpy {
 	my $tumour_read_support = ( $t_PE + $t_SR );
 	
 	# Create temp pseudo counts to avoid illegal division by 0
-	my $sc_tumour_read_support = $tumour_read_support + 0.001;
-		
+	my $pc_tumour_read_support = $tumour_read_support + 0.001;
+	
+	my $pc_direct_control_read_support = 0;
+	
 		# Anything with less than 4 supporting reads is filtered
 		if ( $tumour_read_support < 4 ){
 			push @filter_reasons, 'tumour_reads<4=' . $tumour_read_support;
@@ -329,21 +331,20 @@ sub lumpy {
 				}
 			}
 		
-			my $sc_direct_control_read_support = 0;
+			
 			# for imprecise variants:
 			if ($info_block =~ /IMPRECISE;/){
 							
-				# Filter if # tumour reads supporting var is less than 5 * control reads
-				# Or if there are more than 2 control reads
-				
-				# Get read support for direct control
+				# Get read support for direct control only
 				$c_PE =  $sample_info{$id}{$control}{'PE'};
 				$c_SR =  $sample_info{$id}{$control}{'SR'};
 			
 				my $direct_control_read_support = ( $c_PE + $c_SR );
-				$sc_direct_control_read_support = $direct_control_read_support + 0.001;
-				
-				if ( $direct_control_read_support > 1 ){
+				$pc_direct_control_read_support = $direct_control_read_support + 0.001;
+			
+				# Filter if # tumour reads supporting var is less than 5 * control reads
+				# Or if there are more than 2 control reads
+				if ( $pc_tumour_read_support/$pc_direct_control_read_support < 5 or $direct_control_read_support > 1 ){
 					push @filter_reasons, "imprecise_var_with_$control\_read_support>1=" . $direct_control_read_support;
 				}
 				
@@ -377,14 +378,17 @@ sub lumpy {
 	
 		# Subtract control reads from tumour reads
 		# If this number of SU is less than 10% of tumour read_depth then filter
-		# if ( ( $tumour_read_support - $sc_direct_control_read_support ) / ( $t_DP + 0.01 ) < 0.1 ){ # Maybe this is too harsh...
+	    if ( ( $tumour_read_support - $pc_direct_control_read_support ) / ( $t_DP + 0.01 ) < 0.1 ){ # Maybe this is too harsh...
 		
-		if ( $tumour_read_support / ( $t_DP + 0.01 ) < 0.1 ){
+		# if ( $tumour_read_support / ( $t_DP + 0.01 ) < 0.1 ){ # OLD
+			
 			# Unless there are both PE and SR supporting variant
-			unless ($t_PE > 0 and $t_SR > 0){
+			# unless ($t_PE > 1 and $t_SR > 0){
+				
 				push @filter_reasons, 'tumour_reads/tumour_depth<10%=' . $tumour_read_support . "/" . $t_DP;
+			
 			}
-		}
+		# }
 		
 }
 		
@@ -588,7 +592,7 @@ sub get_variant {
 	
 	if (scalar @filter_reasons > 0 ){
 	say "\n______________________________________________";	
-	say "Variant '$id_lookup' was filtered for the following reasons:";
+	say "Variant '$id_lookup' will be filtered for the following reasons:";
 	say "* $_" foreach @filter_reasons;
 	say "______________________________________________\n";
 	}
