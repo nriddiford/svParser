@@ -102,7 +102,7 @@ sub parse {
  		push @{$sample_parts{$samples[$_]}}, split(/:/, $sample_info[$_]) for 0..$#samples;
 		
 		my @tumour_parts 	= split(/:/, $sample_info[0]);
-	    my @normal_parts 	= split(/:/, $sample_info[1]) if @samples > 1; # In case there are no control samples
+	    my @normal_parts 	= split(/:/, $sample_info[1]) if @samples > 1; # In case there are no control samples...
 						
 		my @format 		 	= split(/:/, $format_block);
 		my @info_parts		= split(/;/, $info_block);
@@ -309,7 +309,7 @@ sub lumpy {
 			push @filter_reasons, 'tumour_reads<4=' . $tumour_read_support;
 		}
 		
-		if (@samples > 1){ # Only if there are controls...
+		if (@samples > 1){ # In case there are no control samples...
 		
 			# for precise variants:
 			if ($info_block !~ /IMPRECISE;/){
@@ -359,7 +359,7 @@ sub lumpy {
 		
 		my $t_DP =  $sample_info{$id}{$tumour}{'DP'};
 		
-		if (@samples > 1){ # Only if there are controls...
+		if (@samples > 1){ # In case there are no control samples...
 		
 			my $c_DP =  $sample_info{$id}{$control}{'DP'};
 		
