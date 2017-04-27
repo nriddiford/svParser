@@ -62,9 +62,7 @@ sub parse {
 	open my $in, '<', $file or die $!;
 
 	my @headers;
-		
-	# my %filter_flags = %{ $filter_flags };
-	
+			
 	my (%SVs, %info, %filtered_SVs);
 	
 	my ($tumour_name, $control_name);
@@ -309,7 +307,7 @@ sub lumpy {
 	
 	if (not exists $filter_flags{'dp'}) {$filter_flags{'dp'} = 10}
 	if (not exists $filter_flags{'su'}) {$filter_flags{'su'} = 4}
-	if (not exists $filter_flags{'tnr'}) {$filter_flags{'tnr'} = 0.1}
+	if (not exists $filter_flags{'rdr'}) {$filter_flags{'rdr'} = 0.1}
 	if (not exists $filter_flags{'sq'}) {$filter_flags{'sq'} = 10}
 	
 	my @samples = @{ $samples };
@@ -407,7 +405,7 @@ sub lumpy {
 	
 		# Subtract control reads from tumour reads
 		# If this number of SU is less than 10% of tumour read_depth then filter
-	    if ( ( $tumour_read_support - $pc_direct_control_read_support ) / ( $t_DP + 0.01 ) < $filter_flags{'tnr'} ){ # Maybe this is too harsh...
+	    if ( ( $tumour_read_support - $pc_direct_control_read_support ) / ( $t_DP + 0.01 ) < $filter_flags{'rdr'} ){ # Maybe this is too harsh...
 		
 		# if ( $tumour_read_support / ( $t_DP + 0.01 ) < 0.1 ){ # OLD
 			

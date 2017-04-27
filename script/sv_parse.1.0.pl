@@ -59,22 +59,22 @@ if ( scalar keys %filters > 0 ){
 		say "Running in filter mode, using all default filters:";
 		say "o Read support > 4";
 		say "o Read depth > 10";
-		say "o Ratio of tumour:normal read support > 0.1";
+		say "o Read support / depth > 0.1";
 		say "o SQ quality > 10";
 		
 		%filters = ("su" => 4,
 					"dp" => 10,
-					"tnr" => 0.1,
+					"rdr" => 0.1,
 					"sq" => 10
 					);
 					
 		$filter = 1;
 	}
-	elsif ( $filters{'su'} or $filters{'dp'} or $filters{'tnr'} or $filters{'sq'} ) {
+	elsif ( $filters{'su'} or $filters{'dp'} or $filters{'rdr'} or $filters{'sq'} ) {
 		say "Running in filter mode, using custom filters:";
 		say "o Read support > $filters{'su'}" if $filters{'su'};
 		say "o Read depth > $filters{'dp'}" if $filters{'dp'};
-		say "o Ratio of tumour:normal read support > $filters{'tnr'}" if $filters{'tnr'};
+		say "o Read support / depth > $filters{'rdr'}" if $filters{'rdr'};
 		say "o SQ quality > $filters{'sq'}" if $filters{'sq'};
 		$filter = 1;
 	}
