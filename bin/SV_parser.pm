@@ -177,32 +177,32 @@ sub parse {
 					
 	    my ($SV_type) = $info_block =~ /SVTYPE=(.*?);/;
 				
-		my ($SV_length, $chr2, $stop, $t_SR, $t_PE, $filters);
+		my ($SV_length, $chr2, $stop, $t_SR, $t_PE, $filter_list);
 		
 		if ($type eq 'lumpy'){
-			( $SV_length, $chr2, $stop, $t_SR, $t_PE, $filters ) = lumpy( $id, $info_block, $SV_type, $alt, $start, \%sample_info, $tumour_name, $control_name, \@samples, \@normals, \@filter_reasons, $filter_flags );
+			( $SV_length, $chr2, $stop, $t_SR, $t_PE, $filter_list ) = lumpy( $id, $info_block, $SV_type, $alt, $start, \%sample_info, $tumour_name, $control_name, \@samples, \@normals, \@filter_reasons, $filter_flags );
 		}
 		
 		elsif ($type eq 'delly'){
-			( $SV_length, $chr2, $stop, $t_SR, $t_PE, $filters ) = delly( $info_block, $start, $SV_type, \@filter_reasons );
+			( $SV_length, $chr2, $stop, $t_SR, $t_PE, $filter_list ) = delly( $info_block, $start, $SV_type, \@filter_reasons );
 		}
 		
 		elsif ($type eq 'novobreak'){
 			@samples = qw/tumour normal/;
 			my ( $sample_info_novo, $format_novo, $format_long_novo );
-			( $SV_length, $chr2, $stop, $t_SR, $t_PE, $filters, $sample_info_novo, $format_novo, $format_long_novo ) = novobreak( $id, $info_block, $start, $SV_type, \@filter_reasons, \@sample_info );
+			( $SV_length, $chr2, $stop, $t_SR, $t_PE, $filter_list, $sample_info_novo, $format_novo, $format_long_novo ) = novobreak( $id, $info_block, $start, $SV_type, \@filter_reasons, \@sample_info );
 			%sample_info = %{ $sample_info_novo };
 			@format = @{ $format_novo };
 			%format_long = %{ $format_long_novo };
 		}
 		
-		$filters = chrom_filter( $chr, $chr2, $filters );
+		$filter_list = chrom_filter( $chr, $chr2, $filter_list );
 				
-		$SVs{$id} = [ @fields[0..10], $SV_type, $SV_length, $stop, $chr2, $t_SR, $t_PE, $filters, \@samples ];
+		$SVs{$id} = [ @fields[0..10], $SV_type, $SV_length, $stop, $chr2, $t_SR, $t_PE, $filter_list, \@samples ];
 
 		$info{$id} = [ [@format], [%format_long], [%info_long], [@tumour_parts], [@normal_parts], [%information], [%sample_info] ];
 				
-		if (scalar @{$filters} == 0){
+		if (scalar @{$filter_list} == 0){
 			$filtered_SVs{$.} = $_;
 		}
 			
