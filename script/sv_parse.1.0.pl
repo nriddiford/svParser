@@ -3,20 +3,21 @@
 use strict;
 use warnings;
 
+use SV_parser;
+
+use 5.18.2;
+
 use FindBin;
 use FindBin '$Script';
 
 use File::Spec;
 use lib File::Spec->catdir($FindBin::Bin, '..', 'bin/');
 
-use SV_parser;
-
 use feature qw/ say /;
 use Data::Dumper;
 use Getopt::Long qw/ GetOptions /;
 
 use File::Basename;
-
 
 my $vcf_file; 
 my $help;
@@ -38,6 +39,9 @@ my %filters;
 # my $depth_filter 							= 10;
 # my $tumour_normal_read_support_ratio		= 0.1;
 # my $SQ_quality_filter						= 10;
+
+#
+my $tumour_read_support = 4;
 
 # Change to write to cwd by default (-o . is messy and confusing)
 my $output_dir;
