@@ -51,9 +51,11 @@ if (not $vcf_file) {
 
 my $filter = 0;
 
+print Dumper \%filters;
+
 if ( scalar keys %filters > 0 ){
 	print "\n";
-	if (exists $filters{'a'} or exists $filters{''} ){
+	if ( exists $filters{'a'} ){
 		say "Running in filter mode, using all default filters:";
 		say "o Read support > 4";
 		say "o Read depth (in both tumor and normal) > 10";
