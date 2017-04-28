@@ -62,7 +62,9 @@ sub parse {
 	open my $in, '<', $file or die $!;
 
 	my @headers;
-			
+		
+	# my %filter_flags = %{ $filter_flags };
+	
 	my (%SVs, %info, %filtered_SVs);
 	
 	my ($tumour_name, $control_name);
@@ -412,7 +414,7 @@ sub lumpy {
 			# Unless there are both PE and SR supporting variant
 			# unless ($t_PE > 1 and $t_SR > 0){
 				
-				push @filter_reasons, 'tumour_reads/tumour_depth<10%=' . $tumour_read_support . "/" . $t_DP;
+				push @filter_reasons, 'tumour_reads/tumour_depth<' . ($filter_flags{'rdr'}*100) . "%" . '=' . $tumour_read_support . "/" . $t_DP;
 			
 			}
 		# }
