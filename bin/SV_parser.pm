@@ -142,12 +142,7 @@ sub parse {
  		my @normals = @samples[1..$#samples];
 		
 		my @filter_reasons;
-		
-		if (not exists $filter_flags{'dp'}) {$filter_flags{'dp'} = 0}
-		if (not exists $filter_flags{'su'}) {$filter_flags{'su'} = 0}
-		if (not exists $filter_flags{'rdr'}) {$filter_flags{'rdr'} = 0}
-		if (not exists $filter_flags{'sq'}) {$filter_flags{'sq'} = 0}		
-		
+				
 		###################
 		# Genotype filter #
 		###################
@@ -282,9 +277,11 @@ sub novobreak {
 	# Filter on tumour reads #
 	##########################
 	
-	my $filtered_on_reads = read_support_filter($tumour_read_support, $filter_flags{'su'}, \@filter_reasons); 
+	if (exists $filter_flags{'su'}){
+		my $filtered_on_reads = read_support_filter($tumour_read_support, $filter_flags{'su'}, \@filter_reasons); 
 	
-	@filter_reasons = @{$filtered_on_reads};
+		@filter_reasons = @{$filtered_on_reads};
+	}
 	
     my ($stop) = $info_block =~ /;END=(.*?);/;
 		
@@ -336,11 +333,12 @@ sub lumpy {
 	my $pc_tumour_read_support = $tumour_read_support + 0.001;
 	
 	my $pc_direct_control_read_support = 0;
-		
-	my $filtered_on_reads = read_support_filter($tumour_read_support, $filter_flags{'su'}, \@filter_reasons); 
 	
-	@filter_reasons = @{$filtered_on_reads};
+	if (exists $filter_flags{'su'}){
+		my $filtered_on_reads = read_support_filter($tumour_read_support, $filter_flags{'su'}, \@filter_reasons); 
 	
+		@filter_reasons = @{$filtered_on_reads};
+	}
 	
 	if (@samples > 1){ # In case there are no control samples...
 	
@@ -388,7 +386,7 @@ sub lumpy {
 	# Read depth filters #
 	######################
 			
-	if ( exists $sample_info{$id}{$tumour}{'DP'} ){
+	if ( exists $sample_info{$id}{$tumour}{'DP'} and exists $filter_flags{'dp'} ){
 		
 		my $t_DP =  $sample_info{$id}{$tumour}{'DP'};
 		
@@ -410,7 +408,7 @@ sub lumpy {
 	
 		# Subtract control reads from tumour reads
 		# If this number of SU is less than 10% of tumour read_depth then filter
-	    if ( ( $tumour_read_support - $pc_direct_control_read_support ) / ( $t_DP + 0.01 ) < $filter_flags{'rdr'} ){ # Maybe this is too harsh...
+	    if ( exists $filter_flags{'rdr'} and ( $tumour_read_support - $pc_direct_control_read_support ) / ( $t_DP + 0.01 ) < $filter_flags{'rdr'} ){ # Maybe this is too harsh...
 		
 		# if ( $tumour_read_support / ( $t_DP + 0.01 ) < 0.1 ){ # OLD
 			
@@ -428,7 +426,7 @@ sub lumpy {
 		# Quality filter #
 		##################
 		
-		if ( exists $sample_info{$id}{$tumour}{'SQ'} ){
+		if ( exists $sample_info{$id}{$tumour}{'SQ'} and exists $filter_flags{'sq'} ){
 			$sample_info{$id}{$tumour}{'SQ'} = 0 if $sample_info{$id}{$tumour}{'SQ'} eq '.';
 
 			if ( $sample_info{$id}{$tumour}{'SQ'} <= $filter_flags{'sq'} ){
