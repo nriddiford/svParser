@@ -53,7 +53,7 @@ my $filter = 0;
 
 if ( scalar keys %filters > 0 ){
 	print "\n";
-	if (exists $filters{'a'}){
+	if (exists $filters{'a'} or exists $filters{''} ){
 		say "Running in filter mode, using all default filters:";
 		say "o Read support > 4";
 		say "o Read depth (in both tumor and normal) > 10";
@@ -77,13 +77,14 @@ if ( scalar keys %filters > 0 ){
 		$filter = 1;
 	}
 	else {
-		say "Illegal filter option used. Please specify filters to run with (or use '-f a' to run all defaults)";
+		my $illegals = join(",", keys %filters);
+		say "Illegal filter option used: '$illegals'. Please specify filters to run with (or use '-f or -f a' to run all defaults)";
 		say "Filter options available:";
 		say "o Read support: su=INT";
 		say "o Read depth: dp=INT";
 		say "o Read support / depth: rdr=FLOAT";
 		say "o SQ quality: sq=INT";
-		say "\nRunning without filters";	   
+		die "Please check filter specification\n";
 	   }
 }
 
@@ -110,60 +111,66 @@ SV_parser::dump_variants( $SVs, $info, $filter, $chromosome ) if $dump;
 
 SV_parser::print_variants ( $SVs, $filtered_vars, $name, $output_dir ) if $output_dir;
 
-sub usage {
-	say "********** $Script ***********";
-    say "Usage: $Script [options]";
-	say "  --vcf = VCF file for parsing";
-	say "  --type = specifiy input type [LUMPY = l; DELLY = d; novobreak = n] or let $Script guess";
-	say "  --id = extract information for a given variant";
-	say "  --dump = cycle through all variants (can be combined with both -f and -c)";
-	say "  --filter = apply filters and mark filtered variants";
-	say "  --output = write out variants that pass filters to specified dir";
-	say "  --chromosome = used in conjunction with --dump will cycle though variants on chromosome speciified in -c";
-	say "  --help\n";
-
-	say "Examples: ";
-	say "o Browse all variants that passed filter within a speicifc window on X chromosome:";
-
-	say "->  perl script/sv_parse.1.0.pl -v data/HUM-7.tagged.SC.lumpy.gt_all.vcf -t l -f -d -c X:3000000-3500000";
-	say "o Filter vars and write to file in cwd:";
-	say "->  perl $0 -v data/HUM-7.tagged.SC.lumpy.gt_all.vcf -t l-f -o .\n";
-	say "Nick Riddiford 2017";
-}
-
 # sub usage {
-# 	print
-# "
-# usage: $Script [-h] [-v FILE] [-o PATH] [-t STR] [-i STR] [-d] [-f] [-c STR]
+# 	say "********** $Script ***********";
+#     say "Usage: $Script [options]";
+# 	say "  --vcf = VCF file for parsing";
+# 	say "  --type = specifiy input type [LUMPY = l; DELLY = d; novobreak = n] or let $Script guess";
+# 	say "  --id = extract information for a given variant";
+# 	say "  --dump = cycle through all variants (can be combined with both -f and -c)";
+# 	say "  --filter = apply filters and mark filtered variants";
+# 	say "  --output = write out variants that pass filters to specified dir";
+# 	say "  --chromosome = used in conjunction with --dump will cycle though variants on chromosome speciified in -c";
+# 	say "  --help\n";
 #
-# svParser
-# author: Nick Riddiford (nick.riddiford\@curie.fr)
-# version: v1.0
-# description: Browse vcf output from several SV callers LUMPY, DELLY and novobreak
+# 	say "Examples: ";
+# 	say "o Browse all variants that passed filter within a speicifc window on X chromosome:";
 #
-# arguments:
-#   -h, --help            show this help message and exit
-#   -v FILE, --vcf FILE
-#                         VCF input [required]
-#   -o PATH, --output PATH
-#                         path to write filtered file to
-#   -t STRING, --type STRING
-#                         specify input source (default: guess from input)
-#                         -l = LUMPY
-#                         -d = DELLY
-#                         -n = novobreak
-#   -i STRING, --id STRING
-#                         breakpoint id to inspect
-#   -d, --dump            cycle through breakpoints
-#   -c STRING, --chromosome
-#                         limit search to chromosome and/or region (e.g. X:10000-20000)
-#                         can be used in conjunction with -d
-#   -f SRING, --filter    number of reads to sample from BAM file for building insert size distribution [1000000]
-#
-# examples: ;
-# o Browse all variants that passed filter within a speicifc window on X chromosome:
-# ->  perl script/sv_parse.1.0.pl -v data/HUM-7.tagged.SC.lumpy.gt_all.vcf -t l -f -d -c X:3000000-3500000
-# o Filter vars and write to file in cwd:
-# ->  perl $0 -v data/HUM-7.tagged.SC.lumpy.gt_all.vcf -t l-f -o .
-# "
+# 	say "->  perl script/sv_parse.1.0.pl -v data/HUM-7.tagged.SC.lumpy.gt_all.vcf -t l -f -d -c X:3000000-3500000";
+# 	say "o Filter vars and write to file in cwd:";
+# 	say "->  perl $0 -v data/HUM-7.tagged.SC.lumpy.gt_all.vcf -t l-f -o .\n";
+# 	say "Nick Riddiford 2017";
 # }
+
+sub usage {
+	print
+"
+usage: $Script [-h] [-v FILE] [-o PATH] [-t STR] [-i STR] [-d] [-f key=val] [-c STR]
+
+svParser
+author: Nick Riddiford (nick.riddiford\@curie.fr)
+version: v1.0
+description: Browse vcf output from several SV callers LUMPY, DELLY and novobreak
+
+arguments:
+  -h, --help            show this help message and exit
+  -v FILE, --vcf FILE
+                        VCF input [required]
+  -o PATH, --output PATH
+                        path to write filtered file to
+  -t STRING, --type STRING
+                        specify input source (default: guess from input)
+                        -l = LUMPY
+                        -d = DELLY
+                        -n = novobreak
+  -i STRING, --id STRING
+                        breakpoint id to inspect
+  -d, --dump            cycle through breakpoints
+  -c STRING, --chromosome
+                        limit search to chromosome and/or region (e.g. X:10000-20000)
+                        can be used in conjunction with -d
+  -f KEY=VAL, --filter  
+                        filters to apply:
+                        -f su=INT [number of tumour reads supporting var]
+                        -f dp=INT [minimum depth for both tumour normal at variant site]
+                        -f rdr=FLOAT [supporting reads/tumour depth - a value of 1 would mean all reads support variant]
+                        -f sq=INT [phred-scaled variant likelihood]
+                        -f, -f a = apply default filters [ -f su=4 -f dp=10 -f rdr=0.1 -f sq=10 ]
+
+Examples:
+o Browse all variants that passed default filters within a speicifc window on X chromosome:
+->  perl script/sv_parse.1.0.pl -v data/HUM-7.tagged.SC.lumpy.gt_all.vcf -f -d -c X:3000000-3500000
+o Filter vars with tumour read support > 5 and SQ score > 20, and write to file in cwd:
+->  perl $0 -v data/HUM-7.tagged.SC.lumpy.gt_all.vcf -f su=5 -f sq=20 -o .
+"
+}
