@@ -184,7 +184,7 @@ sub parse {
 		}
 		
 		elsif ($type eq 'delly'){
-			( $SV_length, $chr2, $stop, $t_SR, $t_PE, $filter_list ) = delly( $info_block, $start, $SV_type, \@filter_reasons );
+			( $SV_length, $chr2, $stop, $t_SR, $t_PE, $filter_list ) = delly( $info_block, $start, $SV_type, \@filter_reasons, \%filter_flags );
 		}
 		
 		elsif ($type eq 'novobreak'){
@@ -450,9 +450,11 @@ sub lumpy {
 }
 
 sub delly {
-	my ($info_block, $start, $SV_type, $filters) = @_;
+	my ($info_block, $start, $SV_type, $filters, $filter_flags) = @_;
 	
 	my @filter_reasons = @{ $filters };
+	
+	my %filter_flags = %{ $filter_flags };
 	
     my ($stop) = $info_block =~ /;END=(.*?);/;
 		
@@ -467,6 +469,14 @@ sub delly {
 	   if ($info_block =~ /;PE=(\d+);/){
 	   		$t_PE = $1;
 	   }
+	   
+   	my $tumour_read_support = ( $t_PE + $t_SR );
+	   
+   	if (exists $filter_flags{'su'}){
+   		my $filtered_on_reads = read_support_filter($tumour_read_support, $filter_flags{'su'}, \@filter_reasons); 
+	
+   		@filter_reasons = @{$filtered_on_reads};
+   	}
  	  		
 		if ($start > $stop){
 			my $old_start = $start;
