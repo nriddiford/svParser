@@ -49,6 +49,7 @@ if (not $vcf_file) {
 	 exit usage();
 }
 
+my $filter = 0;
 
 if ( scalar keys %filters > 0 ){
 	print "\n";
@@ -64,6 +65,7 @@ if ( scalar keys %filters > 0 ){
 					"rdr" => 0.1,
 					"sq" => 10
 					);
+		$filter = 1;
 					
 	}
 	elsif ( $filters{'su'} or $filters{'dp'} or $filters{'rdr'} or $filters{'sq'} ) {
@@ -72,8 +74,17 @@ if ( scalar keys %filters > 0 ){
 		say "o Read depth > $filters{'dp'}" if $filters{'dp'};
 		say "o Read support / depth > $filters{'rdr'}" if $filters{'rdr'};
 		say "o SQ quality > $filters{'sq'}" if $filters{'sq'};
+		$filter = 1;
 	}
-	else { say "Illegal filter option used. Please specify filters to run with (or use '-f a' to run all defaults)"}
+	else {
+		say "Illegal filter option used. Please specify filters to run with (or use '-f a' to run all defaults)";
+		say "Filter options available:";
+		say "o Read support: su=INT";
+		say "o Read depth: dp=INT";
+		say "o Read support / depth: rdr=FLOAT";
+		say "o SQ quality: sq=INT";
+		say "\nRunning without filters";	   
+	   }
 }
 
 # Need to make sure this is stable

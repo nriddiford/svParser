@@ -307,11 +307,11 @@ sub lumpy {
 	
 	my %filter_flags = %{ $filter_flags };
 	
-	if (not exists $filter_flags{'dp'}) {$filter_flags{'dp'} = 10}
-	if (not exists $filter_flags{'su'}) {$filter_flags{'su'} = 4}
-	if (not exists $filter_flags{'rdr'}) {$filter_flags{'rdr'} = 0.1}
-	if (not exists $filter_flags{'sq'}) {$filter_flags{'sq'} = 10}
-	
+	if (not exists $filter_flags{'dp'}) {$filter_flags{'dp'} = 0}
+	if (not exists $filter_flags{'su'}) {$filter_flags{'su'} = 0}
+	if (not exists $filter_flags{'rdr'}) {$filter_flags{'rdr'} = 0}
+	if (not exists $filter_flags{'sq'}) {$filter_flags{'sq'} = 0}
+		
 	my @samples = @{ $samples };
 	
 	my %sample_info = %{ $sample_info };
@@ -484,7 +484,7 @@ sub delly {
 }
 
 sub summarise_variants {
-	my ( $SVs, $filter_flag, $chromosome ) = @_;
+	my ( $SVs, $filter_switch, $chromosome ) = @_;
 	
 	my ($dels, $dups, $trans, $invs, $filtered) = (0,0,0,0,0);
 
@@ -549,7 +549,7 @@ sub summarise_variants {
 	   	
 		if ( scalar @filter_reasons > 0 ){
 			$filtered++;
-			next if $filter_flag;
+			next if $filter_switch;
 		}
 			
 	   $read_support = ( $SR + $PE );
@@ -563,7 +563,7 @@ sub summarise_variants {
 	}
 	
 	print "\n";
-	if ($filter_flag){
+	if ($filter_switch){
 		say "Running in filter mode: $filtered calls filtered out:";
 		say " - $_: $filtered_sv{$_}" for sort {$filtered_sv{$b} <=> $filtered_sv{$a} } keys %filtered_sv;
 		print "\n";		
