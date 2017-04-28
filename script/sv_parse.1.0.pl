@@ -51,8 +51,6 @@ if (not $vcf_file) {
 
 my $filter = 0;
 
-print Dumper \%filters;
-
 if ( scalar keys %filters > 0 ){
 	print "\n";
 	if ( exists $filters{'a'} ){
