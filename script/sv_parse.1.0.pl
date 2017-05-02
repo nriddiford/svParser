@@ -35,7 +35,7 @@ GetOptions( 'vcf=s'	        	=>		\$vcf_file,
 			'type=s'			=>		\$type,
 			'id=s'				=>		\$id,
 			'dump'				=>		\$dump,
-			'filter:s'			=>		\%filters,
+			'filter=s'			=>		\%filters,
             'output_dir=s'     	=>      \$output_dir,
 			'chromosome=s'		=>		\$chromosome,
 			'help'              =>      \$help
