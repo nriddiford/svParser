@@ -42,7 +42,7 @@ arguments:
 
 ## Summarise variants
 
-* Read vcf file from lumpy or delly (or novobreak) and see summary of variants called:
+* Read vcf file from lumpy (or delly / novobreak) and see summary of variants called:
 
 `perl script/sv_parse.1.0.pl -v data/HUM-7.tagged.SC.lumpy.gt_all.vcf -t l`
 
