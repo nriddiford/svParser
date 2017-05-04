@@ -711,8 +711,8 @@ sub dump_variants {
 
 	}
 
-	say "Enter any key to start cycling through calls or enter 'q' to exit";
 	say "Running in filter mode - not displaying filtered calls" if $filter_flag;
+	say "\nEnter any key to start cycling through calls or enter 'q' to exit";
 
 	for ( sort { @{ $SVs->{$a}}[0] cmp @{ $SVs->{$b}}[0] or
 				@{ $SVs->{$a}}[1] <=> @{ $SVs->{$b}}[1]
@@ -849,6 +849,66 @@ sub chrom_filter {
 
 	return (\@filter_reasons);
 
+}
+
+sub write_tsv {
+
+	my ( $SVs, $name, $output_dir ) = @_;
+
+	open my $info_file, '>', $output_dir . $name . ".filtered.summary.tsv" or die $!;
+
+	my %connected_bps;
+
+	say "Writing useful info to " . "'$output_dir" . $name . ".filtered.summary.tsv'";
+
+	print $info_file join("\t", "type", "split reads", "pe reads", "id", "length(Kb)", "position", "consensus", "microhomology length", "configuration") . "\n";
+
+	for ( sort { @{ $SVs->{$a}}[0] cmp @{ $SVs->{$b}}[0] or
+				@{ $SVs->{$a}}[1] <=> @{ $SVs->{$b}}[1]
+			}  keys %{ $SVs } ){
+		my ( $chr, $start, $id, $ref, $alt, $quality_score, $filt, $info_block, $format_block, $tumour_info_block, $normal_info_block, $sv_type, $SV_length, $stop, $chr2, $SR, $PE, $filters, $samples ) = @{ $SVs->{$_} };
+		if (scalar @{$filters} == 0){
+
+			my $bp_id = $_;
+			if ($bp_id =~ /_/){
+				($bp_id) = $bp_id =~ /(.+)?_/;
+			}
+			# flatten connected bps into 1 id for summary
+			next if $connected_bps{$bp_id}++;
+
+			my ($length_in_kb) = sprintf("%.1f", abs($SV_length)/1000);
+
+			my ($consensus, $mh_length, $ct );
+
+			if ($info_block =~ /CONSENSUS=(.*?);/){
+	 			$consensus = $1;
+			}
+			else{
+				$consensus = "-";
+			}
+
+			if ($info_block =~ /HOMLEN=(\d+);/){
+				$mh_length = $1;
+			}
+			else{
+				$mh_length = "-";
+			}
+
+			if ($info_block =~ /CT=(.*?);/){
+				($ct) = $1;
+			}
+			elsif ($alt =~ /\[|\]/) {
+				$ct = $alt;
+			}
+			else {
+				$ct = "-";
+			}
+
+			$chr2 ? print $info_file join("\t", $sv_type, $SR, $PE, $_, $length_in_kb, "$chr:$start $chr2:$stop", $consensus, $mh_length, $ct ) . "\n"
+			: print $info_file join("\t", $sv_type, $SR, $PE, $_, $length_in_kb, "$chr:$start-$stop", $consensus, $mh_length, $ct ) . "\n";
+
+		}
+	}
 }
 
 1;
