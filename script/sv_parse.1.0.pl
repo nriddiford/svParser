@@ -129,7 +129,7 @@ arguments:
   -o PATH, --output PATH
                         path to write filtered file to
   -t STRING, --type STRING
-                        specify input source (default: guess from input)
+                        specify input source [default: guess from input]
                         -l = LUMPY
                         -d = DELLY
                         -n = novobreak
