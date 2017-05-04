@@ -861,7 +861,7 @@ sub write_tsv {
 
 	say "Writing useful info to " . "'$output_dir" . $name . ".filtered.summary.tsv'";
 
-	print $info_file join("\t", "type", "split reads", "pe reads", "id", "length(Kb)", "position", "consensus", "microhomology length", "configuration") . "\n";
+	print $info_file join("\t", "type", "chromosome", "bp1", "bp2", "split reads", "pe reads", "id", "length(Kb)", "position", "consensus", "microhomology length", "configuration") . "\n";
 
 	for ( sort { @{ $SVs->{$a}}[0] cmp @{ $SVs->{$b}}[0] or
 				@{ $SVs->{$a}}[1] <=> @{ $SVs->{$b}}[1]
@@ -904,8 +904,8 @@ sub write_tsv {
 				$ct = "-";
 			}
 
-			$chr2 ? print $info_file join("\t", $sv_type, $SR, $PE, $_, $length_in_kb, "$chr:$start $chr2:$stop", $consensus, $mh_length, $ct ) . "\n"
-			: print $info_file join("\t", $sv_type, $SR, $PE, $_, $length_in_kb, "$chr:$start-$stop", $consensus, $mh_length, $ct ) . "\n";
+			$chr2 ? print $info_file join("\t", $sv_type, $chr, "$chr:$start", "$chr2:$stop", $SR, $PE, $_, $length_in_kb, "$chr:$start $chr2:$stop", $consensus, $mh_length, $ct ) . "\n"
+			: print $info_file join("\t", $sv_type, $chr, "$chr:$start", "$chr:$stop", $SR, $PE, $_, $length_in_kb, "$chr:$start-$stop", $consensus, $mh_length, $ct ) . "\n";
 
 		}
 	}
