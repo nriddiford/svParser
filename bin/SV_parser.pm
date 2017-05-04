@@ -49,11 +49,13 @@ sub typer {
 			$type = 'novobreak';
 			parse($file, $type, \%filters);
 		}
-
+		else {
+			die "This VCF can not be parsed. Try specfiying type '-t' explicitly. See -h for details. Abort";
+		}
 	}
 
 	else {
-		die "This VCF can not be parsed. Abort";
+		die "This VCF can not be parsed. Try specfiying type '-t' explicitly. See -h for details. Abort";
 	}
 }
 
