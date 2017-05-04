@@ -761,7 +761,7 @@ sub dump_variants {
 
 			if (scalar @filter_reasons > 0 ){
 				say "______________________________________________";
-				say "Variant '$id' was filtered for the following reasons:";
+				say "Variant '$id' will be filtered for the following reasons:";
 				say "* $_" foreach @filter_reasons;
 				say "______________________________________________\n";
 			}
