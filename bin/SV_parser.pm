@@ -126,7 +126,7 @@ sub parse {
  		push @{$sample_parts{$samples[$_]}}, split(/:/, $sample_info[$_]) for 0..$#samples;
 
 		my @tumour_parts 	= split(/:/, $sample_info[0]);
-	    my @normal_parts 	= split(/:/, $sample_info[1]) if @samples > 1; # In case there are no control samples...
+	  my @normal_parts 	= split(/:/, $sample_info[1]) if @samples > 1; # In case there are no control samples...
 
 		my @format 		 	= split(/:/, $format_block);
 		my @info_parts		= split(/;/, $info_block);
@@ -177,7 +177,7 @@ sub parse {
 			$information{$id}{$info_key} = $info_value;
 		}
 
-	    my ($SV_type) = $info_block =~ /SVTYPE=(.*?);/;
+	  my ($SV_type) = $info_block =~ /SVTYPE=(.*?);/;
 
 		my ($SV_length, $chr2, $stop, $t_SR, $t_PE, $filter_list);
 
