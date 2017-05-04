@@ -19,7 +19,7 @@ use Getopt::Long qw/ GetOptions /;
 
 use File::Basename;
 
-my $vcf_file; 
+my $vcf_file;
 my $help;
 my $id;
 my $dump;
@@ -27,65 +27,67 @@ my $chromosome;
 my $type = "guess";
 
 my %filters;
-			   
-# Change to write to cwd by default (-o . is messy and confusing)
+
+# Change to write to cwd by default (-o . is messy)
 my $output_dir;
 
-GetOptions( 'vcf=s'	        	=>		\$vcf_file,
-			'type=s'			=>		\$type,
-			'id=s'				=>		\$id,
-			'dump'				=>		\$dump,
-			'filter:s'			=>		\%filters,
-            'output_dir=s'     	=>      \$output_dir,
-			'chromosome=s'		=>		\$chromosome,
-			'help'              =>      \$help
-	  ) or die usage();
+GetOptions( 'vcf=s'           =>    \$vcf_file,
+            'type=s'          =>    \$type,
+            'id=s'            =>    \$id,
+            'dump'            =>    \$dump,
+            'filter:s'        =>    \%filters,
+            'output_dir=s'    =>    \$output_dir,
+            'chromosome=s'    =>    \$chromosome,
+            'help'            =>    \$help
+    ) or die usage();
 
-if ($help) { exit usage() } 
-
-
+if ($help) { exit usage() }
 
 if (not $vcf_file) {
-	 exit usage();
+   exit usage();
 }
 
 my $filter = 0;
 
 if ( scalar keys %filters > 0 ){
-	print "\n";
-	if ( exists $filters{'a'} ){
-		say "Running in filter mode, using all default filters:";
-		say "o Read support >= 4";
-		say "o Read depth (in both tumor and normal) > 10";
-		say "o Read support / depth > 0.1";
-		say "o SQ quality > 10";
-		
-		%filters = ("su" => 4,
-					"dp" => 10,
-					"rdr" => 0.1,
-					"sq" => 10
-					);
-		$filter = 1;
-					
-	}
-	elsif ( $filters{'su'} or $filters{'dp'} or $filters{'rdr'} or $filters{'sq'} ) {
-		say "Running in filter mode, using custom filters:";
-		say "o Read support >= $filters{'su'}" if $filters{'su'};
-		say "o Read depth (in both tumor and normal) > $filters{'dp'}" if $filters{'dp'};
-		say "o Read support / depth > $filters{'rdr'}" if $filters{'rdr'};
-		say "o SQ quality > $filters{'sq'}" if $filters{'sq'};
-		$filter = 1;
-	}
-	else {
-		my $illegals = join(",", keys %filters);
-		say "Illegal filter option used: '$illegals'. Please specify filters to run with (or use '-f or -f a' to run all defaults)";
-		say "Filter options available:";
-		say "o Read support: su=INT";
-		say "o Read depth: dp=INT";
-		say "o Read support / depth: rdr=FLOAT";
-		say "o SQ quality: sq=INT";
-		die "Please check filter specification\n";
-	   }
+  print "\n";
+  if ( exists $filters{'a'} ){
+    say "Running in filter mode, using all default filters:";
+    say " o Read support >= 4";
+    say " o Read depth (in both tumor and normal) > 10";
+    say " o Read support / depth > 0.1";
+    say " o SQ quality > 10";
+    say " o Chromosomes 2L 2R 3L 3R 4 X Y";
+
+    %filters = ("su"  =>  4,
+                "dp"  =>  10,
+                "rdr" =>  0.1,
+                "sq"  =>  10,
+                "chr" =>  1
+               );
+    $filter = 1;
+
+  }
+  elsif ( $filters{'su'} or $filters{'dp'} or $filters{'rdr'} or $filters{'sq'} or $filters{'chr'} ) {
+    say "Running in filter mode, using custom filters:";
+    say " o Read support >= $filters{'su'}" if $filters{'su'};
+    say " o Read depth (in both tumor and normal) > $filters{'dp'}" if $filters{'dp'};
+    say " o Read support / depth > $filters{'rdr'}" if $filters{'rdr'};
+    say " o SQ quality > $filters{'sq'}" if $filters{'sq'};
+    say " o Chromosomes 2L 2R 3L 3R 4 X Y" if $filters{'chr'};
+    $filter = 1;
+  }
+  else {
+    my $illegals = join(",", keys %filters);
+    say "Illegal filter option used: '$illegals'. Please specify filters to run with (or use '-f or -f a' to run all defaults)";
+    say "Filter options available:";
+    say " o Read support: su=INT";
+    say " o Read depth: dp=INT";
+    say " o Read support / depth: rdr=FLOAT";
+    say " o SQ quality: sq=INT";
+    say " o Chromosomes 2L 2R 3L 3R 4 X Y";
+    die "Please check filter specification\n";
+     }
 }
 
 # Need to make sure this is stable
@@ -95,45 +97,23 @@ my ($name, $extention) = split(/\.([^.]+)$/, basename($vcf_file), 2);
 
 print "\n";
 
-# Retun SV and info hashes 
+# Retun SV and info hashes
 my ( $SVs, $info, $filtered_vars ) = SV_parser::typer($vcf_file, $type, %filters);
 
 # Print all info for specified id
-
 SV_parser::summarise_variants( $SVs, $filter, $chromosome ) unless $id or $dump;
 
 # Print all info for specified id
-
 SV_parser::get_variant( $id, $SVs, $info, $filter ) if $id;
 
 # Dump all variants to screen
 SV_parser::dump_variants( $SVs, $info, $filter, $chromosome ) if $dump;
 
+# Write out variants passing filters
 SV_parser::print_variants ( $SVs, $filtered_vars, $name, $output_dir ) if $output_dir;
 
-# sub usage {
-# 	say "********** $Script ***********";
-#     say "Usage: $Script [options]";
-# 	say "  --vcf = VCF file for parsing";
-# 	say "  --type = specifiy input type [LUMPY = l; DELLY = d; novobreak = n] or let $Script guess";
-# 	say "  --id = extract information for a given variant";
-# 	say "  --dump = cycle through all variants (can be combined with both -f and -c)";
-# 	say "  --filter = apply filters and mark filtered variants";
-# 	say "  --output = write out variants that pass filters to specified dir";
-# 	say "  --chromosome = used in conjunction with --dump will cycle though variants on chromosome speciified in -c";
-# 	say "  --help\n";
-#
-# 	say "Examples: ";
-# 	say "o Browse all variants that passed filter within a speicifc window on X chromosome:";
-#
-# 	say "->  perl script/sv_parse.1.0.pl -v data/HUM-7.tagged.SC.lumpy.gt_all.vcf -t l -f -d -c X:3000000-3500000";
-# 	say "o Filter vars and write to file in cwd:";
-# 	say "->  perl $0 -v data/HUM-7.tagged.SC.lumpy.gt_all.vcf -t l-f -o .\n";
-# 	say "Nick Riddiford 2017";
-# }
-
 sub usage {
-	print
+  print
 "
 usage: $Script [-h] [-v FILE] [-o PATH] [-t STR] [-i STR] [-d] [-f key=val] [-c STR]
 
@@ -159,18 +139,13 @@ arguments:
   -c STRING, --chromosome
                         limit search to chromosome and/or region (e.g. X:10000-20000)
                         can be used in conjunction with -d
-  -f KEY=VAL, --filter  
+  -f KEY=VAL, --filter
                         filters to apply:
                         -f su=INT [number of tumour reads supporting var]
                         -f dp=INT [minimum depth for both tumour normal at variant site]
                         -f rdr=FLOAT [supporting reads/tumour depth - a value of 1 would mean all reads support variant]
                         -f sq=INT [phred-scaled variant likelihood]
+                        -f chr=1 [only show chromosomes 2L 2R 3L 3R 4 X Y. Only use for Drosophila]
                         -f, -f a = apply default filters [ -f su=4 -f dp=10 -f rdr=0.1 -f sq=10 ]
-
-Examples:
-o Browse all variants that passed default filters within a speicifc window on X chromosome:
-->  perl script/sv_parse.1.0.pl -v data/HUM-7.tagged.SC.lumpy.gt_all.vcf -f -d -c X:3000000-3500000
-o Filter vars with tumour read support > 5 and SQ score > 20, and write to file in cwd:
-->  perl $0 -v data/HUM-7.tagged.SC.lumpy.gt_all.vcf -f su=5 -f sq=20 -o .
 "
 }
