@@ -55,7 +55,7 @@ if ( scalar keys %filters > 0 ){
 	print "\n";
 	if ( exists $filters{'a'} ){
 		say "Running in filter mode, using all default filters:";
-		say "o Read support > 4";
+		say "o Read support >= 4";
 		say "o Read depth (in both tumor and normal) > 10";
 		say "o Read support / depth > 0.1";
 		say "o SQ quality > 10";
@@ -70,7 +70,7 @@ if ( scalar keys %filters > 0 ){
 	}
 	elsif ( $filters{'su'} or $filters{'dp'} or $filters{'rdr'} or $filters{'sq'} ) {
 		say "Running in filter mode, using custom filters:";
-		say "o Read support > $filters{'su'}" if $filters{'su'};
+		say "o Read support >= $filters{'su'}" if $filters{'su'};
 		say "o Read depth (in both tumor and normal) > $filters{'dp'}" if $filters{'dp'};
 		say "o Read support / depth > $filters{'rdr'}" if $filters{'rdr'};
 		say "o SQ quality > $filters{'sq'}" if $filters{'sq'};
