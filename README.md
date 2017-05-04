@@ -87,6 +87,6 @@ arguments:
 
 
 # To do
-- [ x ] User-controlled filter params
-- [ x ] Write output for specified params (rather than for post-filter)
+- [x] User-controlled filter params
+- [x] Write output for specified params (rather than for post-filter)
 - [ ] Custom sorting of vcf summary (in `summarise_variants`), e.g. by SQ value
