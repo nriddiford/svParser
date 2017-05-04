@@ -39,7 +39,6 @@ arguments:
 
 # Examples
 
-
 ## Summarise variants
 
 * Read vcf file from lumpy (or delly / novobreak) and see summary of variants called:
