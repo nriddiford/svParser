@@ -256,10 +256,10 @@ sub novobreak {
 	my $bp2_SR = $info[19]; # high qual split reads bp2
 	my $bp2_PE = $info[28]; # PE reads bp2
 
-	my $t_SR = ($bp1_SR + $bp2_SR)/2;
+	my $t_SR = $bp1_SR + $bp2_SR;
 	my $t_PE = $bp1_PE + $bp2_PE;
 
-	my $t_PE = 0; # Don't believe PE read support!
+	# my $t_PE = 0; # Don't believe PE read support!
 
 	my $tumour_read_support = ( $t_PE + $t_SR );
 
