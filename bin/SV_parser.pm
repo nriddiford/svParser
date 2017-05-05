@@ -256,8 +256,10 @@ sub novobreak {
 	my $bp2_SR = $info[19]; # high qual split reads bp2
 	my $bp2_PE = $info[28]; # PE reads bp2
 
-	my $t_SR = $bp1_SR + $bp2_SR;
+	my $t_SR = ($bp1_SR + $bp2_SR)/2;
 	my $t_PE = $bp1_PE + $bp2_PE;
+
+	my $t_PE = 0; # Don't believe PE read support!
 
 	my $tumour_read_support = ( $t_PE + $t_SR );
 
@@ -275,7 +277,7 @@ sub novobreak {
 	my $n_bp2_SR = $info[24]; # high qual split reads bp2
 	my $n_bp2_PE = $info[29]; # PE reads bp2
 
-	my $all_control_read_support = ( $n_bp1_SR + $n_bp1_PE + $n_bp2_SR + $n_bp2_PE );
+	my $all_control_read_support = ( $n_bp1_SR + $n_bp1_PE + $n_bp2_SR + $n_bp2_PE )/2;
 
 	# Filter if there are more than 1 control reads
 	if ( $all_control_read_support > 1 ){
@@ -289,8 +291,8 @@ sub novobreak {
 	my ($c_DP_1, $c_DP_2) = @info[6,16];
 	my ($t_DP_1, $t_DP_2) = @info[11,21];
 
-	my $c_DP = $c_DP_1 + $c_DP_2;
-	my $t_DP = $t_DP_1 + $t_DP_2;
+	my $c_DP = ($c_DP_1 + $c_DP_2)/2;
+	my $t_DP = ($t_DP_1 + $t_DP_2)/2;
 
 	if ( exists $filter_flags{'dp'} and $c_DP <= $filter_flags{'dp'} ){
 		push @filter_reasons, 'control_depth<' . $filter_flags{'dp'} . '=' . $c_DP;
