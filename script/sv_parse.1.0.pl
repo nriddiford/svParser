@@ -113,7 +113,7 @@ SV_parser::dump_variants( $SVs, $info, $filter, $chromosome ) if $dump;
 SV_parser::print_variants ( $SVs, $filtered_vars, $name, $output_dir ) if $output_dir;
 
 # Write out some useful info to tsv file
-SV_parser::write_tsv ( $SVs, $name, $output_dir ) if $output_dir;
+SV_parser::write_tsv ( $SVs, $name, $output_dir, $type ) if $output_dir;
 
 sub usage {
   print
