@@ -192,7 +192,7 @@ sub parse {
 		elsif ($type eq 'novobreak'){
 			@samples = qw/tumour normal/;
 			my ( $sample_info_novo, $format_novo, $format_long_novo );
-			( $SV_length, $chr2, $stop, $t_SR, $t_PE, $filter_list, $sample_info_novo, $format_novo, $format_long_novo ) = novobreak( $id, $info_block, $start, $SV_type, \@filter_reasons, \@sample_info, \%filter_flags );
+			( $SV_length, $chr2, $stop, $t_PE, $t_SR, $filter_list, $sample_info_novo, $format_novo, $format_long_novo ) = novobreak( $id, $info_block, $start, $SV_type, \@filter_reasons, \@sample_info, \%filter_flags );
 			%sample_info = %{ $sample_info_novo };
 			@format = @{ $format_novo };
 			%format_long = %{ $format_long_novo };
@@ -251,10 +251,57 @@ sub novobreak {
 	my %sample_info;
 	my %format_long;
 
-	my $tumour_read_support = $info[4];
+	my $bp1_SR = $info[9]; # high qual split reads bp1
+	my $bp1_PE = $info[26]; # PE reads bp1
+	my $bp2_SR = $info[19]; # high qual split reads bp2
+	my $bp2_PE = $info[28]; # PE reads bp2
 
-	my @tumour_parts = @info[6..10, 16..20];
-	my @normal_parts = @info[11..15, 21..25];
+	my $t_SR = $bp1_SR + $bp2_SR;
+	my $t_PE = $bp1_PE + $bp2_PE;
+
+	my $tumour_read_support = ( $t_PE + $t_SR );
+
+	########################
+	# Read support filters #
+	########################
+
+	if (exists $filter_flags{'su'}){
+		my $filtered_on_reads = read_support_filter($tumour_read_support, $filter_flags{'su'}, \@filter_reasons);
+		@filter_reasons = @{$filtered_on_reads};
+	}
+
+	my $n_bp1_SR = $info[14]; # high qual split reads bp1
+	my $n_bp1_PE = $info[27]; # PE reads bp1
+	my $n_bp2_SR = $info[24]; # high qual split reads bp2
+	my $n_bp2_PE = $info[29]; # PE reads bp2
+
+	my $all_control_read_support = ( $n_bp1_SR + $n_bp1_PE + $n_bp2_SR + $n_bp2_PE );
+
+	# Filter if there are more than 1 control reads
+	if ( $all_control_read_support > 1 ){
+		push @filter_reasons, "precise var with read support in a normal sample=" . $all_control_read_support;
+	}
+
+	######################
+	# Read depth filters #
+	######################
+
+	my ($c_DP_1, $c_DP_2) = @info[6,16];
+	my ($t_DP_1, $t_DP_2) = @info[11,21];
+
+	my $c_DP = $c_DP_1 + $c_DP_2;
+	my $t_DP = $t_DP_1 + $t_DP_2;
+
+	if ( exists $filter_flags{'dp'} and $c_DP <= $filter_flags{'dp'} ){
+		push @filter_reasons, 'control_depth<' . $filter_flags{'dp'} . '=' . $c_DP;
+	}
+
+	if ( exists $filter_flags{'dp'} and $t_DP <= $filter_flags{'dp'} ){
+		push @filter_reasons, 'tumour_depth<' . $filter_flags{'dp'} . '=' . $t_DP;
+	}
+
+	my @tumour_parts = @info[6..10, 16..20, 26, 28];
+	my @normal_parts = @info[11..15, 21..25, 27, 29];
 
 	my @short_format = (
 	"Breakpoint 1 depth",
@@ -266,33 +313,21 @@ sub novobreak {
 	"Breakpoint 2 split reads",
 	"Breakpoint 2 quality score",
 	"Breakpoint 2 high quality split reads",
-	"Breakpoint 2 high quality quality score"
+	"Breakpoint 2 high quality quality score",
+	"Breakpoint 1 discordant reads",
+	"Breakpoint 2 discordant reads"
 	);
 
-	my @format = qw / DP1 SR1 Q1 HCSR1 HCQ1 DP2 SR2 Q2 HCSR2 HCQ2 /;
+	my @format = qw / DP1 SR1 Q1 HCSR1 HCQ1 DP2 SR2 Q2 HCSR2 HCQ2 PE1 PE2 /;
 
 	$format_long{$format[$_]} = $short_format[$_] for 0..$#format;
 
 	$sample_info{$id}{'tumour'}{$format[$_]} = $tumour_parts[$_] for 0..$#format;
 	$sample_info{$id}{'normal'}{$format[$_]} = $normal_parts[$_] for 0..$#format;
 
-	##########################
-	# Filter on tumour reads #
-	##########################
-
-	if (exists $filter_flags{'su'}){
-		my $filtered_on_reads = read_support_filter($tumour_read_support, $filter_flags{'su'}, \@filter_reasons);
-
-		@filter_reasons = @{$filtered_on_reads};
-	}
-
-    my ($stop) = $info_block =~ /;END=(.*?);/;
+  my ($stop) = $info_block =~ /;END=(.*?);/;
 
 	my ($SV_length) = ($stop - $start);
-
-	my ($t_SR, $t_PE) = (0,0);
-
-	$t_SR = $tumour_read_support;
 
 	if ($start > $stop){
 		my $old_start = $start;
@@ -303,7 +338,7 @@ sub novobreak {
 
 	my ($chr2) = $info_block =~ /CHR2=(.*?);/;
 
-	return ($SV_length, $chr2, $stop, $tumour_read_support, $t_PE, \@filter_reasons, \%sample_info, \@format, \%format_long );
+	return ($SV_length, $chr2, $stop, $t_PE, $t_SR, \@filter_reasons, \%sample_info, \@format, \%format_long );
 }
 
 sub lumpy {
@@ -451,21 +486,21 @@ sub delly {
 
 	my %filter_flags = %{ $filter_flags };
 
-    my ($stop) = $info_block =~ /;END=(.*?);/;
+	my ($stop) = $info_block =~ /;END=(.*?);/;
 
 	my ($SV_length) = ($stop - $start);
 
-		my ($t_SR, $t_PE) = (0,0);
+	my ($t_SR, $t_PE) = (0,0);
 
 		if ($info_block =~ /;SR=(\d+);/){
-	   		$t_SR = $1;
-	   	}
+			$t_SR = $1;
+		}
 
-	   if ($info_block =~ /;PE=(\d+);/){
-	   		$t_PE = $1;
-	   }
+		if ($info_block =~ /;PE=(\d+);/){
+			$t_PE = $1;
+		}
 
-   	my $tumour_read_support = ( $t_PE + $t_SR );
+	my $tumour_read_support = ( $t_PE + $t_SR );
 
    	if (exists $filter_flags{'su'}){
    		my $filtered_on_reads = read_support_filter($tumour_read_support, $filter_flags{'su'}, \@filter_reasons);
@@ -480,7 +515,7 @@ sub delly {
 			$stop = $old_start;
 		}
 
-		my ($chr2) = 0;
+	my ($chr2) = 0;
 
 		if ($SV_type eq 'TRA'){
 			($chr2) = $info_block =~ /CHR2=(.*?);/;
