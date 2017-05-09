@@ -892,7 +892,7 @@ sub write_tsv {
 
 	my ( $SVs, $name, $output_dir, $type ) = @_;
 
-	open my $info_file, '>', $output_dir . $name . ".filtered.summary.tsv" or die $!;
+	open my $info_file, '>', $output_dir . $name . ".filtered.summary.txt" or die $!;
 
 	$type = "lumpy" if $type eq 'l';
 	$type = "delly" if $type eq 'd';
@@ -900,9 +900,9 @@ sub write_tsv {
 
 	my %connected_bps;
 
-	say "Writing useful info to " . "'$output_dir" . $name . ".filtered.summary.tsv'";
+	say "Writing useful info to " . "'$output_dir" . $name . ".filtered.summary.txt'";
 
-	print $info_file join("\t", "source", "type", "chromosome", "bp1", "bp2", "split reads", "pe reads", "id", "length(Kb)", "position", "consensus", "microhomology length", "configuration") . "\n";
+	print $info_file join("\t", "source", "type", "chromosome1", "bp1", "chromosome2", "bp2", "split reads", "pe reads", "id", "length(Kb)", "position", "consensus", "microhomology length", "configuration") . "\n";
 
 	for ( sort { @{ $SVs->{$a}}[0] cmp @{ $SVs->{$b}}[0] or
 				@{ $SVs->{$a}}[1] <=> @{ $SVs->{$b}}[1]
@@ -945,8 +945,8 @@ sub write_tsv {
 				$ct = "-";
 			}
 
-			$chr2 ? print $info_file join("\t", $type, $sv_type, $chr, "$chr:$start", "$chr2:$stop", $SR, $PE, $_, $length_in_kb, "$chr:$start $chr2:$stop", $consensus, $mh_length, $ct ) . "\n"
-			: print $info_file join("\t", $type, $sv_type, $chr, "$chr:$start", "$chr:$stop", $SR, $PE, $_, $length_in_kb, "$chr:$start-$stop", $consensus, $mh_length, $ct ) . "\n";
+			$chr2 ? print $info_file join("\t", $type, $sv_type, $chr, $start, $chr2, $stop, $SR, $PE, $_, $length_in_kb, "$chr:$start $chr2:$stop", $consensus, $mh_length, $ct ) . "\n"
+			: print $info_file join("\t", $type, $sv_type, $chr, $start, $chr, $stop, $SR, $PE, $_, $length_in_kb, "$chr:$start-$stop", $consensus, $mh_length, $ct ) . "\n";
 
 		}
 	}
