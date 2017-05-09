@@ -127,16 +127,16 @@ description: Browse vcf output from several SV callers LUMPY, DELLY and novobrea
 
 arguments:
   -h, --help            show this help message and exit
-  -v FILE, --vcf FILE
+  -v FILE, --vcf
                         VCF input [required]
-  -o PATH, --output PATH
+  -o PATH, --output
                         path to write filtered file to
-  -t STRING, --type STRING
+  -t STRING, --type
                         specify input source [default: guess from input]
                         -l = LUMPY
                         -d = DELLY
                         -n = novobreak
-  -i STRING, --id STRING
+  -i STRING, --id
                         breakpoint id to inspect
   -d, --dump            cycle through breakpoints
   -c STRING, --chromosome
