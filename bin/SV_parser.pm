@@ -945,7 +945,7 @@ sub write_tsv {
 				$ct = "-";
 			}
 
-			$chr2 ? print $info_file join("\t", $type, $sv_type, $chr, $start, $chr2, $stop, $SR, $PE, $_, $length_in_kb, "$chr:$start-$chr2:$stop", $consensus, $mh_length, $ct ) . "\n"
+			$chr2 ? print $info_file join("\t", $type, $sv_type, $chr, $start, $chr2, $stop, $SR, $PE, $_, $length_in_kb, "$chr:$start $chr2:$stop", $consensus, $mh_length, $ct ) . "\n"
 			: print $info_file join("\t", $type, $sv_type, $chr, $start, $chr, $stop, $SR, $PE, $_, $length_in_kb, "$chr:$start-$stop", $consensus, $mh_length, $ct ) . "\n";
 
 		}
