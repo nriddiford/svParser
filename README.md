@@ -1,6 +1,6 @@
-# SV_parser
+# svParser
 
-Parse VCF output from structural variant callers Lumpy and Delly (also supports input from novobreak).
+Parse VCF output from structural variant callers LUMPY and DELLY (also supports input from novoBreak).
 
 Run without options or with `--help` or `-h` to print usage statement
 
@@ -39,7 +39,7 @@ arguments:
                         -f, -f a = apply default filters [ -f su=4 -f dp=10 -f rdr=0.1 -f sq=10 ]
 ```
 
-# Parsing structural variants from vcf files called by LUMPY DELLY and novoBreak
+# Parsing structural variants from VCF files called by LUMPY DELLY and novoBreak
 
 ## Summarise variants
 
