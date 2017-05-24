@@ -9,18 +9,44 @@ use feature qw/ say /;
 use Data::Printer;
 use Data::Dumper;
 
-die "Must list at least 1 file\n" unless @ARGV > 0;
+use File::Path qw(make_path);
 
-my @files = @ARGV;
+use Getopt::Long qw/ GetOptions /;
+
+my @files;
+my $help;
+
+# foo=s{1,} indicates one or more values
+
+GetOptions( 'files=s{1,}'   =>    \@files,
+            'help'          =>    \$help
+          ) or die usage();
+
+if ($help) { exit usage() }
+
+if (@files == 0){
+  say "Exiting. Must list at least 1 file";
+  exit usage();
+}
+
+my $dir = "merged";
+eval { make_path($dir) };
+if ($@) {
+  print "Couldn't create $dir: $@";
+}
 
 my @parts = split(/\./, $files[0]);
 
-open my $out, '>', $parts[0] . "_merged_SVs.tsv" or die $!;
+open my $out, '>', "$dir/" . $parts[0] . "_merged_SVs.txt" or die $!;
 
+say "Writing merged files to: " . "'$dir/" . $parts[0] . "_merged_SVs.txt'";
+
+say "Merging files: ";
 my %SVs;
 my %seen;
 my $header;
 foreach (@files){
+  say "* $_";
   open my $in, '<', $_ or die $!;
 
   while(<$in>){
@@ -48,13 +74,19 @@ for my $chr1 (sort keys %SVs){
   }
 }
 
-__DATA__
-source	type	chromosome	bp1	bp2	split reads	pe reads	id	length(Kb)	position	consensus	microhomology length	configuration
-lumpy	DEL	2L	2L:5890205	2L:5890720	5	11	287	0.5	2L:5890205-5890720	-	-	-
-lumpy	BND	2L	2L:22220720	2L:22255744	0	7	1062_1	35.0	2L:22220720 2L:22255744	-	-	N]2L:22255744]
-lumpy	INV	3L	3L:15568694	3L:15568866	0	5	3083	0.2	3L:15568694-15568866	-	-	-
-lumpy	DEL	3R	3R:14006281	3R:14008253	7	10	3810	2.0	3R:14006281-14008253	-	-	-
-lumpy	BND	3R	3R:32060908	3R:32061196	0	16	4665_1	0.3	3R:32060908 3R:32061196	-	-	[3R:32061196[N
-lumpy	BND	3R	3R:32066206	3R:32068392	11	26	4666_1	2.2	3R:32066206 3R:32068392	-	-	N]3R:32068392]
-lumpy	DEL	X	X:4574313	X:4576607	4	5	4781	2.3	X:4574313-4576607	-	-	-
-lumpy	BND	X	X:11414158	X:11531996	0	5	4910_1	117.8	X:11414158 X:11531996	-	-	N]X:11531996]
+sub usage {
+  print
+"
+usage: perl svMerger.pl [-h] [-f FILE]
+
+svMerger
+author: Nick Riddiford (nick.riddiford\@curie.fr)
+version: v0.1
+description: Merge summary output of SV calls from svParser
+
+arguments:
+  -h, --help            show this help message and exit
+  -f FILE, --file
+                        All summary files to be merged for a sample [required]
+"
+}
