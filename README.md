@@ -39,7 +39,7 @@ arguments:
                         -f, -f a = apply default filters [ -f su=4 -f dp=10 -f rdr=0.1 -f sq=10 ]
 ```
 
-# Examples
+# Parsing structural variants from vcf files called by LUMPY DELLY and novoBreak
 
 ## Summarise variants
 
@@ -94,21 +94,21 @@ arguments:
 ```
 for file in data/lumpy/*.vcf
 do
-  perl script/sv_parse.1.0.pl -v data/$file -f -t l -o .
+  perl script/sv_parse.1.0.pl -v $file -f a -t l -p
 done
 ```
 
 ```
 for file in data/delly/*.vcf
 do
-  perl script/sv_parse.1.0.pl -v data/$file -f -t d -o .
+  perl script/sv_parse.1.0.pl -v $file -f a -t d -p
 done
 ```
 
 ```
 for file in data/novobreak/*.vcf
 do
-  perl script/sv_parse.1.0.pl -v data/$file -f -t n -o .
+  perl script/sv_parse.1.0.pl -v $file -f a -t n -p
 done
 ```
 
