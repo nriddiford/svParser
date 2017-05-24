@@ -5,6 +5,8 @@ Parse VCF output from structural variant callers Lumpy and Delly (also supports 
 Run without options or with `--help` or `-h` to print usage statement
 
 ```
+usage: sv_parse.1.0.pl [-h] [-v FILE] [-p] [-t STR] [-i STR] [-d] [-f key=val] [-c STR]
+
 svParser
 author: Nick Riddiford (nick.riddiford@curie.fr)
 version: v1.0
@@ -12,16 +14,16 @@ description: Browse vcf output from several SV callers LUMPY, DELLY and novobrea
 
 arguments:
   -h, --help            show this help message and exit
-  -v FILE, --vcf FILE
+  -v FILE, --vcf
                         VCF input [required]
-  -o PATH, --output PATH
-                        path to write filtered file to
-  -t STRING, --type STRING
+  -p, --print
+                        print filtered vcf and summary file to './filtered'
+  -t STRING, --type
                         specify input source [default: guess from input]
                         -l = LUMPY
                         -d = DELLY
                         -n = novobreak
-  -i STRING, --id STRING
+  -i STRING, --id
                         breakpoint id to inspect
   -d, --dump            cycle through breakpoints
   -c STRING, --chromosome
@@ -43,46 +45,81 @@ arguments:
 
 * Read vcf file from lumpy (or delly / novobreak) and see summary of variants called:
 
-`perl script/sv_parse.1.0.pl -v data/HUM-7.tagged.SC.lumpy.gt_all.vcf -t l`
+`perl script/sv_parse.1.0.pl -v data/lumpy/HUM-7.tagged.SC.lumpy.gt_all.vcf -t l`
 
 * See summary of variants that passed default filters (only appropriate for Drosophila):
 
-`perl script/sv_parse.1.0.pl -v data/HUM-7.tagged.SC.lumpy.gt_all.vcf -t l -f a`
+`perl script/sv_parse.1.0.pl -v data/lumpy/HUM-7.tagged.SC.lumpy.gt_all.vcf -t l -f a`
 
 * See summary of variants that have >= 4 reads in tumour (-f 4)
 
-`perl script/sv_parse.1.0.pl -v data/HUM-7.tagged.SC.lumpy.gt_all.vcf -t l -f su=4`
+`perl script/sv_parse.1.0.pl -v data/lumpy/HUM-7.tagged.SC.lumpy.gt_all.vcf -t l -f su=4`
 
 
 ## Get variant (-i)
 
 * Investigate a specific variant (by ID):
 
-`perl script/sv_parse.1.0.pl -v data/HUM-7.tagged.SC.lumpy.gt_all.vcf -i 4706`
+`perl script/sv_parse.1.0.pl -v data/lumpy/HUM-7.tagged.SC.lumpy.gt_all.vcf -i 4706`
 
 
 ## Browse variants (-d)
 
-`perl script/sv_parse.1.0.pl -v data/HUM-7.tagged.SC.lumpy.gt_all.vcf -d`
+`perl script/sv_parse.1.0.pl -v data/lumpy/HUM-7.tagged.SC.lumpy.gt_all.vcf -d`
 
 * Browse all variants with su>=5 on X chromosome (-c -f su=5):
 
-`perl script/sv_parse.1.0.pl -v data/HUM-7.tagged.SC.lumpy.gt_all.vcf -f su=5 -d -c X`
+`perl script/sv_parse.1.0.pl -v data/lumpy/HUM-7.tagged.SC.lumpy.gt_all.vcf -f su=5 -d -c X`
 
 * Browse all variants within a specific window on X chromosome:
 
-`perl script/sv_parse.1.0.pl -v data/HUM-7.tagged.SC.lumpy.gt_all.vcf -d -c X:3000000-3500000`
+`perl script/sv_parse.1.0.pl -v data/lumpy/HUM-7.tagged.SC.lumpy.gt_all.vcf -d -c X:3000000-3500000`
 
 * Browse all variants that passed read depth filter (dp=20) filter within a specific window on X chromosome:
 
-`perl script/sv_parse.1.0.pl -v data/HUM-7.tagged.SC.lumpy.gt_all.vcf -f dp=20 -d -c X:3000000-3500000`
+`perl script/sv_parse.1.0.pl -v data/lumpy/HUM-7.tagged.SC.lumpy.gt_all.vcf -f dp=20 -d -c X:3000000-3500000`
 
 
 ## Print variants (-p)
 
-* Write all variants that passed filter (-o) to 'HUM-7.tagged.SC.lumpy.gt_all.filtered.vcf'
+* Write all variants that passed filter (-p) to 'HUM-7.tagged.SC.lumpy.gt_all.filtered.vcf'
 
-`perl script/sv_parse.1.0.pl -v data/HUM-7.tagged.SC.lumpy.gt_all.vcf -f -o .`
+`perl script/sv_parse.1.0.pl -v data/lumpy/HUM-7.tagged.SC.lumpy.gt_all.vcf -f -p`
+
+
+# Combining calls from multiple sources
+
+* Generate `filtered.vcf` and  files for calls made by delly, lumpy and novoBreak
+
+```
+for file in data/lumpy/*.vcf
+do
+  perl script/sv_parse.1.0.pl -v data/$file -f -t l -o .
+done
+```
+
+```
+for file in data/delly/*.vcf
+do
+  perl script/sv_parse.1.0.pl -v data/$file -f -t d -o .
+done
+```
+
+```
+for file in data/novobreak/*.vcf
+do
+  perl script/sv_parse.1.0.pl -v data/$file -f -t n -o .
+done
+```
+
+#
+
+
+
+
+
+
+
 
 
 # To do

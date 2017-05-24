@@ -1,0 +1,65 @@
+##fileformat=VCFv4.2
+##fileDate=20170228
+##reference=
+##INFO=<ID=SVTYPE,Number=1,Type=String,Description="Type of structural variant">
+##INFO=<ID=SVLEN,Number=.,Type=Integer,Description="Difference in length between REF and ALT alleles">
+##INFO=<ID=END,Number=1,Type=Integer,Description="End position of the variant described in this record">
+##INFO=<ID=STRANDS,Number=.,Type=String,Description="Strand orientation of the adjacency in BEDPE format (DEL:+-, DUP:-+, INV:++/--)">
+##INFO=<ID=IMPRECISE,Number=0,Type=Flag,Description="Imprecise structural variation">
+##INFO=<ID=CIPOS,Number=2,Type=Integer,Description="Confidence interval around POS for imprecise variants">
+##INFO=<ID=CIEND,Number=2,Type=Integer,Description="Confidence interval around END for imprecise variants">
+##INFO=<ID=CIPOS95,Number=2,Type=Integer,Description="Confidence interval (95%) around POS for imprecise variants">
+##INFO=<ID=CIEND95,Number=2,Type=Integer,Description="Confidence interval (95%) around END for imprecise variants">
+##INFO=<ID=MATEID,Number=.,Type=String,Description="ID of mate breakends">
+##INFO=<ID=EVENT,Number=1,Type=String,Description="ID of event associated to breakend">
+##INFO=<ID=SECONDARY,Number=0,Type=Flag,Description="Secondary breakend in a multi-line variants">
+##INFO=<ID=SU,Number=.,Type=Integer,Description="Number of pieces of evidence supporting the variant across all samples">
+##INFO=<ID=PE,Number=.,Type=Integer,Description="Number of paired-end reads supporting the variant across all samples">
+##INFO=<ID=SR,Number=.,Type=Integer,Description="Number of split reads supporting the variant across all samples">
+##INFO=<ID=BD,Number=.,Type=Integer,Description="Amount of BED evidence supporting the variant across all samples">
+##INFO=<ID=EV,Number=.,Type=String,Description="Type of LUMPY evidence contributing to the variant call">
+##INFO=<ID=PRPOS,Number=.,Type=String,Description="LUMPY probability curve of the POS breakend">
+##INFO=<ID=PREND,Number=.,Type=String,Description="LUMPY probability curve of the END breakend">
+##ALT=<ID=DEL,Description="Deletion">
+##ALT=<ID=DUP,Description="Duplication">
+##ALT=<ID=INV,Description="Inversion">
+##ALT=<ID=DUP:TANDEM,Description="Tandem duplication">
+##ALT=<ID=INS,Description="Insertion of novel sequence">
+##ALT=<ID=CNV,Description="Copy number variable region">
+##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">
+##FORMAT=<ID=SU,Number=1,Type=Integer,Description="Number of pieces of evidence supporting the variant">
+##FORMAT=<ID=PE,Number=1,Type=Integer,Description="Number of paired-end reads supporting the variant">
+##FORMAT=<ID=SR,Number=1,Type=Integer,Description="Number of split reads supporting the variant">
+##FORMAT=<ID=BD,Number=1,Type=Integer,Description="Amount of BED evidence supporting the variant">
+##FORMAT=<ID=GQ,Number=1,Type=Integer,Description="Genotype quality">
+##FORMAT=<ID=SQ,Number=1,Type=Float,Description="Phred-scaled probability that this site is variant (non-reference in this sample">
+##FORMAT=<ID=GL,Number=G,Type=Float,Description="Genotype Likelihood, log10-scaled likelihoods of the data given the called genotype for each possible genotype generated from the reference and alternate alleles given the sample ploidy">
+##FORMAT=<ID=DP,Number=1,Type=Integer,Description="Read depth">
+##FORMAT=<ID=RO,Number=1,Type=Integer,Description="Reference allele observation count, with partial observations recorded fractionally">
+##FORMAT=<ID=AO,Number=A,Type=Integer,Description="Alternate allele observations, with partial observations recorded fractionally">
+##FORMAT=<ID=QR,Number=1,Type=Integer,Description="Sum of quality of reference observations">
+##FORMAT=<ID=QA,Number=A,Type=Integer,Description="Sum of quality of alternate observations">
+##FORMAT=<ID=RS,Number=1,Type=Integer,Description="Reference allele split-read observation count, with partial observations recorded fractionally">
+##FORMAT=<ID=AS,Number=A,Type=Integer,Description="Alternate allele split-read observation count, with partial observations recorded fractionally">
+##FORMAT=<ID=ASC,Number=A,Type=Integer,Description="Alternate allele clipped-read observation count, with partial observations recorded fractionally">
+##FORMAT=<ID=RP,Number=1,Type=Integer,Description="Reference allele paired-end observation count, with partial observations recorded fractionally">
+##FORMAT=<ID=AP,Number=A,Type=Integer,Description="Alternate allele paired-end observation count, with partial observations recorded fractionally">
+##FORMAT=<ID=AB,Number=A,Type=Float,Description="Allele balance, fraction of observations from alternate allele, QA/(QR+QA)">
+##source=LUMPY
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	HUM-7	HUM-9	HUM-3	HUM-6
+2L	3697091	150	N	<DEL>	26.87	PASS	SVTYPE=DEL;SVLEN=-446;END=3697537;STRANDS=+-:4;IMPRECISE;CIPOS=-10,203;CIEND=-166,9;CIPOS95=-3,72;CIEND95=-67,3;SU=4;PE=4;SR=0	GT:SU:PE:SR:GQ:SQ:GL:DP:RO:AO:QR:QA:RS:AS:ASC:RP:AP:AB	0/1:4:4:0:26:26.87:-6,-3,-15:22:18:3:18:3:0:0:0:18:3:0.14	0/0:0:0:0:42:0.00:-2,-6,-22:25:23:1:23:1:0:0:0:23:1:0.042	0/0:.:.:.:45:0.00:-2,-6,-23:26:24:1:24:1:0:0:0:24:1:0.04	0/0:.:.:.:108:0.00:-0,-11,-36:38:37:0:36:0:20:0:0:16:0:0
+2R	972869	1087_1	N	[2R:1310940[N	89.93	PASS	SVTYPE=BND;STRANDS=--:4;IMPRECISE;CIPOS=-486,9;CIEND=-469,9;CIPOS95=-86,3;CIEND95=-87,3;MATEID=1087_2;EVENT=1087;SU=4;PE=4;SR=0	GT:SU:PE:SR:GQ:SQ:GL:DP:RO:AO:QR:QA:RS:AS:ASC:RP:AP:AB	0/1:4:4:0:87:89.86:-11,-2,-11:20:15:5:15:5:0:0:0:15:5:0.25	0/0:0:0:0:200:0.00:-0,-17,-55:57:56:0:55:0:35:0:0:20:0:0	0/0:.:.:.:54:0.00:-2,-7,-26:29:27:1:27:1:0:0:0:27:1:0.036	0/0:.:.:.:18:0.07:-2,-4,-14:17:15:1:15:1:0:0:0:15:1:0.062
+2R	1310940	1087_2	N	[2R:972869[N	89.93	PASS	SVTYPE=BND;STRANDS=--:4;IMPRECISE;CIPOS=-469,9;CIEND=-486,9;CIPOS95=-87,3;CIEND95=-86,3;MATEID=1087_1;EVENT=1087;SECONDARY;SU=4;PE=4;SR=0	GT:SU:PE:SR:GQ:SQ:GL:DP:RO:AO:QR:QA:RS:AS:ASC:RP:AP:AB	0/1:4:4:0:87:89.86:-11,-2,-11:20:15:5:15:5:0:0:0:15:5:0.25	0/0:0:0:0:200:0.00:-0,-17,-55:57:56:0:55:0:35:0:0:20:0:0	0/0:.:.:.:54:0.00:-2,-7,-26:29:27:1:27:1:0:0:0:27:1:0.036	0/0:.:.:.:18:0.07:-2,-4,-14:17:15:1:15:1:0:0:0:15:1:0.062
+2R	2845138	1178	N	<DEL>	38.76	PASS	SVTYPE=DEL;SVLEN=-1865033;END=4710171;STRANDS=+-:4;CIPOS=-9,8;CIEND=-9,8;CIPOS95=0,0;CIEND95=0,0;SU=4;PE=0;SR=4	GT:SU:PE:SR:GQ:SQ:GL:DP:RO:AO:QR:QA:RS:AS:ASC:RP:AP:AB	0/1:4:0:4:38:38.76:-9,-5,-27:38:32:5:32:5:32:3:1:0:0:0.14	0/0:0:0:0:51:0.00:-3,-8,-32:38:35:2:35:2:35:0:2:0:0:0.054	0/0:.:.:.:30:0.00:-5,-8,-33:41:37:3:37:3:37:2:0:0:0:0.075	0/0:.:.:.:84:0.00:-0,-8,-28:29:29:0:28:0:15:0:0:13:0:0
+3L	42620	2095	N	<DEL>	77.77	PASS	SVTYPE=DEL;SVLEN=-363;END=42983;STRANDS=+-:4;IMPRECISE;CIPOS=-10,216;CIEND=-145,9;CIPOS95=-3,68;CIEND95=-65,2;SU=4;PE=4;SR=0	GT:SU:PE:SR:GQ:SQ:GL:DP:RO:AO:QR:QA:RS:AS:ASC:RP:AP:AB	0/1:4:4:0:77:77.77:-12,-4,-22:35:28:6:28:6:0:0:0:28:6:0.18	0/0:0:0:0:200:0.00:-0,-25,-84:84:84:0:84:0:49:0:0:35:0:0	0/0:.:.:.:200:0.00:-0,-29,-97:99:98:0:97:0:61:0:0:36:0:0	0/0:.:.:.:36:0.00:-2,-5,-20:23:21:1:21:1:0:0:0:21:1:0.045
+3R	19770265	4128	N	<DEL>	17.91	PASS	SVTYPE=DEL;SVLEN=-11914673;END=31684938;STRANDS=+-:4;CIPOS=-9,8;CIEND=-9,8;CIPOS95=0,0;CIEND95=0,0;SU=4;PE=0;SR=4	GT:SU:PE:SR:GQ:SQ:GL:DP:RO:AO:QR:QA:RS:AS:ASC:RP:AP:AB	0/1:4:0:4:17:17.91:-6,-4,-18:25:21:3:21:3:21:3:0:0:0:0.12	0/0:0:0:0:200:0.00:-0,-23,-76:77:77:0:76:0:43:0:0:33:0:0	0/0:.:.:.:200:0.00:-0,-17,-57:58:58:0:57:0:29:0:0:28:0:0	0/0:.:.:.:159:0.00:-0,-16,-53:54:54:0:53:0:33:0:0:20:0:0
+X	3351890	4229_1	N	[X:3353248[N	194.88	PASS	SVTYPE=BND;STRANDS=--:11;CIPOS=-10,9;CIEND=-10,9;CIPOS95=0,0;CIEND95=0,0;MATEID=4229_2;EVENT=4229;SU=11;PE=3;SR=8	GT:SU:PE:SR:GQ:SQ:GL:DP:RO:AO:QR:QA:RS:AS:ASC:RP:AP:AB	0/1:10:3:7:28:194.88:-20,-1,-4:18:8:9:7:8:4:5:0:3:2:0.53	0/0:1:0:1:93:0.00:-0,-9,-31:33:32:0:31:0:16:0:0:15:0:0	0/0:.:.:.:63:0.00:-0,-6,-21:22:22:0:21:0:10:0:0:11:0:0	0/0:.:.:.:63:0.00:-0,-6,-21:22:22:0:21:0:13:0:0:8:0:0
+X	3353248	4229_2	N	[X:3351890[N	194.88	PASS	SVTYPE=BND;STRANDS=--:11;CIPOS=-10,9;CIEND=-10,9;CIPOS95=0,0;CIEND95=0,0;MATEID=4229_1;EVENT=4229;SECONDARY;SU=11;PE=3;SR=8	GT:SU:PE:SR:GQ:SQ:GL:DP:RO:AO:QR:QA:RS:AS:ASC:RP:AP:AB	0/1:10:3:7:28:194.88:-20,-1,-4:18:8:9:7:8:4:5:0:3:2:0.53	0/0:1:0:1:93:0.00:-0,-9,-31:33:32:0:31:0:16:0:0:15:0:0	0/0:.:.:.:63:0.00:-0,-6,-21:22:22:0:21:0:10:0:0:11:0:0	0/0:.:.:.:63:0.00:-0,-6,-21:22:22:0:21:0:13:0:0:8:0:0
+X	3129531	4232_1	N	N]X:3364620]	110.84	PASS	SVTYPE=BND;STRANDS=++:5;CIPOS=-8,8;CIEND=-10,9;CIPOS95=0,0;CIEND95=0,0;MATEID=4232_2;EVENT=4232;SU=5;PE=1;SR=4	GT:SU:PE:SR:GQ:SQ:GL:DP:RO:AO:QR:QA:RS:AS:ASC:RP:AP:AB	0/1:5:1:4:102:110.84:-13,-2,-12:25:18:7:17:6:10:3:0:7:2:0.26	0/0:0:0:0:87:0.00:-0,-9,-29:30:30:0:29:0:17:0:0:12:0:0	0/0:.:.:.:117:0.00:-0,-12,-39:40:40:0:39:0:24:0:0:15:0:0	0/0:.:.:.:45:0.00:-0,-5,-15:16:16:0:15:0:9:0:0:6:0:0
+X	3364620	4232_2	N	N]X:3129531]	110.84	PASS	SVTYPE=BND;STRANDS=++:5;CIPOS=-10,9;CIEND=-8,8;CIPOS95=0,0;CIEND95=0,0;MATEID=4232_1;EVENT=4232;SECONDARY;SU=5;PE=1;SR=4	GT:SU:PE:SR:GQ:SQ:GL:DP:RO:AO:QR:QA:RS:AS:ASC:RP:AP:AB	0/1:5:1:4:102:110.84:-13,-2,-12:25:18:7:17:6:10:3:0:7:2:0.26	0/0:0:0:0:87:0.00:-0,-9,-29:30:30:0:29:0:17:0:0:12:0:0	0/0:.:.:.:117:0.00:-0,-12,-39:40:40:0:39:0:24:0:0:15:0:0	0/0:.:.:.:45:0.00:-0,-5,-15:16:16:0:15:0:9:0:0:6:0:0
+2L	4945395	4734_1	N	]3L:10482353]N	32.81	PASS	SVTYPE=BND;STRANDS=-+:4;CIPOS=-9,8;CIEND=-9,8;CIPOS95=0,0;CIEND95=0,0;MATEID=4734_2;EVENT=4734;SU=4;PE=0;SR=4	GT:SU:PE:SR:GQ:SQ:GL:DP:RO:AO:QR:QA:RS:AS:ASC:RP:AP:AB	0/1:4:0:4:32:32.81:-8,-4,-21:30:25:4:25:4:25:3:0:0:0:0.14	0/0:0:0:0:200:0.00:-0,-20,-65:66:66:0:65:0:34:0:0:31:0:0	0/0:.:.:.:200:0.00:-0,-23,-76:77:77:0:76:0:43:0:0:33:0:0	0/0:.:.:.:141:0.00:-0,-14,-47:48:48:0:47:0:26:0:0:21:0:0
+3L	10482353	4734_2	N	N[2L:4945395[	32.81	PASS	SVTYPE=BND;STRANDS=+-:4;CIPOS=-9,8;CIEND=-9,8;CIPOS95=0,0;CIEND95=0,0;MATEID=4734_1;EVENT=4734;SECONDARY;SU=4;PE=0;SR=4	GT:SU:PE:SR:GQ:SQ:GL:DP:RO:AO:QR:QA:RS:AS:ASC:RP:AP:AB	0/1:4:0:4:32:32.81:-8,-4,-21:30:25:4:25:4:25:3:0:0:0:0.14	0/0:0:0:0:200:0.00:-0,-20,-65:66:66:0:65:0:34:0:0:31:0:0	0/0:.:.:.:200:0.00:-0,-23,-76:77:77:0:76:0:43:0:0:33:0:0	0/0:.:.:.:141:0.00:-0,-14,-47:48:48:0:47:0:26:0:0:21:0:0
+3L	10674175	4932_1	N	]X:14354070]N	14.98	PASS	SVTYPE=BND;STRANDS=-+:4;CIPOS=-9,8;CIEND=-9,8;CIPOS95=0,0;CIEND95=0,0;MATEID=4932_2;EVENT=4932;SU=4;PE=0;SR=4	GT:SU:PE:SR:GQ:SQ:GL:DP:RO:AO:QR:QA:RS:AS:ASC:RP:AP:AB	0/1:4:0:4:14:14.98:-6,-4,-19:26:22:3:22:3:22:3:0:0:0:0.12	0/0:0:0:0:102:0.00:-0,-10,-34:35:35:0:34:0:17:0:0:17:0:0	0/0:.:.:.:87:0.00:-0,-9,-29:30:30:0:29:0:18:0:0:11:0:0	0/0:.:.:.:96:0.00:-0,-10,-32:33:33:0:32:0:19:0:0:13:0:0
+X	14354070	4932_2	N	N[3L:10674175[	14.98	PASS	SVTYPE=BND;STRANDS=+-:4;CIPOS=-9,8;CIEND=-9,8;CIPOS95=0,0;CIEND95=0,0;MATEID=4932_1;EVENT=4932;SECONDARY;SU=4;PE=0;SR=4	GT:SU:PE:SR:GQ:SQ:GL:DP:RO:AO:QR:QA:RS:AS:ASC:RP:AP:AB	0/1:4:0:4:14:14.98:-6,-4,-19:26:22:3:22:3:22:3:0:0:0:0.12	0/0:0:0:0:102:0.00:-0,-10,-34:35:35:0:34:0:17:0:0:17:0:0	0/0:.:.:.:87:0.00:-0,-9,-29:30:30:0:29:0:18:0:0:11:0:0	0/0:.:.:.:96:0.00:-0,-10,-32:33:33:0:32:0:19:0:0:13:0:0
+3R	8865766	4961_1	N	]X:20381409]N	26.87	PASS	SVTYPE=BND;STRANDS=-+:4;CIPOS=-9,8;CIEND=-9,8;CIPOS95=0,0;CIEND95=0,0;MATEID=4961_2;EVENT=4961;SU=4;PE=0;SR=4	GT:SU:PE:SR:GQ:SQ:GL:DP:RO:AO:QR:QA:RS:AS:ASC:RP:AP:AB	0/1:4:0:4:26:26.87:-6,-3,-15:22:18:3:18:3:18:3:0:0:0:0.14	0/0:0:0:0:200:0.00:-0,-18,-61:62:62:0:61:0:35:0:0:26:0:0	0/0:.:.:.:200:0.00:-0,-18,-59:60:60:0:59:0:38:0:0:21:0:0	0/0:.:.:.:129:0.00:-0,-13,-43:44:44:0:43:0:27:0:0:16:0:0
+X	20381409	4961_2	N	N[3R:8865766[	26.87	PASS	SVTYPE=BND;STRANDS=+-:4;CIPOS=-9,8;CIEND=-9,8;CIPOS95=0,0;CIEND95=0,0;MATEID=4961_1;EVENT=4961;SECONDARY;SU=4;PE=0;SR=4	GT:SU:PE:SR:GQ:SQ:GL:DP:RO:AO:QR:QA:RS:AS:ASC:RP:AP:AB	0/1:4:0:4:26:26.87:-6,-3,-15:22:18:3:18:3:18:3:0:0:0:0.14	0/0:0:0:0:200:0.00:-0,-18,-61:62:62:0:61:0:35:0:0:26:0:0	0/0:.:.:.:200:0.00:-0,-18,-59:60:60:0:59:0:38:0:0:21:0:0	0/0:.:.:.:129:0.00:-0,-13,-43:44:44:0:43:0:27:0:0:16:0:0

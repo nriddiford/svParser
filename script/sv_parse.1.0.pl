@@ -18,6 +18,7 @@ use Data::Dumper;
 use Getopt::Long qw/ GetOptions /;
 
 use File::Basename;
+use File::Path qw(make_path);
 
 my $vcf_file;
 my $help;
@@ -25,18 +26,16 @@ my $id;
 my $dump;
 my $chromosome;
 my $type = "guess";
+my $print;
 
 my %filters;
-
-# Change to write to cwd by default (-o . is messy)
-my $output_dir;
 
 GetOptions( 'vcf=s'           =>    \$vcf_file,
             'type=s'          =>    \$type,
             'id=s'            =>    \$id,
             'dump'            =>    \$dump,
             'filter:s'        =>    \%filters,
-            'output_dir=s'    =>    \$output_dir,
+            'print'           =>    \$print,
             'chromosome=s'    =>    \$chromosome,
             'help'            =>    \$help
     ) or die usage();
@@ -45,6 +44,16 @@ if ($help) { exit usage() }
 
 if (not $vcf_file) {
    exit usage();
+}
+
+my $output_dir;
+if ($print){
+  $output_dir = "filtered/";
+  eval { make_path($output_dir) };
+
+  if ($@) {
+    print "Couldn't create '$output_dir': $@";
+  }
 }
 
 my $filter = 0;
@@ -90,9 +99,6 @@ if ( scalar keys %filters > 0 ){
      }
 }
 
-# Need to make sure this is stable
-$output_dir =~ s!/*$!/! if $output_dir; # Add a trailing slash
-
 my ($name, $extention) = split(/\.([^.]+)$/, basename($vcf_file), 2);
 
 print "\n";
@@ -110,15 +116,15 @@ SV_parser::get_variant( $id, $SVs, $info, $filter ) if $id;
 SV_parser::dump_variants( $SVs, $info, $filter, $chromosome ) if $dump;
 
 # Write out variants passing filters
-SV_parser::print_variants ( $SVs, $filtered_vars, $name, $output_dir ) if $output_dir;
+SV_parser::print_variants ( $SVs, $filtered_vars, $name, $output_dir ) if $print;
 
 # Write out some useful info to txt file
-SV_parser::write_summary ( $SVs, $name, $output_dir, $type ) if $output_dir;
+SV_parser::write_summary ( $SVs, $name, $output_dir, $type ) if $print;
 
 sub usage {
   print
 "
-usage: $Script [-h] [-v FILE] [-o PATH] [-t STR] [-i STR] [-d] [-f key=val] [-c STR]
+usage: $Script [-h] [-v FILE] [-p] [-t STR] [-i STR] [-d] [-f key=val] [-c STR]
 
 svParser
 author: Nick Riddiford (nick.riddiford\@curie.fr)
@@ -129,8 +135,8 @@ arguments:
   -h, --help            show this help message and exit
   -v FILE, --vcf
                         VCF input [required]
-  -o PATH, --output
-                        path to write filtered file to
+  -p, --print
+                        print filtered vcf and summary file to './filtered'
   -t STRING, --type
                         specify input source [default: guess from input]
                         -l = LUMPY
