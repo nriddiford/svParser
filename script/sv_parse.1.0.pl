@@ -46,13 +46,20 @@ if (not $vcf_file) {
    exit usage();
 }
 
-my $output_dir;
+my ($filtered_out, $summary_out);
 if ($print){
-  $output_dir = "filtered/";
-  eval { make_path($output_dir) };
+  $filtered_out = "filtered/";
+  eval { make_path($filtered_out) };
 
   if ($@) {
-    print "Couldn't create '$output_dir': $@";
+    print "Couldn't create '$filtered_out': $@";
+  }
+
+  $summary_out = "filtered/summary/";
+  eval { make_path($summary_out) };
+
+  if ($@) {
+    print "Couldn't create '$summary_out': $@";
   }
 }
 
@@ -116,10 +123,10 @@ SV_parser::get_variant( $id, $SVs, $info, $filter ) if $id;
 SV_parser::dump_variants( $SVs, $info, $filter, $chromosome ) if $dump;
 
 # Write out variants passing filters
-SV_parser::print_variants ( $SVs, $filtered_vars, $name, $output_dir ) if $print;
+SV_parser::print_variants ( $SVs, $filtered_vars, $name, $filtered_out ) if $print;
 
 # Write out some useful info to txt file
-SV_parser::write_summary ( $SVs, $name, $output_dir, $type ) if $print;
+SV_parser::write_summary ( $SVs, $name, $summary_out, $type ) if $print;
 
 sub usage {
   print

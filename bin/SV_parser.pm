@@ -869,9 +869,9 @@ sub chrom_filter {
 }
 
 sub write_summary {
-  my ( $SVs, $name, $output_dir, $type ) = @_;
+  my ( $SVs, $name, $summary_out, $type ) = @_;
 
-  open my $info_file, '>', $output_dir . $name . ".filtered.summary.txt" or die $!;
+  open my $info_file, '>', $summary_out . $name . ".filtered.summary.txt" or die $!;
 
   $type = "lumpy" if $type eq 'l';
   $type = "delly" if $type eq 'd';
@@ -879,7 +879,7 @@ sub write_summary {
 
   my %connected_bps;
 
-  say "Writing useful info to " . "'$output_dir" . $name . ".filtered.summary.txt'";
+  say "Writing useful info to " . "'$summary_out" . $name . ".filtered.summary.txt'";
 
   print $info_file join("\t", "source", "type", "chromosome1", "bp1", "chromosome2", "bp2", "split reads", "pe reads", "id", "length(Kb)", "position", "consensus", "microhomology length", "configuration") . "\n";
 
