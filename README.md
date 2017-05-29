@@ -99,7 +99,6 @@ To be used in conjunction with filter options.
 `perl script/sv_parse.1.0.pl -v data/lumpy/HUM-7.tagged.SC.lumpy.gt_all.vcf -f -p`
 
 
-
 # Combining calls from multiple sources
 
 * Generate `filtered/input.filtered.vcf` and `filtered/summary/input.filtered.summary.txt` files for calls made by delly, lumpy and novoBreak
@@ -125,7 +124,20 @@ do
 done
 ```
 
-* Run merge_vcf.pl (https://github.com/ljdursi/mergevcf/tree/master/mergevcf)
+* Run [merge_vcf](https://github.com/ljdursi/mergevcf/tree/master/mergevcf) on all filtered files. (Run from `filtered` directory):
+
+```
+cd filtered
+perl ../script/merge_vcf.pl
+```
+
+* Run svMerger.pl for all files in sample group. E.g. `input1.delly.filtered.summary.txt` `input1.lumpy.filtered.summary.txt` `input1.novobreak.filtered.summary.txt`
+
+```
+cd filtered/summary
+perl ../../script/svMerger.pl -f input1.*
+```
+
 
 # To do
 - [x] User-controlled filter params
