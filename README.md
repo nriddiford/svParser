@@ -125,20 +125,7 @@ do
 done
 ```
 
-<<<<<<< HEAD
 * Run merge_vcf.pl (https://github.com/ljdursi/mergevcf/tree/master/mergevcf)
-
-
-
-
-
-
-
-
-
-
-=======
->>>>>>> origin/master
 
 # To do
 - [x] User-controlled filter params
