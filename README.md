@@ -112,15 +112,6 @@ do
 done
 ```
 
-#
-
-
-
-
-
-
-
-
 
 # To do
 - [x] User-controlled filter params
