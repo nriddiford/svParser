@@ -5,7 +5,7 @@ use warnings;
 
 use 5.18.2;
 
-use FindBin;
+use FindBin qw($Bin);
 use FindBin '$Script';
 
 use File::Spec;
@@ -46,16 +46,17 @@ if (not $vcf_file) {
    exit usage();
 }
 
+
 my ($filtered_out, $summary_out);
 if ($print){
-  $filtered_out = "filtered/";
+  $filtered_out = "$Bin/../filtered/";
   eval { make_path($filtered_out) };
 
   if ($@) {
     print "Couldn't create '$filtered_out': $@";
   }
 
-  $summary_out = "filtered/summary/";
+  $summary_out = "$Bin/../filtered/summary/";
   eval { make_path($summary_out) };
 
   if ($@) {
