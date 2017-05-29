@@ -43,6 +43,10 @@ arguments:
 
 ## Summarise variants
 
+Print a summary of variants called in VCF file to see the number of DELS/DUPS/INV/TRA called  
+
+#### Examples
+
 * Read vcf file from lumpy (or delly / novobreak) and see summary of variants called:
 
 `perl script/sv_parse.1.0.pl -v data/lumpy/HUM-7.tagged.SC.lumpy.gt_all.vcf -t l`
@@ -51,7 +55,7 @@ arguments:
 
 `perl script/sv_parse.1.0.pl -v data/lumpy/HUM-7.tagged.SC.lumpy.gt_all.vcf -t l -f a`
 
-* See summary of variants that have >= 4 reads in tumour (-f 4)
+* See summary of variants that have >= 4 reads supporting call in tumour (-f su=4)
 
 `perl script/sv_parse.1.0.pl -v data/lumpy/HUM-7.tagged.SC.lumpy.gt_all.vcf -t l -f su=4`
 
@@ -65,13 +69,18 @@ arguments:
 
 ## Browse variants (-d)
 
+Browse variants using the `-d` flag. This cycles through each line of the VCF file, printing an easy-to-read breakdown for each variant.  
+Press any key to move to the next variant, or `q` to quit
+
+#### Examples
+
 `perl script/sv_parse.1.0.pl -v data/lumpy/HUM-7.tagged.SC.lumpy.gt_all.vcf -d`
 
-* Browse all variants with su>=5 on X chromosome (-c -f su=5):
+* Browse all variants with su>=5 on X chromosome (-c X -f su=5):
 
 `perl script/sv_parse.1.0.pl -v data/lumpy/HUM-7.tagged.SC.lumpy.gt_all.vcf -f su=5 -d -c X`
 
-* Browse all variants within a specific window on X chromosome:
+* Browse all variants within a specific window on X chromosome (-c X:3000000-3500000):
 
 `perl script/sv_parse.1.0.pl -v data/lumpy/HUM-7.tagged.SC.lumpy.gt_all.vcf -d -c X:3000000-3500000`
 
@@ -82,14 +91,18 @@ arguments:
 
 ## Print variants (-p)
 
+Write a new VCF file (`filtered/input.filtered.vcf`) and a summary txt file containing useful info (`filtered/summary/input.filtered.summary.txt`).  
+To be used in conjunction with filter options.
+
 * Write all variants that passed filter (-p) to 'HUM-7.tagged.SC.lumpy.gt_all.filtered.vcf'
 
 `perl script/sv_parse.1.0.pl -v data/lumpy/HUM-7.tagged.SC.lumpy.gt_all.vcf -f -p`
 
 
+
 # Combining calls from multiple sources
 
-* Generate `filtered.vcf` and  files for calls made by delly, lumpy and novoBreak
+* Generate `filtered/input.filtered.vcf` and `filtered/summary/input.filtered.summary.txt` files for calls made by delly, lumpy and novoBreak
 
 ```
 for file in data/lumpy/*.vcf
@@ -112,7 +125,9 @@ do
 done
 ```
 
-#
+* Run merge_vcf.pl (https://github.com/ljdursi/mergevcf/tree/master/mergevcf)
+
+
 
 
 
