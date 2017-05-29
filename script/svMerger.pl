@@ -6,6 +6,8 @@ use File::Basename;
 
 use feature qw/ say /;
 
+use FindBin qw($Bin);
+
 use Data::Printer;
 use Data::Dumper;
 
@@ -25,17 +27,18 @@ GetOptions( 'files=s{1,}'   =>    \@files,
 if ($help) { exit usage() }
 
 if (@files == 0){
-  say "Exiting. Must list at least 1 file";
+  say "Exiting. Must list at least 1 file (and specify with `-f`)";
   exit usage();
 }
 
-my $dir = "merged/";
+my $dir = "$Bin/../filtered/summary/merged/";
+
 eval { make_path($dir) };
 if ($@) {
   print "Couldn't create $dir: $@";
 }
 
-my @parts = split(/\./, $files[0]);
+my @parts = split( /\./, basename($files[0]) );
 
 open my $out, '>', "$dir" . $parts[0] . "_merged_SVs.txt" or die $!;
 
