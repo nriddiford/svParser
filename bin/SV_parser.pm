@@ -252,6 +252,12 @@ sub novobreak {
   my $t_SR = $bp1_SR + $bp2_SR;
   my $t_PE = $bp1_PE + $bp2_PE;
 
+  $t_SR = $t_SR/2;
+  $t_PE = $t_PE/2;
+  
+  $t_SR = int($t_SR + 0.5);
+  $t_PE = int($t_SR + 0.5);
+
   # my $t_PE = 0; # Don't believe PE read support!
 
   my $tumour_read_support = ( $t_PE + $t_SR );
@@ -522,6 +528,7 @@ sub summarise_variants {
   my ( $SVs, $filter_switch, $chromosome ) = @_;
 
   my ($dels, $dups, $trans, $invs, $filtered) = (0,0,0,0,0);
+  my ($tds, $CNVs, $ins) = (0,0,0);
 
   my ( $query_region, $query_start, $query_stop );
 
@@ -594,6 +601,9 @@ sub summarise_variants {
     $dups++ if $sv_type eq 'DUP';
     $trans++ if $sv_type eq 'BND' or $sv_type eq 'TRA';
     $invs++ if $sv_type eq 'INV';
+    $tds++ if $sv_type eq 'DUP:TANDEM';
+    $CNVs++ if $sv_type eq 'CNV';
+    $ins++ if $sv_type eq 'INS';
 
   }
   print "\n";
@@ -609,6 +619,9 @@ sub summarise_variants {
   # $trans=$trans/2;
   say "$trans translocations";
   say "$invs inversions";
+  say "$tds tandem duplications";
+  say "$CNVs CNV regions";
+  say "$ins inserted sequences at BP";
 
   my $top_count = 0;
   my %connected_bps;
@@ -847,23 +860,24 @@ sub read_support_filter {
 # Only for Drosophila so far...
 sub chrom_filter {
   my ( $chr, $chr2, $filters ) = @_;
-
   my @keys = qw / 2L 2R 3L 3R 4 X Y /;
   my %chrom_filt;
 
   $chrom_filt{$_} = 1 for (@keys);
-
   my @filter_reasons = @{ $filters };
 
   if ($chr2 eq '0'){
     $chr2 = $chr;
   }
+
   if ( not $chrom_filt{$chr} ){
     push @filter_reasons, 'chrom1=' . $chr;
   }
+
   elsif ( not $chrom_filt{$chr2} ){
     push @filter_reasons, 'chrom2=' . $chr2;
   }
+
   return (\@filter_reasons);
 
 }
@@ -881,7 +895,7 @@ sub write_summary {
 
   say "Writing useful info to " . "'$summary_out" . $name . ".filtered.summary.txt'";
 
-  print $info_file join("\t", "source", "type", "chromosome1", "bp1", "chromosome2", "bp2", "split reads", "pe reads", "id", "length(Kb)", "position", "consensus", "microhomology length", "configuration") . "\n";
+  print $info_file join("\t", "source", "type", "chromosome1", "bp1", "chromosome2", "bp2", "split reads", "pe reads", "id", "length(Kb)", "position", "consensus", "microhomology length", "configuration", "read depth ratio", "notes", "locus") . "\n";
 
   for ( sort { @{ $SVs->{$a}}[0] cmp @{ $SVs->{$b}}[0] or
         @{ $SVs->{$a}}[1] <=> @{ $SVs->{$b}}[1]
@@ -898,13 +912,20 @@ sub write_summary {
 
       my ($length_in_kb) = sprintf("%.1f", abs($SV_length)/1000);
 
-      my ($consensus, $mh_length, $ct );
+      my ($consensus, $mh_length, $ct, $rdr );
 
       if ($info_block =~ /CONSENSUS=(.*?);/){
          $consensus = $1;
       }
       else{
         $consensus = "-";
+      }
+
+      if ($info_block =~ /RDRATIO=(\d+\.?\d*)/){
+        $rdr = $1;
+      }
+      else{
+        $rdr = '-';
       }
 
       if ($info_block =~ /HOMLEN=(\d+);/){
@@ -924,8 +945,8 @@ sub write_summary {
         $ct = "-";
       }
 
-      $chr2 ? print $info_file join("\t", $type, $sv_type, $chr, $start, $chr2, $stop, $SR, $PE, $_, $length_in_kb, "$chr:$start $chr2:$stop", $consensus, $mh_length, $ct ) . "\n"
-      : print $info_file join("\t", $type, $sv_type, $chr, $start, $chr, $stop, $SR, $PE, $_, $length_in_kb, "$chr:$start-$stop", $consensus, $mh_length, $ct ) . "\n";
+      $chr2 ? print $info_file join("\t", $type, $sv_type, $chr, $start, $chr2, $stop, $SR, $PE, $_, $length_in_kb, "$chr:$start $chr2:$stop", $consensus, $mh_length, $ct, $rdr ) . "\n"
+      : print $info_file join("\t", $type, $sv_type, $chr, $start, $chr, $stop, $SR, $PE, $_, $length_in_kb, "$chr:$start-$stop", $consensus, $mh_length, $ct, $rdr ) . "\n";
 
     }
   }
