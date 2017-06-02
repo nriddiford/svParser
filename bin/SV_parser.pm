@@ -254,7 +254,7 @@ sub novobreak {
 
   $t_SR = $t_SR/2;
   $t_PE = $t_PE/2;
-  
+
   $t_SR = int($t_SR + 0.5);
   $t_PE = int($t_SR + 0.5);
 
@@ -914,6 +914,7 @@ sub write_summary {
 
       my ($consensus, $mh_length, $ct, $rdr );
 
+      # Consensus seq
       if ($info_block =~ /CONSENSUS=(.*?);/){
          $consensus = $1;
       }
@@ -921,6 +922,7 @@ sub write_summary {
         $consensus = "-";
       }
 
+      # Read depth ratio (delly)
       if ($info_block =~ /RDRATIO=(\d+\.?\d*)/){
         $rdr = $1;
       }
@@ -928,6 +930,7 @@ sub write_summary {
         $rdr = '-';
       }
 
+      # Microhology length (delly)
       if ($info_block =~ /HOMLEN=(\d+);/){
         $mh_length = $1;
       }
@@ -935,6 +938,7 @@ sub write_summary {
         $mh_length = "-";
       }
 
+      # Configuration
       if ($info_block =~ /CT=(.*?);/){
         ($ct) = $1;
       }
@@ -945,8 +949,13 @@ sub write_summary {
         $ct = "-";
       }
 
-      $chr2 ? print $info_file join("\t", $type, $sv_type, $chr, $start, $chr2, $stop, $SR, $PE, $_, $length_in_kb, "$chr:$start $chr2:$stop", $consensus, $mh_length, $ct, $rdr ) . "\n"
-      : print $info_file join("\t", $type, $sv_type, $chr, $start, $chr, $stop, $SR, $PE, $_, $length_in_kb, "$chr:$start-$stop", $consensus, $mh_length, $ct, $rdr ) . "\n";
+
+      if ($chr2 and $chr2 ne $chr){
+        print $info_file join("\t", $type, $sv_type, $chr, $start, $chr2, $stop, $SR, $PE, $_, $length_in_kb, "$chr:$start $chr2:$stop", $consensus, $mh_length, $ct, $rdr ) . "\n";
+      }
+      else {
+        print $info_file join("\t", $type, $sv_type, $chr, $start, $chr, $stop, $SR, $PE, $_, $length_in_kb, "$chr:$start-$stop", $consensus, $mh_length, $ct, $rdr ) . "\n";
+      }
 
     }
   }
