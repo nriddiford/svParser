@@ -24,7 +24,7 @@ closedir $dir;
 foreach (@files){
   chomp;
 
-  unless (/.vcf$/){
+  unless (/filtered.vcf$/){
     next;
   }
 
