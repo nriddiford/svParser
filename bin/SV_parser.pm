@@ -616,12 +616,11 @@ sub summarise_variants {
 
   say "$dels deletions";
   say "$dups duplications";
-  # $trans=$trans/2;
   say "$trans translocations";
   say "$invs inversions";
-  say "$tds tandem duplications";
-  say "$CNVs CNV regions";
-  say "$ins inserted sequences at BP";
+  say "$tds tandem duplications" if $tds > 0;
+  say "$CNVs CNV regions" if $CNVs > 0;
+  say "$ins inserted sequences at BP" if $ins > 0;
 
   my $top_count = 0;
   my %connected_bps;
@@ -912,6 +911,18 @@ sub write_summary {
 
       my ($length_in_kb) = sprintf("%.1f", abs($SV_length)/1000);
 
+      # Don't print out DELS < 0.5
+      # if ( $sv_type eq "DEL" and $length_in_kb < 0.5 ){
+      #   say "Ommiting SV '$_' from '$name\.filtered.summary.txt' as $sv_type with length: $length_in_kb";
+      #   next;
+      # }
+
+      # Don't include DELS < 1kb with split read support == 0
+      if ( ( $sv_type eq "DEL" and $length_in_kb < 1 ) and $SR == 0 ){
+        say "Ommiting SV '$_' from '$name\.filtered.summary.txt' as $sv_type with length: $length_in_kb and split read support of $SR";
+        next;
+      }
+
       my ($consensus, $mh_length, $ct, $rdr );
 
       # Consensus seq
@@ -948,7 +959,6 @@ sub write_summary {
       else {
         $ct = "-";
       }
-
 
       if ($chr2 and $chr2 ne $chr){
         print $info_file join("\t", $type, $sv_type, $chr, $start, $chr2, $stop, $SR, $PE, $_, $length_in_kb, "$chr:$start $chr2:$stop", $consensus, $mh_length, $ct, $rdr ) . "\n";
