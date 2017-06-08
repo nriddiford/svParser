@@ -894,7 +894,7 @@ sub write_summary {
 
   say "Writing useful info to " . "'$summary_out" . $name . ".filtered.summary.txt'";
 
-  print $info_file join("\t", "source", "type", "chromosome1", "bp1", "chromosome2", "bp2", "split reads", "pe reads", "id", "length(Kb)", "position", "consensus", "microhomology length", "configuration", "read depth ratio", "notes", "locus") . "\n";
+  print $info_file join("\t", "source", "type", "chromosome1", "bp1", "chromosome2", "bp2", "split reads", "pe reads", "id", "length(Kb)", "position", "consensus", "microhomology length", "configuration", "read depth ratio", "read depth evidence", "notes", "locus") . "\n";
 
   for ( sort { @{ $SVs->{$a}}[0] cmp @{ $SVs->{$b}}[0] or
         @{ $SVs->{$a}}[1] <=> @{ $SVs->{$b}}[1]
@@ -923,7 +923,7 @@ sub write_summary {
         next;
       }
 
-      my ($consensus, $mh_length, $ct, $rdr );
+      my ($consensus, $mh_length, $ct, $rdr, $rde );
 
       # Consensus seq
       if ($info_block =~ /CONSENSUS=(.*?);/){
@@ -939,6 +939,14 @@ sub write_summary {
       }
       else{
         $rdr = '-';
+      }
+
+      # Read depth evidence (lumpy)
+      if ($info_block =~ /BD=(\d+)/){
+        $rde = $1;
+      }
+      else {
+        $rde = '-';
       }
 
       # Microhology length (delly)
@@ -961,10 +969,10 @@ sub write_summary {
       }
 
       if ($chr2 and $chr2 ne $chr){
-        print $info_file join("\t", $type, $sv_type, $chr, $start, $chr2, $stop, $SR, $PE, $_, $length_in_kb, "$chr:$start $chr2:$stop", $consensus, $mh_length, $ct, $rdr ) . "\n";
+        print $info_file join("\t", $type, $sv_type, $chr, $start, $chr2, $stop, $SR, $PE, $_, $length_in_kb, "$chr:$start $chr2:$stop", $consensus, $mh_length, $ct, $rdr, $rde ) . "\n";
       }
       else {
-        print $info_file join("\t", $type, $sv_type, $chr, $start, $chr, $stop, $SR, $PE, $_, $length_in_kb, "$chr:$start-$stop", $consensus, $mh_length, $ct, $rdr ) . "\n";
+        print $info_file join("\t", $type, $sv_type, $chr, $start, $chr, $stop, $SR, $PE, $_, $length_in_kb, "$chr:$start-$stop", $consensus, $mh_length, $ct, $rdr, $rde ) . "\n";
       }
 
     }
