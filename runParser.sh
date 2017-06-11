@@ -1,18 +1,4 @@
-#!/usr/bin/bash
-
-filter=0
-merge=0
-annotate=0
-
-while getopts 'fma' flag; do
-  case "${flag}" in
-    f) filter=1 ;;
-    m) merge=1 ;;
-    a) annotate=1 ;;
-    h) usage exit 0 ;;
-    *) error "Unexpected option ${flag}" ;;
-  esac
-done
+#!/bin/sh
 
 ## usage
 usage() {
@@ -25,6 +11,21 @@ options:
   -h    show this message
 "
 }
+
+filter=0
+merge=0
+annotate=0
+
+while getopts 'fmah' flag; do
+  case "${flag}" in
+    f)  filter=1 ;;
+    m)  merge=1 ;;
+    a)  annotate=1 ;;
+    h)  usage
+        exit 0 ;;
+  esac
+done
+
 
 if [[ $filter -eq 1 ]]
 then
