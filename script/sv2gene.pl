@@ -3,23 +3,18 @@ use strict;
 use warnings;
 use autodie;
 use File::Basename;
-
 use Data::Printer;
-
 use Data::Dumper;
-
 use feature qw/ say /;
 
 my $bed_file = $ARGV[0];
-
 open my $bed_in, '<', $bed_file;
-
 my (%genes, %features);
+
 while(<$bed_in>){
   chomp;
   my ($chrom, $feature, $start, $stop, $gene) = (split)[0,2,3,4,11];
   ($gene) = $gene =~ /\"(.*)\";/;
-
   # Take longest feature for each gene (i.e. longest exon for gene 'X')
   if ( (not exists $features{$chrom}{$gene}{$feature}) or ( ($features{$chrom}{$gene}{$feature}[1] - $features{$chrom}{$gene}{$feature}[0]) <= ($stop - $start)) ){
     $features{$chrom}{$gene}{$feature} = [$start, $stop];
@@ -31,13 +26,9 @@ my $in = $ARGV[1];
 open my $SV_in, '<', $in;
 
 my ( $name, $extention ) = split(/\.([^.]+)$/, basename($in), 2);
-
 my ($sample) = split(/_/, $name, 3);
-
 open my $annotated_svs, '>', $sample . ".anno_SVs.txt";
-
 open my $genes_out, '>>', 'all_genes.txt';
-
 open my $bp_out, '>>', 'all_bps.txt';
 
 my $call = 1;
@@ -93,7 +84,6 @@ while(<$SV_in>){
 }
 
 sub getgenes {
-
   my ($chrom1, $bp1, $bp2, $hit_genes, $hits) = @_;
 
   my @hit_genes = @{ $hit_genes };
@@ -111,7 +101,6 @@ sub getgenes {
 }
 
 sub getbps {
-
   my ($chrom, $bp, $hit_bp, $hit_genes, $hits) = @_;
 
   my @hit_genes = @{ $hit_genes };
@@ -120,7 +109,6 @@ sub getbps {
 
   for my $gene ( sort { $genes{$chrom}{$a}[0] <=> $genes{$chrom}{$b}[0] } keys %{$genes{$chrom}} ){
     for my $feature (reverse sort keys %{$features{$chrom}{$gene}}){
-
       my ($feature_start, $feature_stop) = @{$features{$chrom}{$gene}{$feature}};
       my $length = ($feature_stop - $feature_start);
 
@@ -141,7 +129,6 @@ sub getbps {
         }
       }
     }
-
   }
   return ($hit_bp, \@hit_genes, \%hits);
 }
