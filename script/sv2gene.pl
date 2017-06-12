@@ -106,6 +106,8 @@ sub getbps {
   my @hit_genes = @{ $hit_genes };
   my %hits = %{$hits};
   my %smallest_hit_feature;
+  my $bp_feature = "intergenic";
+  my $bp_gene = "intergenic";
 
   for my $gene ( sort { $genes{$chrom}{$a}[0] <=> $genes{$chrom}{$b}[0] } keys %{$genes{$chrom}} ){
     for my $feature (reverse sort keys %{$features{$chrom}{$gene}}){
@@ -124,11 +126,14 @@ sub getbps {
         # find smallest feature and save
         if ( (not exists $smallest_hit_feature{$gene}) or ($smallest_hit_feature{$gene} > $length ) ){
             $smallest_hit_feature{$gene} = $length;
+            $bp_feature = $feature;
+            $bp_gene = $gene;
             $hit_bp = "$gene, $feature";
-            print $bp_out join ("\t", $gene, $feature, $sample, $chrom, $bp) . "\n";
         }
       }
     }
   }
+  print $bp_out join ("\t", $sample, $chrom, $bp, $bp_gene, $bp_feature) . "\n";
+
   return ($hit_bp, \@hit_genes, \%hits);
 }
