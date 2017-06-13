@@ -8,6 +8,7 @@ options:
   -f    filter
   -m    merge
   -a    annotate
+  -s    stats
   -h    show this message
 "
 }
@@ -15,12 +16,14 @@ options:
 filter=0
 merge=0
 annotate=0
+stats=0
 
-while getopts 'fmah' flag; do
+while getopts 'fmash' flag; do
   case "${flag}" in
     f)  filter=1 ;;
     m)  merge=1 ;;
     a)  annotate=1 ;;
+    s)  stats=1 ;;
     h)  usage
         exit 0 ;;
   esac
@@ -82,7 +85,8 @@ fi
 
 cd merged
 
-features=/Users/Nick/Documents/Curie/Data/Genomes/Dmel_v6.12/Features/dmel-all-r6.12.gtf
+#features=/Users/Nick/Documents/Curie/Data/Genomes/Dmel_v6.12/Features/dmel-all-r6.12.gtf
+features=/Users/Nick_curie/Documents/Curie/Data/Genomes/Dmel_v6.12/Features/dmel-all-r6.12.gtf
 
 if [[ $annotate -eq 1 ]]
 then
@@ -100,9 +104,24 @@ then
   for merged_file in *merged_SVs.txt
   do
     echo "Annotating $merged_file"
-    echo "perl ../../../script/sv2gene.v0.1.pl $features $merged_file"
-    perl ../../../script/sv2gene.v0.1.pl $features $merged_file
+    echo "perl ../../../script/sv2gene.pl $features $merged_file"
+    perl ../../../script/sv2gene.pl $features $merged_file
   done
+
+fi
+
+if [[ $stats -eq 1 ]]
+then
+
+  if [ -z all_genes.txt ]
+  then
+    echo "'all_genes' not found! Exiting"
+    exit 1
+  fi
+
+  echo "Calculating breakpoint stats..."
+  echo "perl script/bpstats.pl all_bps.txt"
+  perl ../../../script/bpstats.pl all_bps.txt
 
 fi
 
