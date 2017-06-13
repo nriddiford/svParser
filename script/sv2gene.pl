@@ -9,17 +9,27 @@ use feature qw/ say /;
 
 my $bed_file = $ARGV[0];
 open my $bed_in, '<', $bed_file;
-my (%genes, %features);
+my (%genes, %features, %exons);
 
 while(<$bed_in>){
   chomp;
   my ($chrom, $feature, $start, $stop, $gene) = (split)[0,2,3,4,11];
   ($gene) = $gene =~ /\"(.*)\";/;
-  # Take longest feature for each gene (i.e. longest exon for gene 'X')
-  if ( (not exists $features{$chrom}{$gene}{$feature}) or ( ($features{$chrom}{$gene}{$feature}[1] - $features{$chrom}{$gene}{$feature}[0]) <= ($stop - $start)) ){
-    $features{$chrom}{$gene}{$feature} = [$start, $stop];
+
+  if ($feature eq 'gene'){
+    $genes{$chrom}{$gene} = [$start, $stop];
   }
-  $genes{$chrom}{$gene} = [$start, $stop] if $feature eq 'gene';
+
+  else {
+    my $transcript = (split)[13];
+    ($transcript) = $transcript =~ /\"(.*)\";/;
+    my $feature_length = ($stop - $start);
+    if ($feature eq 'exon'){
+      $exons{$transcript}{$feature}++;
+      $feature = $feature . "_" . $exons{$transcript}{$feature};
+    }
+    $features{$chrom}{$gene}{$feature} = [$start, $stop, $feature_length];
+  }
 }
 
 my $in = $ARGV[1];
@@ -67,7 +77,7 @@ while(<$SV_in>){
   my $joined_genes = join(", ", @hit_genes);
 
   if ($type eq 'DEL' or $type eq 'DUP'){
-    say "SV $call: $length kb $type affecting $affected_genes genes: $joined_genes. Bp1: $hit_bp1 Bp2: $hit_bp2 ";
+    say "SV $call: $length kb $type affecting $affected_genes genes: $joined_genes Bp1: $hit_bp1 Bp2: $hit_bp2 ";
   }
   else {
     say "SV $call: $length kb $type with break points in $chrom1\:$bp1 ($hit_bp1) and $chrom2\:$bp2 ($hit_bp2)";
@@ -110,12 +120,16 @@ sub getbps {
   my $bp_gene = "intergenic";
 
   for my $gene ( sort { $genes{$chrom}{$a}[0] <=> $genes{$chrom}{$b}[0] } keys %{$genes{$chrom}} ){
-    for my $feature (reverse sort keys %{$features{$chrom}{$gene}}){
-      my ($feature_start, $feature_stop) = @{$features{$chrom}{$gene}{$feature}};
-      my $length = ($feature_stop - $feature_start);
+    # Smallest features are last (and will then replace larger overlapping features i.e. exon over CDS)
+    for my $feature ( sort { $features{$chrom}{$gene}{$b}[2] <=> $features{$chrom}{$gene}{$a}[2] } keys %{$features{$chrom}{$gene}}){
 
-      # if ($gene eq 'CR32773' ){
-      #   print join(",", $feature, $length) . "\n";
+      my ($feature_start, $feature_stop, $length) = @{$features{$chrom}{$gene}{$feature}};
+
+      $feature = "intron" if $feature eq 'gene';
+      $feature = "intron" if $feature eq 'mRNA';
+
+      # if ($gene eq 'CanA1' ){
+      #   print join(",", $gene, $feature, $length) . "\n";
       # }
 
       # if breakpoint contained in feature
@@ -123,13 +137,9 @@ sub getbps {
         # save gene containing BP
         push @hit_genes, $gene unless $hits{$gene};
         $hits{$gene}++;
-        # find smallest feature and save
-        if ( (not exists $smallest_hit_feature{$gene}) or ($smallest_hit_feature{$gene} > $length ) ){
-            $smallest_hit_feature{$gene} = $length;
-            $bp_feature = $feature;
-            $bp_gene = $gene;
-            $hit_bp = "$gene, $feature";
-        }
+        $bp_feature = $feature;
+        $bp_gene = $gene;
+        $hit_bp = "$gene, $feature";
       }
     }
   }
