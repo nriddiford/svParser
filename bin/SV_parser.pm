@@ -508,18 +508,18 @@ sub delly {
     @filter_reasons = @{$filtered_on_reads};
   }
 
-  if ($start > $stop){
-    my $old_start = $start;
-    my $old_stop = $stop;
-    $start = $old_stop;
-    $stop = $old_start;
-  }
+  # if ($start > $stop){
+  #   my $old_start = $start;
+  #   my $old_stop = $stop;
+  #   $start = $old_stop;
+  #   $stop = $old_start;
+  # }
 
-  my ($chr2) = 0;
+  # my ($chr2) = 0;
 
-  if ($SV_type eq 'TRA'){
-    ($chr2) = $info_block =~ /CHR2=(.*?);/;
-  }
+  # if ($SV_type eq 'TRA'){
+    my ($chr2) = $info_block =~ /CHR2=(.*?);/;
+  # }
 
   return ($SV_length, $chr2, $stop, $t_SR, $t_PE, \@filter_reasons );
 }
