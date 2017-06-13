@@ -330,14 +330,14 @@ sub novobreak {
 
   my ($SV_length) = ($stop - $start);
 
-  if ($start > $stop){
-    my $old_start = $start;
-    my $old_stop = $stop;
-    $start = $old_stop;
-    $stop = $old_start;
-  }
-
   my ($chr2) = $info_block =~ /CHR2=(.*?);/;
+
+  # if ($start > $stop){
+  #   my $old_start = $start;
+  #   my $old_stop = $stop;
+  #   $start = $old_stop;
+  #   $stop = $old_start;
+  # }
 
   return ($SV_length, $chr2, $stop, $t_PE, $t_SR, \@filter_reasons, \%sample_info, \@format, \%format_long );
 }
@@ -911,12 +911,6 @@ sub write_summary {
 
       my ($length_in_kb) = sprintf("%.1f", abs($SV_length)/1000);
 
-      # Don't print out DELS < 0.5
-      # if ( $sv_type eq "DEL" and $length_in_kb < 0.5 ){
-      #   say "Ommiting SV '$_' from '$name\.filtered.summary.txt' as $sv_type with length: $length_in_kb";
-      #   next;
-      # }
-
       # Don't include DELS < 1kb with split read support == 0
       if ( ( $sv_type eq "DEL" and $length_in_kb < 1 ) and $SR == 0 ){
         say "Ommiting SV '$_' from '$name\.filtered.summary.txt' as $sv_type with length: $length_in_kb and split read support of $SR";
@@ -968,7 +962,7 @@ sub write_summary {
         $ct = "-";
       }
 
-      if ($chr2 and $chr2 ne $chr){
+      if ( $chr2 and ($chr2 ne $chr) ){
         print $info_file join("\t", $type, $sv_type, $chr, $start, $chr2, $stop, $SR, $PE, $_, $length_in_kb, "$chr:$start $chr2:$stop", $consensus, $mh_length, $ct, $rdr, $rde ) . "\n";
       }
       else {
