@@ -46,11 +46,10 @@ my $call = 1;
 while(<$SV_in>){
   chomp;
   if (/source/){
-    print $annotated_svs join("\t", $_, "bp1 feature", "bp2 feature", "affected genes", "notes") . "\n";
+    print $annotated_svs join("\t", $_, "bp1 locus", "bp2 locus", "affected genes", "notes") . "\n";
     next;
   }
   my ($type, $chrom1, $bp1, $chrom2, $bp2, $length) = (split)[1..5, 9];
-
   my (%hits, $hits);
   my @hit_genes;
   my $hit_genes;
@@ -62,13 +61,13 @@ while(<$SV_in>){
     ($hit_genes, $hits)           = getgenes($chrom1, $bp1, $bp2, $hit_genes, $hits);
     ($hit_bp2, $hit_genes, $hits) = getbps($chrom2, $bp2, $hit_bp2, $hit_genes, $hits);
     @hit_genes = @{ $hit_genes };
-    %hits = %{$hits};
+    %hits = %{ $hits };
   }
   else {
     ($hit_bp1, $hit_genes, $hits) = getbps($chrom1, $bp1, $hit_bp1, \@hit_genes, \%hits);
     ($hit_bp2, $hit_genes, $hits) = getbps($chrom2, $bp2, $hit_bp2, $hit_genes, $hits);
     @hit_genes = @{ $hit_genes };
-    %hits = %{$hits};
+    %hits = %{ $hits };
   }
 
   print $genes_out $_ . "\n" foreach @hit_genes;
