@@ -57,15 +57,15 @@ while(<$SV_in>){
   my $hit_bp2 = "intergenic";
 
   if ($type eq "DEL" or $type eq "DUP"){
-    ($hit_bp1, $hit_genes, $hits) = getbps($chrom1, $bp1, $hit_bp1, \@hit_genes, \%hits);
+    ($hit_bp1, $hit_genes, $hits) = getbps($type, $chrom1, $bp1, $hit_bp1, \@hit_genes, \%hits);
     ($hit_genes, $hits)           = getgenes($chrom1, $bp1, $bp2, $hit_genes, $hits);
-    ($hit_bp2, $hit_genes, $hits) = getbps($chrom2, $bp2, $hit_bp2, $hit_genes, $hits);
+    ($hit_bp2, $hit_genes, $hits) = getbps($type, $chrom2, $bp2, $hit_bp2, $hit_genes, $hits);
     @hit_genes = @{ $hit_genes };
     %hits = %{ $hits };
   }
   else {
-    ($hit_bp1, $hit_genes, $hits) = getbps($chrom1, $bp1, $hit_bp1, \@hit_genes, \%hits);
-    ($hit_bp2, $hit_genes, $hits) = getbps($chrom2, $bp2, $hit_bp2, $hit_genes, $hits);
+    ($hit_bp1, $hit_genes, $hits) = getbps($type, $chrom1, $bp1, $hit_bp1, \@hit_genes, \%hits);
+    ($hit_bp2, $hit_genes, $hits) = getbps($type, $chrom2, $bp2, $hit_bp2, $hit_genes, $hits);
     @hit_genes = @{ $hit_genes };
     %hits = %{ $hits };
   }
@@ -110,7 +110,7 @@ sub getgenes {
 }
 
 sub getbps {
-  my ($chrom, $bp, $hit_bp, $hit_genes, $hits) = @_;
+  my ($type, $chrom, $bp, $hit_bp, $hit_genes, $hits) = @_;
 
   my @hit_genes = @{ $hit_genes };
   my %hits = %{$hits};
@@ -142,7 +142,7 @@ sub getbps {
       }
     }
   }
-  print $bp_out join ("\t", $sample, $chrom, $bp, $bp_gene, $bp_feature) . "\n";
+  print $bp_out join ("\t", $sample, $chrom, $bp, $bp_gene, $bp_feature, $type) . "\n";
 
   return ($hit_bp, \@hit_genes, \%hits);
 }
