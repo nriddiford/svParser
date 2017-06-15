@@ -27,7 +27,7 @@ GetOptions( 'files=s{1,}'   =>    \@files,
 if ($help) { exit usage() }
 
 if (@files == 0){
-  say "Exiting. Must list at least 1 file (and specify with `-f`)";
+  say "Exiting. Must list at least 1 file";
   exit usage();
 }
 
@@ -46,7 +46,6 @@ say "Writing merged files to: " . "'$dir" . $parts[0] . "_merged_SVs.txt'";
 
 say "Merging files: ";
 my %SVs;
-my %seen;
 my $header;
 foreach (@files){
   say "* $_";
