@@ -97,6 +97,8 @@ for ( sort { $genes{$b} <=> $genes{$a} } keys %genes ){
   last if $top_genes == 10;
 }
 
+print "\n";
+
 print "Types of event:\n";
 for ( sort { $types{$b} <=> $types{$a} } keys %types ){
   say "$_: " . $types{$_};
