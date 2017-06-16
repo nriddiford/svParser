@@ -9,7 +9,7 @@ use feature qw/ say /;
 
 my $bed_file = $ARGV[0];
 open my $bed_in, '<', $bed_file;
-my (%genes, %features, %exons);
+my (%genes, %features, %exons, %transcript_length);
 
 while(<$bed_in>){
   chomp;
@@ -28,7 +28,8 @@ while(<$bed_in>){
       $exons{$transcript}{$feature}++;
       $feature = $feature . "_" . $exons{$transcript}{$feature};
     }
-    $features{$chrom}{$gene}{$feature} = [$start, $stop, $feature_length];
+    $transcript_length{$chrom}{$gene}{$transcript} += $feature_length;
+    $features{$chrom}{$gene}{$transcript}{$feature} = [$start, $stop, $feature_length];
   }
 }
 
@@ -37,7 +38,7 @@ open my $SV_in, '<', $in;
 
 my ( $name, $extention ) = split(/\.([^.]+)$/, basename($in), 2);
 my ($sample) = split(/_/, $name, 3);
-open my $annotated_svs, '>', $sample . ".anno_SVs.txt";
+open my $annotated_svs, '>', $sample . ".annotated_SVs.txt";
 open my $genes_out, '>>', 'all_genes.txt';
 open my $bp_out, '>>', 'all_bps.txt';
 
@@ -49,7 +50,7 @@ while(<$SV_in>){
     print $annotated_svs join("\t", $_, "bp1 locus", "bp2 locus", "affected genes", "notes") . "\n";
     next;
   }
-  my ($type, $chrom1, $bp1, $chrom2, $bp2, $length) = (split)[1..5, 9];
+  my ($event, $source, $type, $chrom1, $bp1, $chrom2, $bp2, $length) = (split)[0..6, 10];
   my (%hits, $hits);
   my @hit_genes;
   my $hit_genes;
@@ -57,15 +58,15 @@ while(<$SV_in>){
   my $hit_bp2 = "intergenic";
 
   if ($type eq "DEL" or $type eq "DUP"){
-    ($hit_bp1, $hit_genes, $hits) = getbps($type, $chrom1, $bp1, $hit_bp1, \@hit_genes, \%hits);
+    ($hit_bp1, $hit_genes, $hits) = getbps('bp1', $event, $type, $chrom1, $bp1, $hit_bp1, \@hit_genes, \%hits);
     ($hit_genes, $hits)           = getgenes($chrom1, $bp1, $bp2, $hit_genes, $hits);
-    ($hit_bp2, $hit_genes, $hits) = getbps($type, $chrom2, $bp2, $hit_bp2, $hit_genes, $hits);
+    ($hit_bp2, $hit_genes, $hits) = getbps('bp2', $event, $type, $chrom2, $bp2, $hit_bp2, $hit_genes, $hits);
     @hit_genes = @{ $hit_genes };
     %hits = %{ $hits };
   }
   else {
-    ($hit_bp1, $hit_genes, $hits) = getbps($type, $chrom1, $bp1, $hit_bp1, \@hit_genes, \%hits);
-    ($hit_bp2, $hit_genes, $hits) = getbps($type, $chrom2, $bp2, $hit_bp2, $hit_genes, $hits);
+    ($hit_bp1, $hit_genes, $hits) = getbps('bp1', $event, $type, $chrom1, $bp1, $hit_bp1, \@hit_genes, \%hits);
+    ($hit_bp2, $hit_genes, $hits) = getbps('bp2', $event, $type, $chrom2, $bp2, $hit_bp2, $hit_genes, $hits);
     @hit_genes = @{ $hit_genes };
     %hits = %{ $hits };
   }
@@ -110,7 +111,7 @@ sub getgenes {
 }
 
 sub getbps {
-  my ($type, $chrom, $bp, $hit_bp, $hit_genes, $hits) = @_;
+  my ($bp_id, $event, $type, $chrom, $bp, $hit_bp, $hit_genes, $hits) = @_;
 
   my @hit_genes = @{ $hit_genes };
   my %hits = %{$hits};
@@ -118,16 +119,23 @@ sub getbps {
   my $bp_feature = "intergenic";
   my $bp_gene = "intergenic";
 
+
   for my $gene ( sort { $genes{$chrom}{$a}[0] <=> $genes{$chrom}{$b}[0] } keys %{$genes{$chrom}} ){
     # Smallest features are last (and will then replace larger overlapping features i.e. exon over CDS)
-    for my $feature ( sort { $features{$chrom}{$gene}{$b}[2] <=> $features{$chrom}{$gene}{$a}[2] } keys %{$features{$chrom}{$gene}}){
+    my %smallest_hit_feature;
 
-      my ($feature_start, $feature_stop, $length) = @{$features{$chrom}{$gene}{$feature}};
+    for my $transcript ( sort keys %{$transcript_length{$chrom}{$gene}}){
+
+    for my $feature ( sort { $features{$chrom}{$gene}{$transcript}{$b}[2] <=> $features{$chrom}{$gene}{$transcript}{$a}[2] } keys %{$features{$chrom}{$gene}{$transcript}}){
+
+      # print join(",", $gene, $transcript, $transcript_length{$chrom}{$gene}{$transcript}, $feature, $features{$chrom}{$gene}{$transcript}{$feature}[2]  ) . "\n";
+
+      my ($feature_start, $feature_stop, $length) = @{$features{$chrom}{$gene}{$transcript}{$feature}};
 
       $feature = "intron" if $feature eq 'gene';
       $feature = "intron" if $feature eq 'mRNA';
 
-      # if ($gene eq 'CanA1' ){
+      # if ($gene eq 'bun' ){
       #   print join(",", $gene, $feature, $length) . "\n";
       # }
 
@@ -136,13 +144,21 @@ sub getbps {
         # save gene containing BP
         push @hit_genes, $gene unless $hits{$gene};
         $hits{$gene}++;
-        $bp_feature = $feature;
-        $bp_gene = $gene;
-        $hit_bp = "$gene, $feature";
+
+        # take smallest feature that is hit accross all transcript
+        if ( (not exists $smallest_hit_feature{$gene}) or ($smallest_hit_feature{$gene} > ($feature_stop - $feature_start)) ){
+          $smallest_hit_feature{$gene} = ($feature_stop - $feature_start);
+          $bp_feature = $feature;
+          $bp_gene = $gene;
+          $hit_bp = "$gene, $feature";
+        }
+
       }
     }
   }
-  print $bp_out join ("\t", $sample, $chrom, $bp, $bp_gene, $bp_feature, $type) . "\n";
+
+}
+  print $bp_out join ("\t", $event, $bp_id, $sample, $chrom, $bp, $bp_gene, $bp_feature, $type) . "\n";
 
   return ($hit_bp, \@hit_genes, \%hits);
 }
