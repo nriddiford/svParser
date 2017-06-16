@@ -85,6 +85,16 @@ fi
 
 cd merged
 
+if [[ $merge -eq 1 ]]
+then
+  for f in *_merged_SVs.txt
+  do
+    echo "perl ../../../script/svClusters.pl $f"
+    perl ../../../script/svClusters.pl $f
+    rm $f
+  done
+fi
+
 #features=/Users/Nick/Documents/Curie/Data/Genomes/Dmel_v6.12/Features/dmel-all-r6.12.gtf
 features=/Users/Nick_curie/Documents/Curie/Data/Genomes/Dmel_v6.12/Features/dmel-all-r6.12.gtf
 
@@ -101,11 +111,12 @@ then
     rm all_bps.txt
   fi
 
-  for merged_file in *merged_SVs.txt
+  for clustered_file in *clustered_SVs.txt
   do
-    echo "Annotating $merged_file"
-    echo "perl ../../../script/sv2gene.pl $features $merged_file"
-    perl ../../../script/sv2gene.pl $features $merged_file
+    echo "Annotating $clustered_file"
+    echo "perl ../../../script/sv2gene.pl $features $clustered_file"
+    perl ../../../script/sv2gene.pl $features $clustered_file
+    rm $clustered_file
   done
 
 fi
