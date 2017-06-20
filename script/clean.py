@@ -5,15 +5,12 @@ import os
 
 from optparse import OptionParser
 
-def index_exists(ls, i):
-    return (0 <= i < len(ls)) or (-len(ls) <= i < 0)
-
 parser = OptionParser()
 
 parser.add_option("-f",
     "--in_file",
     dest="in_file",
-    help="Input")
+    help="Clustered and annotated SV calls produced by svClusters/sv2gene")
 
 options, args = parser.parse_args()
 
@@ -26,8 +23,11 @@ outfile = out_base + "." + "cleaned_SVs.txt"
 
 false_calls_file = 'all_samples_false_calls.txt'
 
+def index_exists(ls, i):
+    return (0 <= i < len(ls)) or (-len(ls) <= i < 0)
+
 def remove_false_positives(false_calls_file, input_file, clean_output):
-    """Remove entries in input_file if the 20th column equals F."""
+    """Remove entries in input_file if the 20th column equals F"""
     i = 1
     filtered_calls = 0
     with open(false_calls_file, 'a+') as false_calls, open(input_file,'U') as infile, open(clean_output, 'w') as clean_files:
