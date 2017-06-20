@@ -668,7 +668,6 @@ sub get_variant {
 
   my @samples = @{ $samples };
 
-
   # Should change so that it will only print filter reasons if user specifies them
 
   if (scalar @filter_reasons > 0 ){
