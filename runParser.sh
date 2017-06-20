@@ -126,13 +126,24 @@ fi
 
 if [[ $clean -eq 1 ]]
 then
-  for annofile in *_SVs.txt
+  echo "Removing calls marked as flase positives in 'all_samples_false_calls.txt'"
+  for annofile in *annotated_SVs.txt
   do
-    echo "Removing calls marked as flase positives in 'all_samples_false_calls.txt'"
-    echo "python ../../../script/clean.py -f $annofile"
     python ../../../script/clean.py -f $annofile
-    # rm $annofile
   done
+  echo "Removing false positives from bp files ('all_bps.txt' and 'bps_accross_genome_new.txt')"
+  python ../../../script/update_bps.py
+  mv all_bps_new.txt all_bps.txt
+  mv bps_accross_genome_new.txt bps_accross_genome.txt
+
+  for clean_file in *cleaned_SVs.txt
+  do
+    if [[ ! -s $clean_file ]]
+    then
+      rm $clean_file
+    fi
+  done
+
 fi
 
 if [[ $stats -eq 1 ]]
@@ -145,7 +156,6 @@ then
   fi
 
   echo "Calculating breakpoint stats..."
-  echo "perl script/bpstats.pl all_bps.txt"
   perl ../../../script/bpstats.pl all_bps.txt
 
 fi
