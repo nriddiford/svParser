@@ -55,7 +55,7 @@ def select_cnvfile(sv_size, bp1, bp2):
 
 
 def print_R_command(SV_calls):
-    """Remove entries in input_file if the 20th column equals F."""
+    """Generates command that can be used to plot CNVs"""
     i=1
     with open(options.SV_calls, 'U') as calls:
         for l in calls:
