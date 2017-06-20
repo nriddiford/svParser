@@ -42,18 +42,18 @@ def remove_false_positives(false_calls_file, input_file, clean_output):
                 continue
 
             match = "%s_" % out_base + "_".join(parts[3:7])
-
             notes = '-'
 
             if index_exists(parts, 20):
                 notes = parts[20]
 
             if notes == 'F':
+                filtered_calls += 1
                 if not match in seen_lines:
                     false_calls.write("%s\n" % (match))
-                    filtered_calls +=1
+
             elif match in seen_lines:
-                filtered_calls +=1
+                filtered_calls += 1
             else:
                 clean_files.write(l)
             i += 1
