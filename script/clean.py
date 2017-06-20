@@ -23,7 +23,6 @@ if not options.in_file:
 base_name = (os.path.splitext(options.in_file)[0])
 out_base = base_name.split('.')[0]
 outfile = out_base + "." + "cleaned_SVs.txt"
-print("Writing true positives to '%s'" % outfile)
 
 false_calls_file = 'all_samples_false_calls.txt'
 
@@ -34,11 +33,12 @@ def remove_false_positives(false_calls_file, input_file, clean_output):
     with open(false_calls_file, 'a+') as false_calls, open(input_file,'U') as infile, open(clean_output, 'w') as clean_files:
         false_calls.seek(0)
         seen_lines = {line.rstrip() for line in false_calls}
+        wrote_header = False
         for l in infile:
             parts = l.rstrip().split('\t')
 
             if i == 1 and parts[0] == 'event':
-                clean_files.write(l)
+                header = l
                 continue
 
             match = "%s_" % out_base + "_".join(parts[3:7])
@@ -54,9 +54,14 @@ def remove_false_positives(false_calls_file, input_file, clean_output):
 
             elif match in seen_lines:
                 filtered_calls += 1
-            else:
+
+            if filtered_calls:
+                if not wrote_header:  # do this only once
+                    clean_files.write(header)
+                    wrote_header = True
                 clean_files.write(l)
             i += 1
-    print "Removed %s false positives from %s" % (filtered_calls, input_file)
+    if filtered_calls:
+        print "Removed %s false positives from %s" % (filtered_calls, input_file)
 
 remove_false_positives(false_calls_file=false_calls_file, input_file=options.in_file, clean_output=outfile)
