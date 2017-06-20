@@ -8,6 +8,7 @@ options:
   -f    filter
   -m    merge
   -a    annotate
+  -c    clean-up false positives
   -s    stats
   -h    show this message
 "
@@ -16,13 +17,15 @@ options:
 filter=0
 merge=0
 annotate=0
+clean=0
 stats=0
 
-while getopts 'fmash' flag; do
+while getopts 'fmacsh' flag; do
   case "${flag}" in
     f)  filter=1 ;;
     m)  merge=1 ;;
     a)  annotate=1 ;;
+    c)  clean=1 ;;
     s)  stats=1 ;;
     h)  usage
         exit 0 ;;
@@ -119,6 +122,17 @@ then
     rm $clustered_file
   done
 
+fi
+
+if [[ $clean -eq 1 ]]
+then
+  for annofile in *_SVs.txt
+  do
+    echo "Removing calls marked as flase positives in 'all_samples_false_calls.txt'"
+    echo "python ../../../script/clean.py -f $annofile"
+    python ../../../script/clean.py -f $annofile
+    # rm $annofile
+  done
 fi
 
 if [[ $stats -eq 1 ]]
