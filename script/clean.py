@@ -55,7 +55,7 @@ def remove_false_positives(false_calls_file, input_file, clean_output):
             elif match in seen_lines:
                 filtered_calls += 1
 
-            if filtered_calls:
+            elif filtered_calls:
                 if not wrote_header:  # do this only once
                     clean_files.write(header)
                     wrote_header = True
