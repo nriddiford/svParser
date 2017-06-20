@@ -22,7 +22,7 @@ def filter(coords, false_calls, outfile, line):
         outfile.write(line)
 
 def remove_false_positives_from_bps(genome_bps_file, all_bps_file, all_bps_file_clean, genome_bps_file_clean):
-    """Remove entries in input_file if the 20th column equals F."""
+    """Removes false positives from the files 'all_bps_new.txt' and 'bps_accross_genome_new.txt'"""
 
     with open(genome_bps,'U') as gen_in, open(all_bps,'U') as bps_in, open('all_bps_new.txt', 'w') as all_bps_out, open('bps_accross_genome_new.txt', 'w') as genome_bps_out:
         for l in bps_in:
