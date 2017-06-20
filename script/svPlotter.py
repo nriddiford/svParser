@@ -27,7 +27,7 @@ big_window='/Users/Nick_curie/Desktop/script_test/CNV-Seq/Harry-Plotter/cnvs'
 samll_window='/Users/Nick_curie/Desktop/script_test/CNV-Seq/Harry-Plotter/cnvs/w_500'
 
 def select_cnvfile(sv_size, bp1, bp2):
-    if float(sv_size) <= 2000:
+    if float(sv_size) <= 1000:
         start = bp1 - 100000
         if start < 0:
             start = 0
