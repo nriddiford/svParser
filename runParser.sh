@@ -80,8 +80,8 @@ then
 
   for ((i=0;i<${#samples[@]};++i))
   do
-    echo "perl ../../script/svMerger.pl -f ${samples[i]}*.txt"
-    perl ../../script/svMerger.pl -f ${samples[i]}*.txt
+    echo "perl ../../script/svMerger.pl -f ${samples[i]}.*.txt"
+    perl ../../script/svMerger.pl -f ${samples[i]}.*.txt
   done
 
 fi
