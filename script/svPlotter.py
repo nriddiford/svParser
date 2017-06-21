@@ -53,7 +53,7 @@ def select_cnvfile(sv_size, bp1, bp2):
                 return[name, start, stop, tick]
 
 def print_R_command(SV_calls):
-    """Generates command that can be used to plot CNVs"""
+    """Generates command that can be used to plot CNVs with https://github.com/nriddiford/Harry-Plotter"""
     i=1
     with open(options.SV_calls, 'U') as calls:
         for l in calls:
@@ -66,7 +66,7 @@ def print_R_command(SV_calls):
             bp1 = int(bp1)
             bp2 = int(bp2)
             size = parts[10]
-            if type == 'DEL' or type == 'DUP':
+            if chrom1 == chrom2:
                 fields = select_cnvfile(size, bp1, bp2)
                 cnv_file = fields[0]
                 start = fields[1]
