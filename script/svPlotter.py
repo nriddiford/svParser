@@ -52,8 +52,6 @@ def select_cnvfile(sv_size, bp1, bp2):
                 name = "cnvs/" + name
                 return[name, start, stop, tick]
 
-
-
 def print_R_command(SV_calls):
     """Generates command that can be used to plot CNVs"""
     i=1
@@ -75,6 +73,6 @@ def print_R_command(SV_calls):
                 end = fields[2]
                 tick = fields[3]
                 print("SV event: %s, type: %s, size: %s") % (event, type, size)
-                print("plot.region(cnv_file=\"%s\", from=%s, to=%s, bp1=%s,bp2=%s,chrom=\"%s\", tick=%s)") % (cnv_file, start, end, bp1, bp2, chrom1, tick)
+                print("plot.region(cnv_file=\"%s\", from=%s, to=%s, bp1=%s,bp2=%s,chrom=\"%s\", tick=%s, title=\"%sKb %s on %s\")") % (cnv_file, start, end, bp1, bp2, chrom1, tick, size, type, chrom1)
 
 print_R_command(SV_calls=options.SV_calls)
