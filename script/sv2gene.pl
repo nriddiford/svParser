@@ -7,90 +7,109 @@ use Data::Printer;
 use Data::Dumper;
 use feature qw/ say /;
 
-my $bed_file = $ARGV[0];
-open my $bed_in, '<', $bed_file;
-my (%genes, %features, %exons, %transcript_length);
+use Getopt::Long qw/ GetOptions /;
 
-while(<$bed_in>){
-  chomp;
-  my ($chrom, $feature, $start, $stop, $gene) = (split)[0,2,3,4,11];
-  ($gene) = $gene =~ /\"(.*)\";/;
 
-  if ($feature eq 'gene'){
-    $genes{$chrom}{$gene} = [$start, $stop];
-  }
+my (%transcript_length, %genes, %features);
 
-  else {
-    my $transcript = (split)[13];
-    ($transcript) = $transcript =~ /\"(.*)\";/;
-    my $feature_length = ($stop - $start);
-    if ($feature eq 'exon'){
-      $exons{$transcript}{$feature}++;
-      $feature = $feature . "_" . $exons{$transcript}{$feature};
+my ($sample, $annotated_svs, $genes_out, $bp_out);
+
+make_gene_hash($ARGV[0]);
+
+annotate_SVs($ARGV[1]);
+
+sub make_gene_hash {
+  my $bed_file = shift;
+
+  open my $bed_in, '<', $bed_file;
+  my %exons;
+
+  while(<$bed_in>){
+    chomp;
+    my ($chrom, $feature, $start, $stop, $gene) = (split)[0,2,3,4,11];
+    ($gene) = $gene =~ /\"(.*)\";/;
+
+    if ($feature eq 'gene'){
+      $genes{$chrom}{$gene} = [$start, $stop];
     }
-    $transcript_length{$chrom}{$gene}{$transcript} += $feature_length;
-    $features{$chrom}{$gene}{$transcript}{$feature} = [$start, $stop, $feature_length];
+
+    else {
+      my $transcript = (split)[13];
+      ($transcript) = $transcript =~ /\"(.*)\";/;
+      my $feature_length = ($stop - $start);
+      if ($feature eq 'exon'){
+        $exons{$transcript}{$feature}++;
+        $feature = $feature . "_" . $exons{$transcript}{$feature};
+      }
+      $transcript_length{$chrom}{$gene}{$transcript} += $feature_length;
+      $features{$chrom}{$gene}{$transcript}{$feature} = [$start, $stop, $feature_length];
+    }
   }
+
 }
 
-my $in = $ARGV[1];
-open my $SV_in, '<', $in;
+sub annotate_SVs {
+  my $in = shift;
 
-my ( $name, $extention ) = split(/\.([^.]+)$/, basename($in), 2);
-my ($sample) = split(/_/, $name, 3);
-open my $annotated_svs, '>', $sample . ".annotated_SVs.txt";
-open my $genes_out, '>>', 'all_genes.txt';
-open my $bp_out, '>>', 'all_bps.txt';
+  open my $SV_in, '<', $in;
 
-my $call = 1;
+  my ( $name, $extention ) = split(/\.([^.]+)$/, basename($in), 2);
+  my ($sample) = split(/_/, $name, 3);
+  open $annotated_svs, '>', $sample . ".annotated_SVs.txt";
+  open $genes_out, '>>', 'all_genes.txt';
+  open $bp_out, '>>', 'all_bps.txt';
 
-while(<$SV_in>){
-  chomp;
-  if (/source/){
-    print $annotated_svs join("\t", $_, "bp1 locus", "bp2 locus", "affected genes", "notes") . "\n";
-    next;
+  my $call = 1;
+
+  while(<$SV_in>){
+    chomp;
+    if (/source/){
+      print $annotated_svs join("\t", $_, "bp1 locus", "bp2 locus", "affected genes", "notes") . "\n";
+      next;
+    }
+    my ($event, $source, $type, $chrom1, $bp1, $chrom2, $bp2, $length) = (split)[0..6, 10];
+
+    my (%hits, $hits);
+    my @hit_genes;
+    my $hit_genes;
+    my $hit_bp1 = "intergenic";
+    my $hit_bp2 = "intergenic";
+
+    if ($type eq "DEL" or $type eq "DUP"){
+      ($hit_bp1, $hit_genes, $hits) = getbps('bp1', $event, $type, $chrom1, $bp1, $hit_bp1, \@hit_genes, \%hits);
+      ($hit_genes, $hits)           = getgenes($chrom1, $bp1, $bp2, $hit_genes, $hits);
+      ($hit_bp2, $hit_genes, $hits) = getbps('bp2', $event, $type, $chrom2, $bp2, $hit_bp2, $hit_genes, $hits);
+      @hit_genes = @{ $hit_genes };
+      %hits = %{ $hits };
+    }
+    else {
+      ($hit_bp1, $hit_genes, $hits) = getbps('bp1', $event, $type, $chrom1, $bp1, $hit_bp1, \@hit_genes, \%hits);
+      ($hit_bp2, $hit_genes, $hits) = getbps('bp2', $event, $type, $chrom2, $bp2, $hit_bp2, $hit_genes, $hits);
+      @hit_genes = @{ $hit_genes };
+      %hits = %{ $hits };
+    }
+
+    print $genes_out $_ . "\n" foreach @hit_genes;
+
+    my $affected_genes = scalar @hit_genes;
+    my $joined_genes = join(", ", @hit_genes);
+
+    if ($type eq 'DEL' or $type eq 'DUP'){
+      say "SV $call: $length kb $type affecting $affected_genes genes: $joined_genes Bp1: $hit_bp1 Bp2: $hit_bp2 ";
+    }
+    else {
+      say "SV $call: $length kb $type with break points in $chrom1\:$bp1 ($hit_bp1) and $chrom2\:$bp2 ($hit_bp2)";
+    }
+
+    if (scalar(@hit_genes) == 0){
+      push @hit_genes, "-";
+    }
+
+    my $joined_genes2print = join(", ", @hit_genes);
+
+    print $annotated_svs join("\t", $_, $hit_bp1, $hit_bp2, $joined_genes2print, " ") . "\n";
+    $call++;
   }
-  my ($event, $source, $type, $chrom1, $bp1, $chrom2, $bp2, $length) = (split)[0..6, 10];
-  my (%hits, $hits);
-  my @hit_genes;
-  my $hit_genes;
-  my $hit_bp1 = "intergenic";
-  my $hit_bp2 = "intergenic";
-
-  if ($type eq "DEL" or $type eq "DUP"){
-    ($hit_bp1, $hit_genes, $hits) = getbps('bp1', $event, $type, $chrom1, $bp1, $hit_bp1, \@hit_genes, \%hits);
-    ($hit_genes, $hits)           = getgenes($chrom1, $bp1, $bp2, $hit_genes, $hits);
-    ($hit_bp2, $hit_genes, $hits) = getbps('bp2', $event, $type, $chrom2, $bp2, $hit_bp2, $hit_genes, $hits);
-    @hit_genes = @{ $hit_genes };
-    %hits = %{ $hits };
-  }
-  else {
-    ($hit_bp1, $hit_genes, $hits) = getbps('bp1', $event, $type, $chrom1, $bp1, $hit_bp1, \@hit_genes, \%hits);
-    ($hit_bp2, $hit_genes, $hits) = getbps('bp2', $event, $type, $chrom2, $bp2, $hit_bp2, $hit_genes, $hits);
-    @hit_genes = @{ $hit_genes };
-    %hits = %{ $hits };
-  }
-
-  print $genes_out $_ . "\n" foreach @hit_genes;
-
-  my $affected_genes = scalar @hit_genes;
-  my $joined_genes = join(", ", @hit_genes);
-
-  if ($type eq 'DEL' or $type eq 'DUP'){
-    say "SV $call: $length kb $type affecting $affected_genes genes: $joined_genes Bp1: $hit_bp1 Bp2: $hit_bp2 ";
-  }
-  else {
-    say "SV $call: $length kb $type with break points in $chrom1\:$bp1 ($hit_bp1) and $chrom2\:$bp2 ($hit_bp2)";
-  }
-
-  if (scalar(@hit_genes) == 0){
-    push @hit_genes, "-";
-  }
-
-  my $joined_genes2print = join(", ", @hit_genes);
-
-  print $annotated_svs join("\t", $_, $hit_bp1, $hit_bp2, $joined_genes2print, " ") . "\n";
-  $call++;
 }
 
 sub getgenes {
