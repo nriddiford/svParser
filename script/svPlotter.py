@@ -66,7 +66,9 @@ def print_R_command(SV_calls):
             bp1 = int(bp1)
             bp2 = int(bp2)
             size = parts[10]
-            if chrom1 == chrom2 and type != 'INV':
+            # if chrom1 == chrom2 and type != 'INV':
+            if chrom1 == chrom2:
+
                 fields = select_cnvfile(size, bp1, bp2)
                 cnv_file = fields[0]
                 start = fields[1]

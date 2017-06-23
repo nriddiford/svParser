@@ -131,16 +131,26 @@ then
   do
     python ../../../script/clean.py -f $annofile
   done
+
   echo "Removing false positives from bp files ('all_bps.txt' and 'bps_accross_genome_new.txt')"
-  python ../../../script/update_bps.py
-  mv all_bps_new.txt all_bps.txt
-  mv bps_accross_genome_new.txt bps_accross_genome.txt
+
+  # mv all_bps_new.txt all_bps.txt
+  # mv bps_accross_genome_new.txt bps_accross_genome.txt
+
+  if [[ -f 'all_bps_cleaned.txt' ]]
+  then
+    rm 'all_bps_cleaned.txt'
+  fi
 
   for clean_file in *cleaned_SVs.txt
   do
     if [[ ! -s $clean_file ]]
     then
       rm $clean_file
+    fi
+    if [[ -f $clean_file ]]
+    then
+      python ../../../script/update_bps2.py -f $clean_file
     fi
   done
 
@@ -156,7 +166,7 @@ then
   fi
 
   echo "Calculating breakpoint stats..."
-  perl ../../../script/bpstats.pl all_bps.txt
+  perl ../../../script/bpstats.pl all_bps_cleaned.txt
 
 fi
 

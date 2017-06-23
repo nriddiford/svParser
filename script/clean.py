@@ -18,8 +18,8 @@ if not options.in_file:
     parser.error('No input file provided')
 
 base_name = (os.path.splitext(options.in_file)[0])
-out_base = base_name.split('.')[0]
-outfile = out_base + "." + "cleaned_SVs.txt"
+out_base = base_name.split('_')[0]
+outfile = out_base + "_" + "cleaned_SVs.txt"
 
 false_calls_file = 'all_samples_false_calls.txt'
 
@@ -55,7 +55,7 @@ def remove_false_positives(false_calls_file, input_file, clean_output):
             elif match in seen_lines:
                 filtered_calls += 1
 
-            elif filtered_calls:
+            elif notes != 'F':
                 if not wrote_header:  # do this only once
                     clean_files.write(header)
                     wrote_header = True

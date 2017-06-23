@@ -9,6 +9,7 @@ use Data::Dumper;
 
 my (%samples, %chroms, %genes, %gene_data, %gene_sample, %features, %types, %seen_event, %seen_event_bp);
 
+# Read in 'all_bps_cleaned.txt'
 my $in_file = $ARGV[0];
 open my $in, '<', $in_file;
 
@@ -26,7 +27,7 @@ my $sv_count = 0;
 
 while(<$in>){
   chomp;
-  my ($event, $bp_id, $sample, $chrom, $bp, $gene, $feature, $type) = (split);
+  my ($event, $bp_id, $sample, $chrom, $bp, $gene, $feature, $type, $length) = (split);
   next if grep /$sample/, @omit;
 
   $feature =~ s/_\d+//g;
@@ -43,7 +44,7 @@ while(<$in>){
     push @{$gene_sample{$gene}} , $sample;
     $gene_data{$gene}{$sample}++ unless $gene eq 'intergenic';
     $features{$feature}++;
-    print $bps_accross_genome join ("\t", $sample, $chrom, $bp, $gene, $feature, $type ) . "\n";
+    print $bps_accross_genome join ("\t", $sample, $chrom, $bp, $gene, $feature, $type, $length ) . "\n";
   }
 
 }
