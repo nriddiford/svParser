@@ -7,13 +7,34 @@ use Data::Printer;
 use Data::Dumper;
 use feature qw/ say /;
 
+use FindBin '$Script';
+
+use Getopt::Long qw/ GetOptions /;
+
+my $sv_calls;
+my $help;
+my $features;
+my $reannotate;
+
+GetOptions( 'infile=s'         =>    \$sv_calls,
+            'features=s'       =>    \$features,
+            'help'             =>    \$help,
+            're-annotate'    =>    \$reannotate
+    ) or die usage();
+
+if ($help) { exit usage() }
+
+if (not $sv_calls and not $features ){
+  exit usage();
+}
+
 my (%transcript_length, %genes, %features);
 
 my ($sample, $annotated_svs, $genes_out, $bp_out);
 
-make_gene_hash($ARGV[0]);
+make_gene_hash($features);
 
-annotate_SVs($ARGV[1]);
+annotate_SVs($sv_calls);
 
 sub make_gene_hash {
   my $bed_file = shift;
@@ -52,19 +73,51 @@ sub annotate_SVs {
 
   my ( $name, $extention ) = split(/\.([^.]+)$/, basename($in), 2);
   ($sample) = split(/_/, $name, 3);
-  open $annotated_svs, '>', $sample . ".annotated_SVs.txt";
+
+  if ($reannotate){
+    open $annotated_svs, '>', $sample . "_reannotated_SVs.txt";
+    print "Reannotating SV calls from $sample\n";
+  }
+  else{
+    open $annotated_svs, '>', $sample . "_annotated_SVs.txt";
+    print "Annotating SV calls from $sample\n";
+
+  }
   open $genes_out, '>>', 'all_genes.txt';
   open $bp_out, '>>', 'all_bps.txt';
 
   my $call = 1;
 
-  while(<$SV_in>){
+  # This allows files to be parsed irrespective of line ending. Not recommened for large files
+  local $/ = undef;
+  my $content = <$SV_in>;
+  my @lines = split /\r\n|\n|\r/, $content;
+
+  for (@lines){
     chomp;
-    if (/source/){
-      print $annotated_svs join("\t", $_, "bp1 locus", "bp2 locus", "affected genes", "notes") . "\n";
+    my @cells = split(/\t/);
+
+    if (/event/){
+      if ($reannotate){
+        print $annotated_svs "$_\n";
+        next;
+      }
+      else {
+        print $annotated_svs join("\t", $_, "bp1 locus", "bp2 locus", "affected genes", "notes") . "\n";
+      }
+    }
+
+    my ($event, $source, $type, $chrom1, $bp1, $chrom2, $bp2, undef, undef, undef, $length) = @cells[0..10];
+
+    # Check to see if the SV has already been annotated - print and skip if next
+    if ($cells[17] and $cells[17] ne ' ' and $cells[17] ne '-' and $reannotate){
+      print $annotated_svs "$_\n";
       next;
     }
-    my ($event, $source, $type, $chrom1, $bp1, $chrom2, $bp2, $length) = (split)[0..6, 10];
+    # if it hasn't been annotated, trim off blank cells and proceed
+    elsif( $reannotate ){
+      $_ = join("\t", @cells[0..16]);
+    }
 
     my (%hits, $hits);
     my @hit_genes;
@@ -151,10 +204,6 @@ sub getbps {
       $feature = "intron" if $feature eq 'gene';
       $feature = "intron" if $feature eq 'mRNA';
 
-      # if ($gene eq 'bun' ){
-      #   print join(",", $gene, $feature, $length) . "\n";
-      # }
-
       # if breakpoint contained in feature
       if ( $bp >= $feature_start and $bp <= $feature_stop ) {
         # save gene containing BP
@@ -177,4 +226,23 @@ sub getbps {
   print $bp_out join ("\t", $event, $bp_id, $sample, $chrom, $bp, $bp_gene, $bp_feature, $type) . "\n";
 
   return ($hit_bp, \@hit_genes, \%hits);
+}
+
+sub usage {
+  print
+"
+usage: $Script [-h] [-i INFILE] [-f FEATURES]
+
+sv2gene
+author: Nick Riddiford (nick.riddiford\@curie.fr)
+version: v1.0
+description: Annotate breakpoints of structural variants in svParser summary file
+
+arguments:
+  -h, --help            show this help message and exit
+  -i INFILE, --infile
+                        SV calls file (as produced by svParser)[required]
+  -f FEATURES --features
+                        Features file to annotate from (should be in .gtf format)
+"
 }
