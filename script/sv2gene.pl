@@ -7,9 +7,6 @@ use Data::Printer;
 use Data::Dumper;
 use feature qw/ say /;
 
-use Getopt::Long qw/ GetOptions /;
-
-
 my (%transcript_length, %genes, %features);
 
 my ($sample, $annotated_svs, $genes_out, $bp_out);
@@ -54,7 +51,7 @@ sub annotate_SVs {
   open my $SV_in, '<', $in;
 
   my ( $name, $extention ) = split(/\.([^.]+)$/, basename($in), 2);
-  my ($sample) = split(/_/, $name, 3);
+  ($sample) = split(/_/, $name, 3);
   open $annotated_svs, '>', $sample . ".annotated_SVs.txt";
   open $genes_out, '>>', 'all_genes.txt';
   open $bp_out, '>>', 'all_bps.txt';
