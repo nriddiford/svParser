@@ -117,6 +117,7 @@ sub annotate_SVs {
     }
     # if it hasn't been annotated, trim off blank cells and proceed
     elsif( $reannotate ){
+      no warnings;
       $_ = join("\t", @cells[0..16]);
     }
 
