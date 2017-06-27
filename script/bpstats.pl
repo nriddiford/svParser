@@ -13,7 +13,7 @@ my (%samples, %chroms, %genes, %gene_data, %gene_sample, %features, %types, %see
 my $in_file = $ARGV[0];
 open my $in, '<', $in_file;
 
-open my $bps_accross_genome, '>', 'bps_accross_genome.txt';
+# open my $bps_accross_genome, '>', 'bps_accross_genome.txt';
 
 my @omit = qw/ A373R1 A512R17 A373R7 /;
 
@@ -44,7 +44,7 @@ while(<$in>){
     push @{$gene_sample{$gene}} , $sample;
     $gene_data{$gene}{$sample}++ unless $gene eq 'intergenic';
     $features{$feature}++;
-    print $bps_accross_genome join ("\t", $sample, $chrom, $bp, $gene, $feature, $type, $length ) . "\n";
+    # print $bps_accross_genome join ("\t", $sample, $chrom, $bp, $gene, $feature, $type, $length ) . "\n";
   }
 
 }

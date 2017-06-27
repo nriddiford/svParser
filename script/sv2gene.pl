@@ -77,14 +77,17 @@ sub annotate_SVs {
   if ($reannotate){
     open $annotated_svs, '>', $sample . "_reannotated_SVs.txt";
     print "Reannotating SV calls from $sample\n";
+    open $genes_out, '>>', 'all_genes.txt';
+    open $bp_out, '>>', 'all_bps.txt';
   }
   else{
     open $annotated_svs, '>', $sample . "_annotated_SVs.txt";
     print "Annotating SV calls from $sample\n";
+    open $genes_out, '>>', 'all_genes.txt';
+    open $bp_out, '>>', 'all_bps.txt';
 
   }
-  open $genes_out, '>>', 'all_genes.txt';
-  open $bp_out, '>>', 'all_bps.txt';
+
 
   my $call = 1;
 
@@ -111,12 +114,12 @@ sub annotate_SVs {
     my ($event, $source, $type, $chrom1, $bp1, $chrom2, $bp2, undef, undef, undef, $length) = @cells[0..10];
 
     # Check to see if the SV has already been annotated - print and skip if next
-    if ($cells[17] and $cells[17] ne ' ' and $cells[17] ne '-' and $reannotate){
+    if ( $cells[17] and $cells[17] ne ' ' and $cells[17] ne '-' and $reannotate ){
       print $annotated_svs "$_\n";
       next;
     }
     # if it hasn't been annotated, trim off blank cells and proceed
-    elsif( $reannotate ){
+    elsif ( $reannotate ){
       no warnings;
       $_ = join("\t", @cells[0..16]);
     }

@@ -19,7 +19,7 @@ if not options.SV_calls:
     parser.error('No input file provided')
 
 base_name = (os.path.splitext(options.SV_calls)[0])
-out_base = base_name.split('.')[0]
+out_base = base_name.split('_')[0]
 
 pattern = out_base + '*.cnv'
 
