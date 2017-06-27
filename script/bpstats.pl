@@ -44,7 +44,7 @@ while(<$in>){
     push @{$gene_sample{$gene}} , $sample;
     $gene_data{$gene}{$sample}++ unless $gene eq 'intergenic';
     $features{$feature}++;
-    # print $bps_accross_genome join ("\t", $sample, $chrom, $bp, $gene, $feature, $type, $length ) . "\n";
+    # print join ("\t", $sample, $chrom, $bp, $gene, $feature, $type, $length ) . "\n";
   }
 
 }
