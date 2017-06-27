@@ -188,4 +188,24 @@ feature_lengths<-function(size_threshold = NA){
   p
 }
 
+notch_hits<-function(){
+  data<-get_data()
+  data<-filter(data, chrom == "X", bp >= 3000000, bp <= 3300000)
+  
+  
+  p<-ggplot(data, aes(bp/1000000, sample))
+  p<-p + scale_fill_brewer(palette = "Set2")
+  p<-p + geom_point(aes(colour = sample, shape = type, size = 2), alpha=0.8)
+  #p<-p + geom_text(position=position_jitter(), aes(label=paste(event, bp_no, sep=' '), size=3))
+  p<-p + clean_theme() +
+    theme(axis.title.y=element_blank())
+  p<-p + scale_x_continuous("Mb", expand = c(0,0), breaks = seq(3,3.3,by=0.05), limits=c(3, 3.301))
+  
+  
+  p <- p + annotate("rect", xmin=3.000000, xmax=3.134532, ymin=0, ymax=0.5, alpha=.2, fill="green")
+  p <- p + annotate("rect", xmin=3.134870, xmax=3.172221, ymin=0, ymax=0.5, alpha=.2, fill="skyblue")
+  p <- p + annotate("rect", xmin=3.176440, xmax=3.300000, ymin=0, ymax=0.5, alpha=.2, fill="red")
+  p 
+
+}
 
