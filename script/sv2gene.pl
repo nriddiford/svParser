@@ -130,7 +130,7 @@ sub annotate_SVs {
     my $hit_bp1 = "intergenic";
     my $hit_bp2 = "intergenic";
 
-    if ($type eq "DEL" or $type eq "DUP"){
+    if ($type eq "DEL" or $type eq "DUP" or $type eq 'TANDUP'){
       ($hit_bp1, $hit_genes, $hits) = getbps('bp1', $event, $type, $chrom1, $bp1, $hit_bp1, $length, \@hit_genes, \%hits);
       ($hit_genes, $hits)           = getgenes($chrom1, $bp1, $bp2, $hit_genes, $hits);
       ($hit_bp2, $hit_genes, $hits) = getbps('bp2', $event, $type, $chrom2, $bp2, $hit_bp2, $length, $hit_genes, $hits);
@@ -149,7 +149,7 @@ sub annotate_SVs {
     my $affected_genes = scalar @hit_genes;
     my $joined_genes = join(", ", @hit_genes);
 
-    if ($type eq 'DEL' or $type eq 'DUP'){
+    if ($type eq 'DEL' or $type eq 'DUP' or $type eq 'TANDUP'){
       say "SV $call: $length kb $type affecting $affected_genes genes: $joined_genes Bp1: $hit_bp1 Bp2: $hit_bp2 ";
     }
     else {
