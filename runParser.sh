@@ -8,7 +8,7 @@ options:
   -f    filter
   -m    merge
   -a    annotate
-  -c    clean-up false positives
+  -c    clean-up false positives anad reannotate
   -s    stats
   -h    show this message
 "
@@ -32,6 +32,7 @@ while getopts 'fmacsh' flag; do
   esac
 done
 
+script_bin=/Users/Nick_curie/Desktop/script_test/SV_Parser/script
 
 if [[ $filter -eq 1 ]]
 then
@@ -117,8 +118,8 @@ then
   for clustered_file in *clustered_SVs.txt
   do
     echo "Annotating $clustered_file"
-    echo "perl ../../../script/sv2gene.pl $features $clustered_file"
-    perl ../../../script/sv2gene.pl $features $clustered_file
+    echo "perl $script_bin/script/sv2gene.pl -f $features -i $clustered_file"
+    perl $script_bin/script/sv2gene.pl -f $features -i $clustered_file
     rm $clustered_file
   done
 
@@ -127,20 +128,10 @@ fi
 if [[ $clean -eq 1 ]]
 then
   echo "Removing calls marked as flase positives in 'all_samples_false_calls.txt'"
-  for annofile in *annotated_SVs.txt
+  for annofile in *_annotated_SVs.txt
   do
-    python ../../../script/clean.py -f $annofile
+    python $script_bin/clean.py -f $annofile
   done
-
-  echo "Removing false positives from bp files ('all_bps.txt' and 'bps_accross_genome_new.txt')"
-
-  # mv all_bps_new.txt all_bps.txt
-  # mv bps_accross_genome_new.txt bps_accross_genome.txt
-
-  if [[ -f 'all_bps_cleaned.txt' ]]
-  then
-    rm 'all_bps_cleaned.txt'
-  fi
 
   for clean_file in *cleaned_SVs.txt
   do
@@ -148,11 +139,27 @@ then
     then
       rm $clean_file
     fi
+
     if [[ -f $clean_file ]]
     then
-      python ../../../script/update_bps2.py -f $clean_file
+      perl $script_bin/sv2gene.pl -r -f $features -i $clean_file
     fi
   done
+
+  echo "Writing bp info for cleaned, reannotated SV calls to 'all_bps_cleaned.txt')"
+
+  if [[ -f 'all_bps_cleaned.txt' ]]
+  then
+    rm 'all_bps_cleaned.txt'
+  fi
+
+  for reanno_file in *reannotated_SVs.txt
+  do
+    python $script_bin/getbps.py -f $reanno_file
+  done
+
+  echo "Removing false positives from bp file 'all_bps_cleaned.txt', writing new bp file to 'all_bps_new.txt'"
+  python $script_bin/update_bps.py
 
 fi
 
@@ -166,7 +173,7 @@ then
   fi
 
   echo "Calculating breakpoint stats..."
-  perl ../../../script/bpstats.pl all_bps_cleaned.txt
+  perl ../../../script/bpstats.pl all_bps_new.txt
 
 fi
 
