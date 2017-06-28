@@ -14,7 +14,7 @@ get_data <- function(infile = "all_bps_new.txt"){
   	#filter out samples
     data<-filter(data, sample != "A373R1" & sample != "A373R7" & sample != "A512R17" )
     dir.create(file.path("plots"), showWarnings = FALSE)
-	  return(data)
+	return(data)
 }
 
 clean_theme <- function(base_size = 12){
@@ -46,9 +46,8 @@ plot_all_chroms_grid <- function(type=T){
 	  axis.text.x = element_text(angle = 45, hjust=1),
 	  axis.text = element_text(size=12),
 	  axis.title = element_text(size=20),
-    strip.text.x = element_text(size = 15)
-    )
-  
+      strip.text.x = element_text(size = 15)
+	  )
   
   if (type){
     p<-p + scale_fill_brewer(palette = "Set2")
@@ -117,9 +116,11 @@ bp_features <- function(){
   p<-p + geom_bar(aes(feature, fill = feature))
   p<-p + scale_fill_brewer(palette = "Set2")
   p<-p + clean_theme() +
-    theme(axis.title.x=element_blank())
-  p<-p + scale_x_discrete( expand = c(0.01, 0.01))
-  p<-p + scale_y_continuous( expand = c(0.01, 0.01))
+    theme(axis.title.x=element_blank(),
+          panel.grid.major.y = element_line(color="grey80", size = 0.01)
+		  )
+  p<-p + scale_x_discrete(expand = c(0.01, 0.01))
+  p<-p + scale_y_continuous(expand = c(0.01, 0.01))
   
   
   features_outfile <- paste("Breakpoints_features_count", ".pdf", sep = "")
@@ -143,9 +144,11 @@ sv_types<-function(){
   p<-p + geom_bar(aes(type, fill = type))
   p<-p + scale_fill_brewer(palette = "Set2")
   p<-p + clean_theme() +
-    theme(axis.title.x=element_blank())
-  p<-p + scale_x_discrete( expand = c(0.01, 0.01))
-  p<-p + scale_y_continuous( expand = c(0.01, 0.01))
+    theme(axis.title.x=element_blank(),
+          panel.grid.major.y = element_line(color="grey80", size = 0.01)
+		  )
+  p<-p + scale_x_discrete(expand = c(0.01, 0.01))
+  p<-p + scale_y_continuous(expand = c(0.01, 0.01))
 
   types_outfile <- paste("Breakpoints_types_count", ".pdf", sep = "")
   cat("Writing file", types_outfile, "\n")
@@ -192,15 +195,15 @@ notch_hits<-function(){
   data<-get_data()
   data<-filter(data, chrom == "X", bp >= 3000000, bp <= 3300000)
   
-  
-  p<-ggplot(data, aes(bp/1000000, sample))
-  p<-p + scale_fill_brewer(palette = "Set2")
-  p<-p + geom_point(aes(colour = sample, shape = type, size = 2), alpha=0.8)
+  p<-ggplot(data)
+  p<-p + geom_point(aes(bp/1000000, sample, colour = sample, shape = type, size = 2))
+  #p<-p + geom_line()
   #p<-p + geom_text(position=position_jitter(), aes(label=paste(event, bp_no, sep=' '), size=3))
   p<-p + clean_theme() +
-    theme(axis.title.y=element_blank())
+    theme(axis.title.y=element_blank(),
+          panel.grid.major.y = element_line(color="blue", size = 0.05)
+		  )
   p<-p + scale_x_continuous("Mb", expand = c(0,0), breaks = seq(3,3.3,by=0.05), limits=c(3, 3.301))
-  
   
   p <- p + annotate("rect", xmin=3.000000, xmax=3.134532, ymin=0, ymax=0.5, alpha=.2, fill="green")
   p <- p + annotate("rect", xmin=3.134870, xmax=3.172221, ymin=0, ymax=0.5, alpha=.2, fill="skyblue")
