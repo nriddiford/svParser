@@ -9,12 +9,12 @@ get_data <- function(infile = "all_bps_new.txt"){
     colnames(data) <- c("event", "bp_no", "sample", "chrom", "bp", "gene", "feature", "type", "length")
   
   	#filter on chroms
-    data <- filter(data, chrom != "Y" & chrom != "4")
-  
+    data<-filter(data, chrom != "Y" & chrom != "4")
   	#filter out samples
     data<-filter(data, sample != "A373R1" & sample != "A373R7" & sample != "A512R17" )
     data<-droplevels(data)
     dir.create(file.path("plots"), showWarnings = FALSE)
+	
 	return(data)
 }
 
@@ -33,7 +33,6 @@ clean_theme <- function(base_size = 12){
 }
 
 set_cols <- function(df, col){
-
   names<-levels(df[[col]])
   cat("Setting colour levles:", names, "\n")
   level_number<-length(names)
@@ -71,14 +70,14 @@ plot_all_chroms_grid <- function(object=NA){
     p<-p + cols
   }
   
-  chrom_outfile <- paste("Breakpoints_chroms_by_", object, ".pdf", sep = "")
+  chrom_outfile<-paste("Breakpoints_chroms_by_", object, ".pdf", sep = "")
   cat("Writing file", chrom_outfile, "\n")
   ggsave(paste("plots/", chrom_outfile, sep=""), width = 20, height = 10)
+  
   p
 }
 
 bps_per_chrom <- function(object=NA){
-
   data<-get_data()
   cols<-set_cols(data, "type")
   
@@ -86,10 +85,10 @@ bps_per_chrom <- function(object=NA){
     object<-'type'
   }
   
-  chromosomes <- c("2L", "2R", "3L", "3R", "X", "Y", "4")
-  lengths <- c(23513712, 25286936, 28110227, 32079331, 23542271, 3667352, 1348131)
+  chromosomes<-c("2L", "2R", "3L", "3R", "X", "Y", "4")
+  lengths<-c(23513712, 25286936, 28110227, 32079331, 23542271, 3667352, 1348131)
 
-  karyotype <- setNames(as.list(lengths), chromosomes)
+  karyotype<-setNames(as.list(lengths), chromosomes)
 
   for (c in chromosomes) {
     len<-karyotype[[c]]
@@ -107,14 +106,13 @@ bps_per_chrom <- function(object=NA){
       theme(axis.text.x = element_text(angle = 45, hjust=1),
         axis.title = element_text(size=20)
       )
-    p <- p + ggtitle(paste("Chromosome: ", c))
+    p<-p + ggtitle(paste("Chromosome: ", c))
 
     if (object == 'type'){
        p<-p + cols
     }
     
-    per_chrom <- paste("Breakpoints_on_", c, "_by_", object, ".pdf", sep = "")
-    
+    per_chrom<-paste("Breakpoints_on_", c, "_by_", object, ".pdf", sep = "")
     cat("Writing file", per_chrom, "\n")
     ggsave(paste("plots/", per_chrom, sep=""), width = 20, height = 10)
   }
@@ -125,10 +123,10 @@ bp_features <- function(){
   data<-get_data()
   
   # To condense exon counts into "exon"
-  data$feature <- gsub("_.*", "", data$feature)
+  data$feature<-gsub("_.*", "", data$feature)
   
   # Reoders descending
-  data$feature <- factor(data$feature, levels = names(sort(table(data$feature), decreasing = TRUE)))
+  data$feature<-factor(data$feature, levels = names(sort(table(data$feature), decreasing = TRUE)))
   
   cols<-set_cols(data, "feature")
   
@@ -142,9 +140,8 @@ bp_features <- function(){
   p<-p + scale_x_discrete(expand = c(0.01, 0.01))
   p<-p + scale_y_continuous(expand = c(0.01, 0.01))
   
-  features_outfile <- paste("Breakpoints_features_count", ".pdf", sep = "")
+  features_outfile<-paste("Breakpoints_features_count", ".pdf", sep = "")
   cat("Writing file", features_outfile, "\n")
-
   ggsave(paste("plots/", features_outfile, sep=""), width = 20, height = 10)
 
   p
@@ -152,11 +149,10 @@ bp_features <- function(){
 
 sv_types<-function(){
   data<-get_data()
-  
   cols<-set_cols(data, "type")
   
   # Reorder by count
-  data$type <- factor(data$type, levels = names(sort(table(data$type), decreasing = TRUE)))
+  data$type<-factor(data$type, levels = names(sort(table(data$type), decreasing = TRUE)))
 
   # Only take bp1 for each event
   data<-filter(data, bp_no != "bp2")
@@ -171,9 +167,8 @@ sv_types<-function(){
   p<-p + scale_x_discrete(expand = c(0.01, 0.01))
   p<-p + scale_y_continuous(expand = c(0.01, 0.01))
 
-  types_outfile <- paste("Breakpoints_types_count", ".pdf", sep = "")
+  types_outfile<-paste("Breakpoints_types_count", ".pdf", sep = "")
   cat("Writing file", types_outfile, "\n")
-
   ggsave(paste("plots/", types_outfile, sep=""), width = 20, height = 10)
 
   p
@@ -189,15 +184,15 @@ feature_lengths<-function(size_threshold = NA){
 
   data$length<-(data$length/1000)
 
-  if(is.na (size_threshold)){
+  if(is.na(size_threshold)){
     size_threshold<-max(data$length)
   }
   
   if(size_threshold <= 1){
-    breaks <- 0.1
+    breaks<-0.1
   }
   else{
-    breaks <- 1
+    breaks<-1
   }
   
   p<- ggplot(data, aes(length))
@@ -227,9 +222,10 @@ notch_hits<-function(){
 		  )
   p<-p + scale_x_continuous("Mb", expand = c(0,0), breaks = seq(3,3.3,by=0.05), limits=c(3, 3.301))
   
-  p <- p + annotate("rect", xmin=3.000000, xmax=3.134532, ymin=0, ymax=0.5, alpha=.2, fill="green")
-  p <- p + annotate("rect", xmin=3.134870, xmax=3.172221, ymin=0, ymax=0.5, alpha=.2, fill="skyblue")
-  p <- p + annotate("rect", xmin=3.176440, xmax=3.300000, ymin=0, ymax=0.5, alpha=.2, fill="red")
+  p<-p + annotate("rect", xmin=3.000000, xmax=3.134532, ymin=0, ymax=0.5, alpha=.2, fill="green")
+  p<-p + annotate("rect", xmin=3.134870, xmax=3.172221, ymin=0, ymax=0.5, alpha=.2, fill="skyblue")
+  p<-p + annotate("rect", xmin=3.176440, xmax=3.300000, ymin=0, ymax=0.5, alpha=.2, fill="red")
+  
   p 
 
 }
