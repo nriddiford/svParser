@@ -18,6 +18,7 @@ get_data <- function(infile = "all_bps_new.txt"){
   return(data)
 }
 
+
 clean_theme <- function(base_size = 12){
   theme(
     plot.title = element_text(hjust = 0.5, size = 20),
@@ -31,6 +32,7 @@ clean_theme <- function(base_size = 12){
     axis.title = element_text(size=30)
     )
 }
+
 
 set_cols <- function(df, col){
   names<-levels(df[[col]])
@@ -76,6 +78,7 @@ plot_all_chroms_grid <- function(object=NA){
   p
 }
 
+
 bps_per_chrom <- function(object=NA){
   data<-get_data()
   cols<-set_cols(data, "type")
@@ -118,6 +121,7 @@ bps_per_chrom <- function(object=NA){
 }
 
 
+
 bp_features <- function(){
   data<-get_data()
 
@@ -146,6 +150,7 @@ bp_features <- function(){
   p
 }
 
+
 sv_types<-function(){
   data<-get_data()
   cols<-set_cols(data, "type")
@@ -172,6 +177,7 @@ sv_types<-function(){
 
   p
 }
+
 
 feature_lengths<-function(size_threshold = NA){
   data<-get_data()
@@ -208,6 +214,7 @@ feature_lengths<-function(size_threshold = NA){
 
   p
 }
+
 
 notch_hits<-function(){
   data<-get_data()
