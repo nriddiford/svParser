@@ -7,15 +7,15 @@ library(RColorBrewer)
 get_data <- function(infile = "all_bps_new.txt"){
     data<-read.delim(infile, header = F)
     colnames(data) <- c("event", "bp_no", "sample", "chrom", "bp", "gene", "feature", "type", "length")
-	
-	#filter on chroms
+
+    #filter on chroms
     data<-filter(data, chrom != "Y" & chrom != "4")
-	#filter out samples
+    #filter out samples
     data<-filter(data, sample != "A373R1" & sample != "A373R7" & sample != "A512R17" )
     data<-droplevels(data)
     dir.create(file.path("plots"), showWarnings = FALSE)
-	
-	return(data)
+
+    return(data)
 }
 
 clean_theme <- function(base_size = 12){
@@ -60,9 +60,9 @@ plot_all_chroms_grid <- function(object=NA){
   p<-p + scale_y_continuous("Number of Breakpoints", expand = c(0.01, 0.01))
   p<-p + clean_theme() +
     theme(axis.text.x = element_text(angle = 45, hjust=1),
-	      axis.text = element_text(size=12),
-	      axis.title = element_text(size=20),
-        strip.text.x = element_text(size = 15)
+          axis.text = element_text(size=12),
+          axis.title = element_text(size=20),
+          strip.text.x = element_text(size = 15)
     )
   
   if (object == 'type'){
@@ -108,7 +108,7 @@ bps_per_chrom <- function(object=NA){
     p<-p + ggtitle(paste("Chromosome: ", c))
 
     if (object == 'type'){
-       p<-p + cols
+      p<-p + cols
     }
     
     per_chrom<-paste("Breakpoints_on_", c, "_by_", object, ".pdf", sep = "")
@@ -120,7 +120,7 @@ bps_per_chrom <- function(object=NA){
 
 bp_features <- function(){
   data<-get_data()
-  
+
   # To condense exon counts into "exon"
   data$feature<-gsub("_.*", "", data$feature)
   
@@ -134,11 +134,11 @@ bp_features <- function(){
   p<-p + cols
   p<-p + clean_theme() +
     theme(axis.title.x=element_blank(),
-          panel.grid.major.y = element_line(color="grey80", size = 0.01)
+      panel.grid.major.y = element_line(color="grey80", size = 0.01)
     )
   p<-p + scale_x_discrete(expand = c(0.01, 0.01))
   p<-p + scale_y_continuous(expand = c(0.01, 0.01))
-  
+
   features_outfile<-paste("Breakpoints_features_count", ".pdf", sep = "")
   cat("Writing file", features_outfile, "\n")
   ggsave(paste("plots/", features_outfile, sep=""), width = 20, height = 10)
@@ -161,7 +161,7 @@ sv_types<-function(){
   p<-p + cols
   p<-p + clean_theme() +
     theme(axis.title.x=element_blank(),
-          panel.grid.major.y = element_line(color="grey80", size = 0.01)
+      panel.grid.major.y = element_line(color="grey80", size = 0.01)
     )
   p<-p + scale_x_discrete(expand = c(0.01, 0.01))
   p<-p + scale_y_continuous(expand = c(0.01, 0.01))
@@ -217,15 +217,14 @@ notch_hits<-function(){
   p<-p + geom_point(aes(bp/1000000, sample, colour = sample, shape = type, size = 2))
   p<-p + clean_theme() +
     theme(axis.title.y=element_blank(),
-          panel.grid.major.y = element_line(color="blue", size = 0.05)
-		  )
+      panel.grid.major.y = element_line(color="blue", size = 0.05)
+    )
   p<-p + scale_x_continuous("Mb", expand = c(0,0), breaks = seq(3,3.3,by=0.05), limits=c(3, 3.301))
-  
+
   p<-p + annotate("rect", xmin=3.000000, xmax=3.134532, ymin=0, ymax=0.5, alpha=.2, fill="green")
   p<-p + annotate("rect", xmin=3.134870, xmax=3.172221, ymin=0, ymax=0.5, alpha=.2, fill="skyblue")
   p<-p + annotate("rect", xmin=3.176440, xmax=3.300000, ymin=0, ymax=0.5, alpha=.2, fill="red")
-  
-  p 
+
+  p
 
 }
-
