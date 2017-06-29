@@ -5,17 +5,17 @@ library(RColorBrewer)
 
 
 get_data <- function(infile = "all_bps_new.txt"){
-    data<-read.delim(infile, header = F)
-    colnames(data) <- c("event", "bp_no", "sample", "chrom", "bp", "gene", "feature", "type", "length")
+  data<-read.delim(infile, header = F)
+  colnames(data) <- c("event", "bp_no", "sample", "chrom", "bp", "gene", "feature", "type", "length")
 
-    #filter on chroms
-    data<-filter(data, chrom != "Y" & chrom != "4")
-    #filter out samples
-    data<-filter(data, sample != "A373R1" & sample != "A373R7" & sample != "A512R17" )
-    data<-droplevels(data)
-    dir.create(file.path("plots"), showWarnings = FALSE)
+  #filter on chroms
+  data<-filter(data, chrom != "Y" & chrom != "4")
+  #filter out samples
+  data<-filter(data, sample != "A373R1" & sample != "A373R7" & sample != "A512R17" )
+  data<-droplevels(data)
+  dir.create(file.path("plots"), showWarnings = FALSE)
 
-    return(data)
+  return(data)
 }
 
 clean_theme <- function(base_size = 12){
