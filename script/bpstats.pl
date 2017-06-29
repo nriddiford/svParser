@@ -2,18 +2,20 @@
 use strict;
 use warnings;
 use autodie;
-
 use feature qw/ say /;
-
 use Data::Dumper;
+
+use Getopt::Long qw/ GetOptions /;
+
+my $notch = 0;
+
+GetOptions( 'notch'    =>    \$notch );
 
 my (%samples, %chroms, %genes, %gene_data, %gene_sample, %features, %types, %seen_event, %seen_event_bp);
 
 # Read in 'all_bps_cleaned.txt'
 my $in_file = $ARGV[0];
 open my $in, '<', $in_file;
-
-# open my $bps_accross_genome, '>', 'bps_accross_genome.txt';
 
 my @omit = qw/ A373R1 A512R17 A373R7 /;
 
@@ -23,6 +25,8 @@ say "Omitting sample $_" for @omit;
 
 print "\n";
 
+say "Exclduding bps around Notch" if $notch;
+
 my $sv_count = 0;
 
 while(<$in>){
@@ -30,6 +34,11 @@ while(<$in>){
   my ($event, $bp_id, $sample, $chrom, $bp, $gene, $feature, $type, $length) = (split);
   next if grep /$sample/, @omit;
 
+  if ($notch){
+    if ($chrom eq 'X' and $bp >= 3000000 and $bp <= 3300000){
+      next;
+    }
+  }
   $feature =~ s/_\d+//g;
 
   unless ($seen_event{$sample}{$event}++){
@@ -44,7 +53,9 @@ while(<$in>){
     push @{$gene_sample{$gene}} , $sample;
     $gene_data{$gene}{$sample}++ unless $gene eq 'intergenic';
     $features{$feature}++;
-    # print join ("\t", $sample, $chrom, $bp, $gene, $feature, $type, $length ) . "\n";
+    if ($notch){
+    print join ("\t", $_ ) . "\n";
+  }
   }
 
 }
