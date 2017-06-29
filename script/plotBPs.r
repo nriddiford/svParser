@@ -19,6 +19,13 @@ get_data <- function(infile = "all_bps_new.txt"){
 }
 
 
+exclude_notch <- function(x){
+  data<-get_data()
+  data<-filter(data, !(chrom == "X" & bp >= 3000000 & bp <= 3300000 & gene == 'kirre' & gene == 'dnc'))
+  return(data)
+}
+
+
 clean_theme <- function(base_size = 12){
   theme(
     plot.title = element_text(hjust = 0.5, size = 20),
@@ -45,14 +52,22 @@ set_cols <- function(df, col){
 }
 
 
-plot_all_chroms_grid <- function(object=NA){
-  data<-get_data()
-
+plot_all_chroms_grid <- function(object=NA, notch=NA){
+  
   if(is.na(object)){
     object<-'type'
     cols<-set_cols(data, "type")
   }
   
+  if(!is.na(notch)){
+    data<-exclude_notch()
+    ext<-'_excl.N.pdf'
+  }
+  else{
+    data<-get_data()
+    ext<-'.pdf'
+  }
+
   cat("Plotting SVs by", object, "\n")
   
   p<-ggplot(data)
@@ -71,7 +86,7 @@ plot_all_chroms_grid <- function(object=NA){
     p<-p + cols
   }
   
-  chrom_outfile<-paste("Breakpoints_chroms_by_", object, ".pdf", sep = "")
+  chrom_outfile<-paste("Breakpoints_chroms_by_", object, ext, sep = "")
   cat("Writing file", chrom_outfile, "\n")
   ggsave(paste("plots/", chrom_outfile, sep=""), width = 20, height = 10)
   
@@ -79,20 +94,29 @@ plot_all_chroms_grid <- function(object=NA){
 }
 
 
-bps_per_chrom <- function(object=NA){
-  data<-get_data()
-  cols<-set_cols(data, "type")
+bps_per_chrom <- function(object=NA, notch=NA){
   
   if(is.na(object)){
     object<-'type'
+    cols<-set_cols(data, "type")
   }
   
+  if(!is.na(notch)){
+    data<-exclude_notch()
+    ext<-'_excl.N.pdf'
+  }
+  else{
+    data<-get_data()
+    ext<-'.pdf'
+  }
+
   chromosomes<-c("2L", "2R", "3L", "3R", "X", "Y", "4")
   lengths<-c(23513712, 25286936, 28110227, 32079331, 23542271, 3667352, 1348131)
 
   karyotype<-setNames(as.list(lengths), chromosomes)
 
   for (c in chromosomes) {
+
     len<-karyotype[[c]]
     len<-len/1000000
     
@@ -114,7 +138,7 @@ bps_per_chrom <- function(object=NA){
       p<-p + cols
     }
     
-    per_chrom<-paste("Breakpoints_on_", c, "_by_", object, ".pdf", sep = "")
+    per_chrom<-paste("Breakpoints_on_", c, "_by_", object, ext, sep = "")
     cat("Writing file", per_chrom, "\n")
     ggsave(paste("plots/", per_chrom, sep=""), width = 20, height = 10)
   }
@@ -122,8 +146,16 @@ bps_per_chrom <- function(object=NA){
 
 
 
-bp_features <- function(){
-  data<-get_data()
+bp_features <- function(notch=NA){
+  
+  if(!is.na(notch)){
+    data<-exclude_notch()
+    ext<-'_excl.N.pdf'
+  }
+  else{
+    data<-get_data()
+    ext<-'.pdf'
+  }
 
   # To condense exon counts into "exon"
   data$feature<-gsub("_.*", "", data$feature)
@@ -143,7 +175,7 @@ bp_features <- function(){
   p<-p + scale_x_discrete(expand = c(0.01, 0.01))
   p<-p + scale_y_continuous(expand = c(0.01, 0.01))
 
-  features_outfile<-paste("Breakpoints_features_count", ".pdf", sep = "")
+  features_outfile<-paste("Breakpoints_features_count", ext, sep = "")
   cat("Writing file", features_outfile, "\n")
   ggsave(paste("plots/", features_outfile, sep=""), width = 20, height = 10)
 
@@ -151,8 +183,16 @@ bp_features <- function(){
 }
 
 
-sv_types<-function(){
-  data<-get_data()
+sv_types<-function(notch=NA){
+  
+  if(!is.na(notch)){
+    data<-exclude_notch()
+    ext<-'_excl.N.pdf'
+  }
+  else{
+    data<-get_data()
+    ext<-'.pdf'
+  }
   cols<-set_cols(data, "type")
   
   # Reorder by count
@@ -171,7 +211,7 @@ sv_types<-function(){
   p<-p + scale_x_discrete(expand = c(0.01, 0.01))
   p<-p + scale_y_continuous(expand = c(0.01, 0.01))
 
-  types_outfile<-paste("Breakpoints_types_count", ".pdf", sep = "")
+  types_outfile<-paste("Breakpoints_types_count", ext, sep = "")
   cat("Writing file", types_outfile, "\n")
   ggsave(paste("plots/", types_outfile, sep=""), width = 20, height = 10)
 
@@ -179,8 +219,16 @@ sv_types<-function(){
 }
 
 
-feature_lengths<-function(size_threshold = NA){
-  data<-get_data()
+feature_lengths<-function(size_threshold = NA, notch=NA){
+  
+  if(!is.na(notch)){
+    data<-exclude_notch()
+    ext<-'_excl.N.pdf'
+  }
+  else{
+    data<-get_data()
+    ext<-'.pdf'
+  }
   
   cols<-set_cols(data, "type")
   
@@ -203,11 +251,11 @@ feature_lengths<-function(size_threshold = NA){
   p<-ggplot(data, aes(length))
   p<-p + geom_density(aes(fill = type), alpha = 0.4)
   p<-p + clean_theme()
-  p<-p + scale_x_continuous("Size in Mb", expand = c(0,0), breaks = seq(0,size_threshold,by=breaks), limits=c(0, size_threshold))
+  p<-p + scale_x_continuous("Size in Mb", expand = c(0,0), breaks = seq(0,size_threshold,by=breaks), limits=c(0, (size_threshold+0.1)))
   p<-p + scale_y_continuous(expand = c(0,0))
   p<-p + cols
 
-  sv_classes_len_outfile <- paste("Classes_lengths", ".pdf", sep = "")
+  sv_classes_len_outfile <- paste("Classes_lengths", ext, sep = "")
   cat("Writing file", sv_classes_len_outfile, "\n")
 
   ggsave(paste("plots/", sv_classes_len_outfile, sep=""), width = 20, height = 10)
@@ -233,5 +281,4 @@ notch_hits<-function(){
   p<-p + annotate("rect", xmin=3.176440, xmax=3.300000, ymin=0, ymax=0.5, alpha=.2, fill="red")
 
   p
-
 }
