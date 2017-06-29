@@ -7,10 +7,10 @@ library(RColorBrewer)
 get_data <- function(infile = "all_bps_new.txt"){
     data<-read.delim(infile, header = F)
     colnames(data) <- c("event", "bp_no", "sample", "chrom", "bp", "gene", "feature", "type", "length")
-  
-  	#filter on chroms
+	
+	#filter on chroms
     data<-filter(data, chrom != "Y" & chrom != "4")
-  	#filter out samples
+	#filter out samples
     data<-filter(data, sample != "A373R1" & sample != "A373R7" & sample != "A512R17" )
     data<-droplevels(data)
     dir.create(file.path("plots"), showWarnings = FALSE)
@@ -44,7 +44,6 @@ set_cols <- function(df, col){
 
 
 plot_all_chroms_grid <- function(object=NA){
-  
   data<-get_data()
 
   if(is.na(object)){
@@ -60,11 +59,11 @@ plot_all_chroms_grid <- function(object=NA){
   p<-p + scale_x_continuous("Mbs", breaks = seq(0,33,by=1), limits = c(0, 33),expand = c(0.01, 0.01))
   p<-p + scale_y_continuous("Number of Breakpoints", expand = c(0.01, 0.01))
   p<-p + clean_theme() +
-      theme(axis.text.x = element_text(angle = 45, hjust=1),
+    theme(axis.text.x = element_text(angle = 45, hjust=1),
 	      axis.text = element_text(size=12),
 	      axis.title = element_text(size=20),
         strip.text.x = element_text(size = 15)
-	    )
+    )
   
   if (object == 'type'){
     p<-p + cols
@@ -136,7 +135,7 @@ bp_features <- function(){
   p<-p + clean_theme() +
     theme(axis.title.x=element_blank(),
           panel.grid.major.y = element_line(color="grey80", size = 0.01)
-		  )
+    )
   p<-p + scale_x_discrete(expand = c(0.01, 0.01))
   p<-p + scale_y_continuous(expand = c(0.01, 0.01))
   
@@ -163,7 +162,7 @@ sv_types<-function(){
   p<-p + clean_theme() +
     theme(axis.title.x=element_blank(),
           panel.grid.major.y = element_line(color="grey80", size = 0.01)
-		  )
+    )
   p<-p + scale_x_discrete(expand = c(0.01, 0.01))
   p<-p + scale_y_continuous(expand = c(0.01, 0.01))
 
@@ -195,7 +194,7 @@ feature_lengths<-function(size_threshold = NA){
     breaks<-1
   }
   
-  p<- ggplot(data, aes(length))
+  p<-ggplot(data, aes(length))
   p<-p + geom_density(aes(fill = type), alpha = 0.4)
   p<-p + clean_theme()
   p<-p + scale_x_continuous("Size in Mb", expand = c(0,0), breaks = seq(0,size_threshold,by=breaks), limits=c(0, size_threshold))
