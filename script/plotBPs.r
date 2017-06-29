@@ -32,12 +32,18 @@ clean_theme <- function(base_size = 12){
 }
 
 
-plot_all_chroms_grid <- function(type=T){
+plot_all_chroms_grid <- function(object=NA){
   
   data<-get_data()
+
+  if(is.na(object)){
+    object<-'type'
+  }
+  
+  cat("Plotting SVs by", object, "\n")
   
   p<-ggplot(data)
-  p<-p + geom_histogram(aes(bp/1000000, fill = type), binwidth=0.1, alpha = 0.8)  
+  p<-p + geom_histogram(aes(bp/1000000, fill = get(object)), binwidth=0.1, alpha = 0.8)  
   p<-p + facet_wrap(~chrom, scale = "free_x", ncol = 2)
   p<-p + scale_x_continuous("Mbs", breaks = seq(0,33,by=1), limits = c(0, 33),expand = c(0.01, 0.01))
   p<-p + scale_y_continuous("Number of Breakpoints", expand = c(0.01, 0.01))
@@ -49,13 +55,11 @@ plot_all_chroms_grid <- function(type=T){
       strip.text.x = element_text(size = 15)
 	  )
   
-  if (type){
+  if (object == 'type'){
     p<-p + scale_fill_brewer(palette = "Set2")
-    chrom_outfile <- paste("Breakpoints_chroms_type", ".pdf", sep = "")	
   }
-  else {
-  	chrom_outfile <- paste("Breakpoints_chroms_samples", ".pdf", sep = "")
-  }
+  
+  chrom_outfile <- paste("Breakpoints_chroms_by_", object, ".pdf", sep = "")
   cat("Writing file", chrom_outfile, "\n")
   ggsave(paste("plots/", chrom_outfile, sep=""), width = 20, height = 10)
   p
@@ -76,7 +80,6 @@ bps_per_chrom <- function(type=T){
     cat("Chrom", c, "length:", len, sep = " ",  "\n")
 
     per_chrom<-filter(data, chrom == c)
-
 
     p<-ggplot(per_chrom)
     p<-p + geom_histogram(aes(bp/1000000, fill = type), binwidth=0.1, alpha = 0.8)
@@ -121,7 +124,6 @@ bp_features <- function(){
 		  )
   p<-p + scale_x_discrete(expand = c(0.01, 0.01))
   p<-p + scale_y_continuous(expand = c(0.01, 0.01))
-  
   
   features_outfile <- paste("Breakpoints_features_count", ".pdf", sep = "")
   cat("Writing file", features_outfile, "\n")
@@ -197,8 +199,6 @@ notch_hits<-function(){
   
   p<-ggplot(data)
   p<-p + geom_point(aes(bp/1000000, sample, colour = sample, shape = type, size = 2))
-  #p<-p + geom_line()
-  #p<-p + geom_text(position=position_jitter(), aes(label=paste(event, bp_no, sep=' '), size=3))
   p<-p + clean_theme() +
     theme(axis.title.y=element_blank(),
           panel.grid.major.y = element_line(color="blue", size = 0.05)
