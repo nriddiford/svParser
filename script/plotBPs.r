@@ -13,6 +13,7 @@ get_data <- function(infile = "all_bps_new.txt"){
   
   	#filter out samples
     data<-filter(data, sample != "A373R1" & sample != "A373R7" & sample != "A512R17" )
+    data<-droplevels(data)
     dir.create(file.path("plots"), showWarnings = FALSE)
 	return(data)
 }
@@ -31,6 +32,17 @@ clean_theme <- function(base_size = 12){
     )
 }
 
+set_cols <- function(df, col){
+
+  names<-levels(df[[col]])
+  cat("Setting colour levles:", names, "\n")
+  level_number<-length(names)
+  mycols<-brewer.pal(level_number, "Set2")
+  names(mycols) <- names
+  colScale <- scale_fill_manual(name = col,values = mycols)
+  return(colScale)
+}
+
 
 plot_all_chroms_grid <- function(object=NA){
   
@@ -38,6 +50,7 @@ plot_all_chroms_grid <- function(object=NA){
 
   if(is.na(object)){
     object<-'type'
+    cols<-set_cols(data, "type")
   }
   
   cat("Plotting SVs by", object, "\n")
@@ -48,15 +61,14 @@ plot_all_chroms_grid <- function(object=NA){
   p<-p + scale_x_continuous("Mbs", breaks = seq(0,33,by=1), limits = c(0, 33),expand = c(0.01, 0.01))
   p<-p + scale_y_continuous("Number of Breakpoints", expand = c(0.01, 0.01))
   p<-p + clean_theme() +
-      theme(
-	  axis.text.x = element_text(angle = 45, hjust=1),
-	  axis.text = element_text(size=12),
-	  axis.title = element_text(size=20),
-      strip.text.x = element_text(size = 15)
-	  )
+      theme(axis.text.x = element_text(angle = 45, hjust=1),
+	      axis.text = element_text(size=12),
+	      axis.title = element_text(size=20),
+        strip.text.x = element_text(size = 15)
+	    )
   
   if (object == 'type'){
-    p<-p + scale_fill_brewer(palette = "Set2")
+    p<-p + cols
   }
   
   chrom_outfile <- paste("Breakpoints_chroms_by_", object, ".pdf", sep = "")
@@ -65,9 +77,15 @@ plot_all_chroms_grid <- function(object=NA){
   p
 }
 
-bps_per_chrom <- function(type=T){
+bps_per_chrom <- function(object=NA){
 
   data<-get_data()
+  cols<-set_cols(data, "type")
+  
+  if(is.na(object)){
+    object<-'type'
+  }
+  
   chromosomes <- c("2L", "2R", "3L", "3R", "X", "Y", "4")
   lengths <- c(23513712, 25286936, 28110227, 32079331, 23542271, 3667352, 1348131)
 
@@ -82,23 +100,20 @@ bps_per_chrom <- function(type=T){
     per_chrom<-filter(data, chrom == c)
 
     p<-ggplot(per_chrom)
-    p<-p + geom_histogram(aes(bp/1000000, fill = type), binwidth=0.1, alpha = 0.8)
-    p<-p + scale_fill_brewer(palette = "Set2")
+    p<-p + geom_histogram(aes(bp/1000000, fill = get(object)), binwidth=0.1, alpha = 0.8)
     p<-p + scale_x_continuous("Mbs", breaks = seq(0,len,by=1), limits = c(0, len+0.1),expand = c(0.01, 0.01))
     p<-p + scale_y_continuous("Number of Breakpoints", limits = c(0, 35), expand = c(0.01, 0.01))
     p<-p + clean_theme() +
-      theme(
-        axis.text.x = element_text(angle = 45, hjust=1),
+      theme(axis.text.x = element_text(angle = 45, hjust=1),
         axis.title = element_text(size=20)
       )
     p <- p + ggtitle(paste("Chromosome: ", c))
 
-    if (type){
-      per_chrom <- paste("Breakpoints_type_", c, ".pdf", sep = "")
+    if (object == 'type'){
+       p<-p + cols
     }
-    else{
-      per_chrom <- paste("Breakpoints_sample", c, ".pdf", sep = "")
-    }
+    
+    per_chrom <- paste("Breakpoints_on_", c, "_by_", object, ".pdf", sep = "")
     
     cat("Writing file", per_chrom, "\n")
     ggsave(paste("plots/", per_chrom, sep=""), width = 20, height = 10)
@@ -110,14 +125,16 @@ bp_features <- function(){
   data<-get_data()
   
   # To condense exon counts into "exon"
-  data$feature <- gsub("_.*","",data$feature)
+  data$feature <- gsub("_.*", "", data$feature)
   
   # Reoders descending
   data$feature <- factor(data$feature, levels = names(sort(table(data$feature), decreasing = TRUE)))
-
+  
+  cols<-set_cols(data, "feature")
+  
   p<-ggplot(data)
   p<-p + geom_bar(aes(feature, fill = feature))
-  p<-p + scale_fill_brewer(palette = "Set2")
+  p<-p + cols
   p<-p + clean_theme() +
     theme(axis.title.x=element_blank(),
           panel.grid.major.y = element_line(color="grey80", size = 0.01)
@@ -136,6 +153,8 @@ bp_features <- function(){
 sv_types<-function(){
   data<-get_data()
   
+  cols<-set_cols(data, "type")
+  
   # Reorder by count
   data$type <- factor(data$type, levels = names(sort(table(data$type), decreasing = TRUE)))
 
@@ -144,7 +163,7 @@ sv_types<-function(){
 
   p<-ggplot(data)
   p<-p + geom_bar(aes(type, fill = type))
-  p<-p + scale_fill_brewer(palette = "Set2")
+  p<-p + cols
   p<-p + clean_theme() +
     theme(axis.title.x=element_blank(),
           panel.grid.major.y = element_line(color="grey80", size = 0.01)
@@ -162,6 +181,8 @@ sv_types<-function(){
 
 feature_lengths<-function(size_threshold = NA){
   data<-get_data()
+  
+  cols<-set_cols(data, "type")
   
   # Only take bp1 for each event
   data<-filter(data, type != "TRA", type != "BND", bp_no != "bp2")
@@ -184,6 +205,7 @@ feature_lengths<-function(size_threshold = NA){
   p<-p + clean_theme()
   p<-p + scale_x_continuous("Size in Mb", expand = c(0,0), breaks = seq(0,size_threshold,by=breaks), limits=c(0, size_threshold))
   p<-p + scale_y_continuous(expand = c(0,0))
+  p<-p + cols
 
   sv_classes_len_outfile <- paste("Classes_lengths", ".pdf", sep = "")
   cat("Writing file", sv_classes_len_outfile, "\n")
