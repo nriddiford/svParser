@@ -19,7 +19,7 @@ my $reannotate;
 GetOptions( 'infile=s'         =>    \$sv_calls,
             'features=s'       =>    \$features,
             'help'             =>    \$help,
-            're-annotate'    =>    \$reannotate
+            're-annotate'      =>    \$reannotate
     ) or die usage();
 
 if ($help) { exit usage() }
@@ -87,7 +87,6 @@ sub annotate_SVs {
     open $bp_out, '>>', 'all_bps.txt';
 
   }
-
 
   my $call = 1;
 
