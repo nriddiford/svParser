@@ -10,6 +10,7 @@ options:
   -a    annotate
   -c    clean-up false positives anad reannotate
   -s    stats
+  -ns   stats for notch-excluded hits
   -h    show this message
 "
 }
@@ -19,20 +20,23 @@ merge=0
 annotate=0
 clean=0
 stats=0
+nstats=0
 
-while getopts 'fmacsh' flag; do
+while getopts 'fmacsnh' flag; do
   case "${flag}" in
     f)  filter=1 ;;
     m)  merge=1 ;;
     a)  annotate=1 ;;
     c)  clean=1 ;;
     s)  stats=1 ;;
+    n)  nstats=1 ;;
     h)  usage
         exit 0 ;;
   esac
 done
 
-script_bin=/Users/Nick_curie/Desktop/script_test/SV_Parser/script
+#script_bin=/Users/Nick_curie/Desktop/script_test/SV_Parser/script
+script_bin=/Users/Nick/iCloud/Desktop/script_test/SV_Parser/script
 
 if [[ $filter -eq 1 ]]
 then
@@ -173,7 +177,21 @@ then
   fi
 
   echo "Calculating breakpoint stats..."
-  perl ../../../script/bpstats.pl all_bps_new.txt
+  perl $script_bin/bpstats.pl all_bps_new.txt
+
+fi
+
+if [[ $nstats -eq 1 ]]
+then
+
+  if [ -z all_genes.txt ]
+  then
+    echo "'all_genes' not found! Exiting"
+    exit 1
+  fi
+
+  echo "Calculating breakpoint stats..."
+  perl $script_bin/bpstats.pl -n all_bps_new.txt
 
 fi
 
