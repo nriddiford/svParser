@@ -264,6 +264,51 @@ feature_lengths<-function(size_threshold = NA, notch=0){
   p
 }
 
+feature_lengths_count<-function(size_threshold = NA, notch=0){
+  
+  if(notch){
+    data<-exclude_notch()
+    ext<-'_excl.N.pdf'
+  }
+  else{
+    data<-get_data()
+    ext<-'.pdf'
+  }
+  
+  cols<-set_cols(data, "type")
+  
+  # Only take bp1 for each event
+  data<-filter(data, type != "TRA", type != "BND", bp_no != "bp2")
+  
+  data$length<-(data$length/1000)
+  
+  if(is.na(size_threshold)){
+    size_threshold<-max(data$length)
+  }
+  
+  if(size_threshold <= 1){
+    breaks<-0.1
+  }
+  else{
+    breaks<-1
+  }
+  
+  p<-ggplot(data, aes(length))
+  p<-p + geom_histogram(aes(length, ..count.., fill = type), colour = "black", binwidth = 0.05, position="dodge")
+  p<-p + clean_theme()
+  p<-p + scale_x_continuous("Size in Mb", expand = c(0,0), breaks = seq(0,size_threshold,by=breaks), limits=c(0, (size_threshold+0.1)))
+  p<-p + scale_y_continuous(expand = c(0,0))
+  p<-p + geom_density(aes(fill = type),alpha=0.4, colour = NA)
+  p<-p + cols
+  
+  sv_classes_len_outfile <- paste("Classes_lengths", ext, sep = "")
+  cat("Writing file", sv_classes_len_outfile, "\n")
+  
+  ggsave(paste("plots/", sv_classes_len_outfile, sep=""), width = 20, height = 10)
+  
+  p
+}
+
 
 notch_hits<-function(){
   data<-get_data()
