@@ -21,7 +21,8 @@ get_data <- function(infile = "all_bps_new.txt"){
 
 exclude_notch <- function(x){
   data<-get_data()
-  data<-filter(data, !(chrom == "X" & bp >= 3000000 & bp <= 3300000 & gene == 'kirre' & gene == 'dnc'))
+  data<-filter(data, !(chrom == "X" & bp >= 3000000 & bp <= 3300000))
+  data<-droplevels(data)
   return(data)
 }
 
@@ -52,14 +53,14 @@ set_cols <- function(df, col){
 }
 
 
-plot_all_chroms_grid <- function(object=NA, notch=NA){
+plot_all_chroms_grid <- function(object=NA, notch=0){
   
   if(is.na(object)){
     object<-'type'
     cols<-set_cols(data, "type")
   }
   
-  if(!is.na(notch)){
+  if(notch){
     data<-exclude_notch()
     ext<-'_excl.N.pdf'
   }
@@ -94,14 +95,14 @@ plot_all_chroms_grid <- function(object=NA, notch=NA){
 }
 
 
-bps_per_chrom <- function(object=NA, notch=NA){
+bps_per_chrom <- function(object=NA, notch=0){
   
   if(is.na(object)){
     object<-'type'
     cols<-set_cols(data, "type")
   }
   
-  if(!is.na(notch)){
+  if(notch){
     data<-exclude_notch()
     ext<-'_excl.N.pdf'
   }
@@ -146,9 +147,9 @@ bps_per_chrom <- function(object=NA, notch=NA){
 
 
 
-bp_features <- function(notch=NA){
+bp_features <- function(notch=0){
   
-  if(!is.na(notch)){
+  if(notch){
     data<-exclude_notch()
     ext<-'_excl.N.pdf'
   }
@@ -156,9 +157,9 @@ bp_features <- function(notch=NA){
     data<-get_data()
     ext<-'.pdf'
   }
-
+  
   # To condense exon counts into "exon"
-  data$feature<-gsub("_.*", "", data$feature)
+  data$feature<-as.factor(gsub("_.*", "", data$feature))
   
   # Reoders descending
   data$feature<-factor(data$feature, levels = names(sort(table(data$feature), decreasing = TRUE)))
@@ -183,9 +184,9 @@ bp_features <- function(notch=NA){
 }
 
 
-sv_types<-function(notch=NA){
+sv_types<-function(notch=0){
   
-  if(!is.na(notch)){
+  if(notch){
     data<-exclude_notch()
     ext<-'_excl.N.pdf'
   }
@@ -219,9 +220,9 @@ sv_types<-function(notch=NA){
 }
 
 
-feature_lengths<-function(size_threshold = NA, notch=NA){
+feature_lengths<-function(size_threshold = NA, notch=0){
   
-  if(!is.na(notch)){
+  if(notch){
     data<-exclude_notch()
     ext<-'_excl.N.pdf'
   }
