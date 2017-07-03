@@ -54,7 +54,6 @@ set_cols <- function(df, col){
 
 
 plot_all_chroms_grid <- function(object=NA, notch=0){
-  
   if(is.na(object)){
     object<-'type'
     cols<-set_cols(data, "type")
@@ -96,7 +95,6 @@ plot_all_chroms_grid <- function(object=NA, notch=0){
 
 
 bps_per_chrom <- function(object=NA, notch=0){
-  
   if(is.na(object)){
     object<-'type'
     cols<-set_cols(data, "type")
@@ -148,7 +146,6 @@ bps_per_chrom <- function(object=NA, notch=0){
 
 
 bp_features <- function(notch=0){
-  
   if(notch){
     data<-exclude_notch()
     ext<-'_excl.N.pdf'
@@ -226,7 +223,6 @@ sv_types<-function(notch=0,object=NA){
 
 
 feature_lengths <- function(size_threshold = NA, notch=0){
-  
   if(notch){
     data<-exclude_notch()
     ext<-'_excl.N.pdf'
@@ -270,7 +266,6 @@ feature_lengths <- function(size_threshold = NA, notch=0){
 }
 
 feature_lengths_count <- function(size_threshold = NA, notch=0){
-  
   if(notch){
     data<-exclude_notch()
     ext<-'_excl.N.pdf'
@@ -355,14 +350,13 @@ genome_hits <- function(notch=0){
       axis.text = element_text(size=12),
       axis.title = element_text(size=20),
       strip.text.x = element_text(size = 15),
-	  panel.grid.major.y = element_line(color="blue", size = 0.05)
+      panel.grid.major.y = element_line(color="blue", size = 0.05)
     )
   p<-p + facet_wrap(~chrom, scale = "free_x", ncol = 2)
   p<-p + scale_x_continuous("Mbs", breaks = seq(0,33,by=1), limits = c(0, 33),expand = c(0.01, 0.01))
   
   sv_gen_dist <- paste("bp_gen.dist", ext, sep = "")
   cat("Writing file", sv_gen_dist, "\n")
-  
   ggsave(paste("plots/", sv_gen_dist, sep=""), width = 20, height = 10)
   
   p
@@ -379,8 +373,8 @@ feature_enrichment <- function(){
   classes_count<-table(data$feature)
   
   class_lengths<-setNames(as.list(genome_features$length), genome_features$feature)
+  cat("feature", "observed", "expected", "test", "sig", "p", "\n")
   
-	cat("feature", "observed", "expected", "test", "sig", "p", "\n")
   for (f in levels(data$feature)) {
     feature_fraction<-class_lengths[[f]]/137547960
     feature_expect<-breakpoint_count*(class_lengths[[f]]/137547960)
@@ -394,12 +388,11 @@ feature_enrichment <- function(){
         stat<-binom.test(x = classes_count[f], n = breakpoint_count, p = feature_fraction, alternative = "less")
         test<-"depletion"
       }
-
+	  
       ifelse(stat$p.value < 0.05, sig<-'T', sig<-'F')
-
+	  
       p_val<-format.pval(stat$p.value, digits = 3, eps=0.0001)
       cat(f, classes_count[f], feature_expect, test, sig, p_val, "\n")
-
     }
   }
   
