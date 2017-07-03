@@ -184,7 +184,10 @@ bp_features <- function(notch=0){
 }
 
 
-sv_types<-function(notch=0){
+sv_types<-function(notch=0,object=NA){
+  if(is.na(object)){
+    object<-'type'
+  }
   
   if(notch){
     data<-exclude_notch()
@@ -203,16 +206,18 @@ sv_types<-function(notch=0){
   data<-filter(data, bp_no != "bp2")
 
   p<-ggplot(data)
-  p<-p + geom_bar(aes(type, fill = type))
+  p<-p + geom_bar(aes(get(object), fill = type))
   p<-p + cols
   p<-p + clean_theme() +
     theme(axis.title.x=element_blank(),
-      panel.grid.major.y = element_line(color="grey80", size = 0.01)
+      panel.grid.major.y = element_line(color="grey80", size = 0.01),
+	  axis.text.x = element_text(angle = 45, hjust=1),
+	  axis.title = element_text(size=20)
     )
   p<-p + scale_x_discrete(expand = c(0.01, 0.01))
   p<-p + scale_y_continuous(expand = c(0.01, 0.01))
 
-  types_outfile<-paste("Breakpoints_types_count", ext, sep = "")
+  types_outfile<-paste("sv_types_by_", object, ext, sep = "")
   cat("Writing file", types_outfile, "\n")
   ggsave(paste("plots/", types_outfile, sep=""), width = 20, height = 10)
 
@@ -220,7 +225,7 @@ sv_types<-function(notch=0){
 }
 
 
-feature_lengths<-function(size_threshold = NA, notch=0){
+feature_lengths <- function(size_threshold = NA, notch=0){
   
   if(notch){
     data<-exclude_notch()
@@ -264,7 +269,7 @@ feature_lengths<-function(size_threshold = NA, notch=0){
   p
 }
 
-feature_lengths_count<-function(size_threshold = NA, notch=0){
+feature_lengths_count <- function(size_threshold = NA, notch=0){
   
   if(notch){
     data<-exclude_notch()
@@ -310,7 +315,7 @@ feature_lengths_count<-function(size_threshold = NA, notch=0){
 }
 
 
-notch_hits<-function(){
+notch_hits <- function(){
   data<-get_data()
   data<-filter(data, chrom == "X", bp >= 3000000, bp <= 3300000)
   
@@ -320,7 +325,7 @@ notch_hits<-function(){
     theme(axis.title.y=element_blank(),
       panel.grid.major.y = element_line(color="blue", size = 0.05)
     )
-  p<-p + scale_x_continuous("Mb", expand = c(0,0), breaks = seq(3,3.3,by=0.05), limits=c(3, 3.301))
+  p<-p + scale_x_continuous("Mbs", expand = c(0,0), breaks = seq(3,3.3,by=0.05), limits=c(3, 3.301))
 
   p<-p + annotate("rect", xmin=3.000000, xmax=3.134532, ymin=0, ymax=0.5, alpha=.2, fill="green")
   p<-p + annotate("rect", xmin=3.134870, xmax=3.172221, ymin=0, ymax=0.5, alpha=.2, fill="skyblue")
@@ -328,3 +333,75 @@ notch_hits<-function(){
 
   p
 }
+
+genome_hits <- function(notch=0){
+  data<-get_data()
+  
+  if(notch){
+    data<-exclude_notch()
+    ext<-'_excl.N.pdf'
+  }
+  else{
+    data<-get_data()
+    ext<-'.pdf'
+  }
+  
+  p<-ggplot(data)
+  p<-p + geom_point(aes(bp/1000000, sample, colour = sample, shape = type, size = 0.5), alpha = 0.7)
+  p<-p + guides(color = FALSE, size = FALSE)
+  p<-p + clean_theme() +
+    theme(axis.title.y=element_blank(),
+      axis.text.x = element_text(angle = 45, hjust=1),
+      axis.text = element_text(size=12),
+      axis.title = element_text(size=20),
+      strip.text.x = element_text(size = 15),
+	  panel.grid.major.y = element_line(color="blue", size = 0.05)
+    )
+  p<-p + facet_wrap(~chrom, scale = "free_x", ncol = 2)
+  p<-p + scale_x_continuous("Mbs", breaks = seq(0,33,by=1), limits = c(0, 33),expand = c(0.01, 0.01))
+  
+  sv_gen_dist <- paste("bp_gen.dist", ext, sep = "")
+  cat("Writing file", sv_gen_dist, "\n")
+  
+  ggsave(paste("plots/", sv_gen_dist, sep=""), width = 20, height = 10)
+  
+  p
+}
+
+feature_enrichment <- function(){
+  genome_features<-read.delim('genome_features.txt', header = T)
+  data<-get_data()
+  breakpoint_count<-nrow(data)
+  
+  # To condense exon counts into "exon"
+  data$feature<-as.factor(gsub("_.*", "", data$feature))
+  
+  classes_count<-table(data$feature)
+  
+  class_lengths<-setNames(as.list(genome_features$length), genome_features$feature)
+  
+	cat("feature", "observed", "expected", "test", "sig", "p", "\n")
+  for (f in levels(data$feature)) {
+    feature_fraction<-class_lengths[[f]]/137547960
+    feature_expect<-breakpoint_count*(class_lengths[[f]]/137547960)
+    
+    if(!is.null(class_lengths[[f]])){
+      if(classes_count[f] >= feature_expect){
+        stat<-binom.test(x = classes_count[f], n = breakpoint_count, p = feature_fraction, alternative = "greater")
+        test<-"enrichment"
+      }
+      else{
+        stat<-binom.test(x = classes_count[f], n = breakpoint_count, p = feature_fraction, alternative = "less")
+        test<-"depletion"
+      }
+
+      ifelse(stat$p.value < 0.05, sig<-'T', sig<-'F')
+
+      p_val<-format.pval(stat$p.value, digits = 3, eps=0.0001)
+      cat(f, classes_count[f], feature_expect, test, sig, p_val, "\n")
+
+    }
+  }
+  
+}
+
