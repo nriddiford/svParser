@@ -144,7 +144,6 @@ bps_per_chrom <- function(object=NA, notch=0){
 }
 
 
-
 bp_features <- function(notch=0){
   if(notch){
     data<-exclude_notch()
@@ -243,12 +242,7 @@ feature_lengths <- function(size_threshold = NA, notch=0){
     size_threshold<-max(data$length)
   }
   
-  if(size_threshold <= 1){
-    breaks<-0.1
-  }
-  else{
-    breaks<-1
-  }
+  ifelse(size_threshold <= 1, breaks<-0.1, breaks<-1)
   
   p<-ggplot(data, aes(length))
   p<-p + geom_density(aes(fill = type), alpha = 0.4)
@@ -259,11 +253,11 @@ feature_lengths <- function(size_threshold = NA, notch=0){
 
   sv_classes_len_outfile <- paste("Classes_lengths", ext, sep = "")
   cat("Writing file", sv_classes_len_outfile, "\n")
-
   ggsave(paste("plots/", sv_classes_len_outfile, sep=""), width = 20, height = 10)
 
   p
 }
+
 
 feature_lengths_count <- function(size_threshold = NA, notch=0){
   if(notch){
@@ -286,12 +280,7 @@ feature_lengths_count <- function(size_threshold = NA, notch=0){
     size_threshold<-max(data$length)
   }
   
-  if(size_threshold <= 1){
-    breaks<-0.1
-  }
-  else{
-    breaks<-1
-  }
+  ifelse(size_threshold <= 1, breaks<-0.1, breaks<-1)
   
   p<-ggplot(data, aes(length))
   p<-p + geom_histogram(aes(length, ..count.., fill = type), colour = "black", binwidth = 0.05, position="dodge")
@@ -303,7 +292,6 @@ feature_lengths_count <- function(size_threshold = NA, notch=0){
   
   sv_classes_len_outfile <- paste("Classes_lengths", ext, sep = "")
   cat("Writing file", sv_classes_len_outfile, "\n")
-  
   ggsave(paste("plots/", sv_classes_len_outfile, sep=""), width = 20, height = 10)
   
   p
@@ -328,6 +316,7 @@ notch_hits <- function(){
 
   p
 }
+
 
 genome_hits <- function(notch=0){
   data<-get_data()
@@ -362,8 +351,9 @@ genome_hits <- function(notch=0){
   p
 }
 
+
 feature_enrichment <- function(){
-  genome_features<-read.delim('genome_features.txt', header = T)
+  genome_features<-read.delim('genome_features2.txt', header = T)
   data<-get_data()
   breakpoint_count<-nrow(data)
   
@@ -388,13 +378,12 @@ feature_enrichment <- function(){
         stat<-binom.test(x = classes_count[f], n = breakpoint_count, p = feature_fraction, alternative = "less")
         test<-"depletion"
       }
-	  
+       
       ifelse(stat$p.value < 0.05, sig<-'T', sig<-'F')
-	  
+       
       p_val<-format.pval(stat$p.value, digits = 3, eps=0.0001)
       cat(f, classes_count[f], feature_expect, test, sig, p_val, "\n")
     }
-  }
-  
+  } 
 }
 
