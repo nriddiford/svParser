@@ -35,8 +35,8 @@ while getopts 'fmacsnh' flag; do
   esac
 done
 
-#script_bin=/Users/Nick_curie/Desktop/script_test/SV_Parser/script
-script_bin=/Users/Nick/iCloud/Desktop/script_test/SV_Parser/script
+#script_bin=/Users/Nick/iCloud/Desktop/script_test/SV_Parser/script # home
+script_bin=/Users/Nick_curie/Desktop/script_test/SV_Parser/script # work
 
 if [[ $filter -eq 1 ]]
 then
@@ -103,8 +103,8 @@ then
   done
 fi
 
-#features=/Users/Nick/Documents/Curie/Data/Genomes/Dmel_v6.12/Features/dmel-all-r6.12.gtf
-features=/Users/Nick_curie/Documents/Curie/Data/Genomes/Dmel_v6.12/Features/dmel-all-r6.12.gtf
+#features=/Users/Nick/Documents/Curie/Data/Genomes/Dmel_v6.12/Features/dmel-all-r6.12.gtf # home
+features=/Users/Nick_curie/Documents/Curie/Data/Genomes/Dmel_v6.12/Features/dmel-all-r6.12.gtf # work
 
 if [[ $annotate -eq 1 ]]
 then

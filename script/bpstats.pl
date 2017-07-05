@@ -9,7 +9,7 @@ use Getopt::Long qw/ GetOptions /;
 
 my $notch = 0;
 
-GetOptions( 'notch'    =>    \$notch );
+GetOptions( 'notch'  => \$notch );
 
 my (%samples, %chroms, %genes, %gene_data, %gene_sample, %features, %types, %seen_event, %seen_event_bp);
 

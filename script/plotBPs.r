@@ -14,7 +14,6 @@ get_data <- function(infile = "all_bps_new.txt"){
   data<-filter(data, sample != "A373R1" & sample != "A373R7" & sample != "A512R17" )
   data<-droplevels(data)
   dir.create(file.path("plots"), showWarnings = FALSE)
-
   return(data)
 }
 
