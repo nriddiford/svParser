@@ -31,6 +31,11 @@ sub typer {
     $type = 'novobreak';
     parse($file, $type, \%filters);
   }
+  elsif ($type eq 'F'){
+    say "Forcing parsing of $file";
+    $type = 'unknown';
+    parse($file, $type, \%filters);
+  }
 
   elsif ( $type eq 'guess' ){
 
@@ -188,6 +193,10 @@ sub parse {
       %sample_info = %{ $sample_info_novo };
       @format = @{ $format_novo };
       %format_long = %{ $format_long_novo };
+    }
+
+    elsif ($type eq 'unknown'){
+      $filter_list = \@filter_reasons;
     }
 
     if ( $filter_flags{'chr'} ){
