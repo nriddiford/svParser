@@ -166,7 +166,7 @@ bp_features <- function(notch=0){
   p<-p + cols
   p<-p + clean_theme() +
     theme(axis.title.x=element_blank(),
-      panel.grid.major.y = element_line(color="grey80", size = 0.01)
+      panel.grid.major.y = element_line(color="grey80", size = 0.5, linetype = "dotted"),
     )
   p<-p + scale_x_discrete(expand = c(0.01, 0.01))
   p<-p + scale_y_continuous(expand = c(0.01, 0.01))
@@ -205,7 +205,7 @@ sv_types<-function(notch=0,object=NA){
   p<-p + cols
   p<-p + clean_theme() +
     theme(axis.title.x=element_blank(),
-      panel.grid.major.y = element_line(color="grey80", size = 0.01),
+      panel.grid.major.y = element_line(color="grey80", size = 0.5, linetype = "dotted"),
 	  axis.text.x = element_text(angle = 45, hjust=1),
 	  axis.title = element_text(size=20)
     )
@@ -245,7 +245,8 @@ feature_lengths <- function(size_threshold = NA, notch=0){
   
   p<-ggplot(data, aes(length))
   p<-p + geom_density(aes(fill = type), alpha = 0.4)
-  p<-p + clean_theme()
+  p<-p + clean_theme() +
+    theme(panel.grid.major.y = element_line(color="grey80", size = 0.5, linetype = "dotted"))
   p<-p + scale_x_continuous("Size in Mb", expand = c(0,0), breaks = seq(0,size_threshold,by=breaks), limits=c(0, (size_threshold+0.1)))
   p<-p + scale_y_continuous(expand = c(0,0))
   p<-p + cols
@@ -283,7 +284,8 @@ feature_lengths_count <- function(size_threshold = NA, notch=0){
   
   p<-ggplot(data, aes(length))
   p<-p + geom_histogram(aes(length, ..count.., fill = type), colour = "black", binwidth = 0.05, position="dodge")
-  p<-p + clean_theme()
+  p<-p + clean_theme() +
+    theme(panel.grid.major.y = element_line(color="grey80", size = 0.5, linetype = "dotted"))
   p<-p + scale_x_continuous("Size in Mb", expand = c(0,0), breaks = seq(0,size_threshold,by=breaks), limits=c(0, (size_threshold+0.1)))
   p<-p + scale_y_continuous(expand = c(0,0))
   p<-p + geom_density(aes(fill = type),alpha=0.4, colour = NA)
@@ -303,9 +305,10 @@ notch_hits <- function(){
   
   p<-ggplot(data)
   p<-p + geom_point(aes(bp/1000000, sample, colour = sample, shape = type, size = 2))
+  p<-p + guides(color = FALSE, size = FALSE, sample = FALSE)
   p<-p + clean_theme() +
     theme(axis.title.y=element_blank(),
-      panel.grid.major.y = element_line(color="blue", size = 0.05)
+      panel.grid.major.y = element_line(color="grey80", size = 0.5, linetype = "dotted")
     )
   p<-p + scale_x_continuous("Mbs", expand = c(0,0), breaks = seq(3,3.3,by=0.05), limits=c(3, 3.301))
 
@@ -338,7 +341,7 @@ genome_hits <- function(notch=0){
       axis.text = element_text(size=12),
       axis.title = element_text(size=20),
       strip.text.x = element_text(size = 15),
-      panel.grid.major.y = element_line(color="blue", size = 0.05)
+      panel.grid.major.y = element_line(color="grey80", size = 0.5, linetype = "dotted")
     )
   p<-p + facet_wrap(~chrom, scale = "free_x", ncol = 2)
   p<-p + scale_x_continuous("Mbs", breaks = seq(0,33,by=1), limits = c(0, 33),expand = c(0.01, 0.01))
