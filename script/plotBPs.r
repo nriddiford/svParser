@@ -166,8 +166,7 @@ bp_features <- function(notch=0){
   p<-p + cols
   p<-p + clean_theme() +
     theme(axis.title.x=element_blank(),
-      panel.grid.major.y = element_line(color="grey80", size = 0.5, linetype = "dotted"),
-    )
+      panel.grid.major.y = element_line(color="grey80", size = 0.5, linetype = "dotted"))
   p<-p + scale_x_discrete(expand = c(0.01, 0.01))
   p<-p + scale_y_continuous(expand = c(0.01, 0.01))
 
@@ -385,7 +384,10 @@ feature_enrichment <- function(){
        
       p_val<-format.pval(stat$p.value, digits = 3, eps=0.0001)
       cat(f, classes_count[f], feature_expect, test, sig, p_val, "\n")
-    }
+      
+      enrichement <- data.frame(f,classes_count[f], feature_expect, test, sig, p_val)   
+      }
   } 
+  enrichement
 }
 
