@@ -385,9 +385,7 @@ feature_enrichment <- function(){
       p_val<-format.pval(stat$p.value, digits = 3, eps=0.0001)
       cat(f, classes_count[f], feature_expect, test, sig, p_val, "\n")
       
-      enrichement <- data.frame(f,classes_count[f], feature_expect, test, sig, p_val)   
       }
   } 
-  enrichement
 }
 
