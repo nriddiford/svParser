@@ -19,6 +19,7 @@ get_data <- function(infile = "all_bps_new.txt"){
 
 
 exclude_notch <- function(x){
+  cat("Excluding bps in Notch\n")
   data<-get_data()
   data<-filter(data, !(chrom == "X" & bp >= 3000000 & bp <= 3300000))
   data<-droplevels(data)
@@ -53,6 +54,8 @@ set_cols <- function(df, col){
 
 
 plot_all_chroms_grid <- function(object=NA, notch=0){
+  data<-get_data()
+  ext<-'.pdf'
   if(is.na(object)){
     object<-'type'
     cols<-set_cols(data, "type")
@@ -61,10 +64,6 @@ plot_all_chroms_grid <- function(object=NA, notch=0){
   if(notch){
     data<-exclude_notch()
     ext<-'_excl.N.pdf'
-  }
-  else{
-    data<-get_data()
-    ext<-'.pdf'
   }
 
   cat("Plotting SVs by", object, "\n")
@@ -94,6 +93,9 @@ plot_all_chroms_grid <- function(object=NA, notch=0){
 
 
 bps_per_chrom <- function(object=NA, notch=0){
+  data<-get_data()
+  ext<-'.pdf'
+  
   if(is.na(object)){
     object<-'type'
     cols<-set_cols(data, "type")
@@ -102,10 +104,6 @@ bps_per_chrom <- function(object=NA, notch=0){
   if(notch){
     data<-exclude_notch()
     ext<-'_excl.N.pdf'
-  }
-  else{
-    data<-get_data()
-    ext<-'.pdf'
   }
 
   chromosomes<-c("2L", "2R", "3L", "3R", "X", "Y", "4")
