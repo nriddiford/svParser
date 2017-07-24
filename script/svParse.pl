@@ -114,20 +114,27 @@ print "\n";
 # Retun SV and info hashes
 my ( $SVs, $info, $filtered_vars ) = SV_parser::typer($vcf_file, $type, %filters);
 
-# Print all info for specified id
-SV_parser::summarise_variants( $SVs, $filter, $chromosome ) unless $id or $dump;
+if ($type ne 'snp') {
+  # Print all info for specified id
+  SV_parser::summarise_variants( $SVs, $filter, $chromosome ) unless $id or $dump;
 
-# Print all info for specified id
-SV_parser::get_variant( $id, $SVs, $info, $filter ) if $id;
+  # Print all info for specified id
+  SV_parser::get_variant( $id, $SVs, $info, $filter ) if $id;
 
-# Dump all variants to screen
-SV_parser::dump_variants( $SVs, $info, $filter, $chromosome ) if $dump;
+  # Dump all variants to screen
+  SV_parser::dump_variants( $SVs, $info, $filter, $chromosome, $type) if $dump;
 
-# Write out variants passing filters
-SV_parser::print_variants ( $SVs, $filtered_vars, $name, $filtered_out ) if $print;
+  # Write out variants passing filters
+  SV_parser::print_variants ( $SVs, $filtered_vars, $name, $filtered_out ) if $print;
 
-# Write out some useful info to txt file
-SV_parser::write_summary ( $SVs, $name, $summary_out, $type ) if $print;
+  # Write out some useful info to txt file
+  SV_parser::write_summary ( $SVs, $name, $summary_out, $type ) if $print;
+}
+
+if ($type eq 'snp') {
+  # Dump all variants to screen
+  SV_parser::dump_variants( $SVs, $info, $filter, $chromosome, $type) if $dump;
+}
 
 sub usage {
   print

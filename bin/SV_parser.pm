@@ -31,9 +31,9 @@ sub typer {
     $type = 'novobreak';
     parse($file, $type, \%filters);
   }
-  elsif ($type eq 'F'){
+  elsif ($type eq 'snp'){
     say "Forcing parsing of $file";
-    $type = 'unknown';
+    $type = 'snp';
     parse($file, $type, \%filters);
   }
 
@@ -195,7 +195,8 @@ sub parse {
       %format_long = %{ $format_long_novo };
     }
 
-    elsif ($type eq 'unknown'){
+    elsif ($type eq 'snp'){
+      $chr2 = $chr;
       $filter_list = \@filter_reasons;
     }
 
@@ -730,7 +731,7 @@ sub get_variant {
 }
 
 sub dump_variants {
-  my ( $SVs, $info, $filter_flag, $chromosome ) = @_;
+  my ( $SVs, $info, $filter_flag, $chromosome, $type ) = @_;
   my ( $query_region, $query_start, $query_stop );
   my $specified_region = 0;
 
@@ -807,27 +808,36 @@ sub dump_variants {
         say "* $_" foreach @filter_reasons;
         say "______________________________________________\n";
       }
+      if ($type ne 'snp'){
+        printf "%-10s %-s\n",        "ID:",         $id;
+        printf "%-10s %-s\n",        "TYPE:",       $sv_type;
+        $chr2 ? printf "%-10s %-s\n",    "CHROM1:", $chr : printf "%-10s %-s\n",  "CHROM:",  $chr;
+        printf "%-10s %-s\n",       "CHROM2:",      $chr2 if $chr2;
+        printf "%-10s %-s\n",       "START:",       $start;
+        printf "%-10s %-s\n",       "STOP:",        $stop;
+        ($chr2 and ($chr2 ne $chr) ) ? printf "%-10s %-s\n",   "IGV:",     "$chr:$start" : printf "%-10s %-s\n", "IGV:", "$chr:$start-$stop";
+        printf "%-10s %-s\n",       "LENGTH:",      $SV_length;
+        printf "%-10s %-s\n",       "PE:",          $PE;
+        printf "%-10s %-s\n",       "SR:",          $SR;
+        printf "%-10s %-s\n",       "QUAL:",        $quality_score;
+        printf "%-10s %-s\n",       "FILT:",        $filt;
+        printf "%-10s %-s\n",       "REF:",         $ref;
+        printf "%-10s %-s\n",       "ALT:",         $alt;
+      }
 
-      printf "%-10s %-s\n",        "ID:",     $id;
-      printf "%-10s %-s\n",        "TYPE:",   $sv_type;
-      $chr2 ? printf "%-10s %-s\n",    "CHROM1:",   $chr : printf "%-10s %-s\n",  "CHROM:",  $chr;
-      printf "%-10s %-s\n",       "CHROM2:",   $chr2 if $chr2;
-      printf "%-10s %-s\n",       "START:",   $start;
-      printf "%-10s %-s\n",       "STOP:",    $stop;
-      ($chr2 and ($chr2 ne $chr) ) ? printf "%-10s %-s\n",   "IGV:",     "$chr:$start" : printf "%-10s %-s\n", "IGV:", "$chr:$start-$stop";
-      printf "%-10s %-s\n",       "LENGTH:",   $SV_length;
-      printf "%-10s %-s\n",       "PE:",      $PE;
-      printf "%-10s %-s\n",       "SR:",    $SR;
-      printf "%-10s %-s\n",       "QUAL:",     $quality_score;
-      printf "%-10s %-s\n",       "FILT:",     $filt;
-      printf "%-10s %-s\n",       "REF:",     $ref;
-      printf "%-10s %-s\n",       "ALT:",     $alt;
+      elsif ($type eq 'snp'){
+        printf "%-10s %-s\n",    "CHROM:",  $chr;
+        printf "%-10s %-s\n",    "POS:",    $start;
+        printf "%-10s %-s\n",    "FILT:",   $filt;
+        printf "%-10s %-s\n",    "REF:",    $ref;
+        printf "%-10s %-s\n",    "ALT:",    $alt;
+      }
 
-      say "__________________________________________________________________________________________________________________";
-      printf "%-20s",         "INFO";
-      printf "%-20s",         $_ for @samples;
-      printf "%-s\n",         "EXPLAINER";
-      say "__________________________________________________________________________________________________________________";
+        say "__________________________________________________________________________________________________________________";
+        printf "%-20s",         "INFO";
+        printf "%-20s",         $_ for @samples;
+        printf "%-s\n",         "EXPLAINER";
+        say "__________________________________________________________________________________________________________________";
 
       foreach my $format_block (@format){
         printf "%-20s",       $format_block;
