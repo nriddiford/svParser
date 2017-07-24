@@ -828,9 +828,11 @@ sub dump_variants {
       elsif ($type eq 'snp'){
         printf "%-10s %-s\n",    "CHROM:",  $chr;
         printf "%-10s %-s\n",    "POS:",    $start;
+        printf "%-10s %-s\n",    "IGV:",    "$chr:$start";
         printf "%-10s %-s\n",    "FILT:",   $filt;
         printf "%-10s %-s\n",    "REF:",    $ref;
         printf "%-10s %-s\n",    "ALT:",    $alt;
+        printf "%-10s %-s\n",    "MUT:",    "$ref>$alt";    
       }
 
         say "__________________________________________________________________________________________________________________";
