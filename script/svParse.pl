@@ -134,6 +134,10 @@ if ($type ne 'snp') {
 if ($type eq 'snp') {
   # Dump all variants to screen
   SV_parser::dump_variants( $SVs, $info, $filter, $chromosome, $type) if $dump;
+
+  if ($print or $id ){
+    die "Print and get variants not suported for SNP data\n";
+  }
 }
 
 sub usage {
@@ -157,6 +161,7 @@ arguments:
                         -l = LUMPY
                         -d = DELLY
                         -n = novobreak
+                        -snp = snp data (e.g. Mutect2, Freebayes)
   -i STRING, --id
                         breakpoint id to inspect
   -d, --dump            cycle through breakpoints
