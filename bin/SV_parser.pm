@@ -197,7 +197,8 @@ sub parse {
 
     elsif ($type eq 'snp'){
       $chr2 = $chr;
-      $filter_list = \@filter_reasons;
+      my @empty_filters;
+      $filter_list = \@empty_filters;
     }
 
     if ( $filter_flags{'chr'} ){
@@ -832,7 +833,7 @@ sub dump_variants {
         printf "%-10s %-s\n",    "FILT:",   $filt;
         printf "%-10s %-s\n",    "REF:",    $ref;
         printf "%-10s %-s\n",    "ALT:",    $alt;
-        printf "%-10s %-s\n",    "MUT:",    "$ref>$alt";    
+        printf "%-10s %-s\n",    "MUT:",    "$ref>$alt";
       }
 
         say "__________________________________________________________________________________________________________________";
