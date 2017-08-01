@@ -352,7 +352,7 @@ genome_hits <- function(notch=0){
 
 
 feature_enrichment <- function(){
-  genome_features<-read.delim('genome_features2.txt', header = T)
+  genome_features<-read.delim('genomic_features.txt', header = T)
   data<-get_data()
   breakpoint_count<-nrow(data)
   
