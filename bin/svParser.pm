@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-package SV_parser;
+package svParser;
 use strict;
 use warnings;
 
@@ -832,7 +832,7 @@ sub dump_variants {
         printf "%-10s %-s\n",    "FILT:",   $filt;
         printf "%-10s %-s\n",    "REF:",    $ref;
         printf "%-10s %-s\n",    "ALT:",    $alt;
-        printf "%-10s %-s\n",    "MUT:",    "$ref>$alt";    
+        printf "%-10s %-s\n",    "MUT:",    "$ref>$alt";
       }
 
         say "__________________________________________________________________________________________________________________";

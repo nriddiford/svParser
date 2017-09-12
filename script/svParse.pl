@@ -11,7 +11,7 @@ use FindBin '$Script';
 use File::Spec;
 use lib File::Spec->catdir($FindBin::Bin, '..', 'bin/');
 
-use SV_parser;
+use svParser;
 
 use feature qw/ say /;
 use Data::Dumper;
@@ -112,28 +112,28 @@ my ($name, $extention) = split(/\.([^.]+)$/, basename($vcf_file), 2);
 print "\n";
 
 # Retun SV and info hashes
-my ( $SVs, $info, $filtered_vars ) = SV_parser::typer($vcf_file, $type, %filters);
+my ( $SVs, $info, $filtered_vars ) = svParser::typer($vcf_file, $type, %filters);
 
 if ($type ne 'snp') {
   # Print all info for specified id
-  SV_parser::summarise_variants( $SVs, $filter, $chromosome ) unless $id or $dump;
+  svParser::summarise_variants( $SVs, $filter, $chromosome ) unless $id or $dump;
 
   # Print all info for specified id
-  SV_parser::get_variant( $id, $SVs, $info, $filter ) if $id;
+  svParser::get_variant( $id, $SVs, $info, $filter ) if $id;
 
   # Dump all variants to screen
-  SV_parser::dump_variants( $SVs, $info, $filter, $chromosome, $type) if $dump;
+  svParser::dump_variants( $SVs, $info, $filter, $chromosome, $type) if $dump;
 
   # Write out variants passing filters
-  SV_parser::print_variants ( $SVs, $filtered_vars, $name, $filtered_out ) if $print;
+  svParser::print_variants ( $SVs, $filtered_vars, $name, $filtered_out ) if $print;
 
   # Write out some useful info to txt file
-  SV_parser::write_summary ( $SVs, $name, $summary_out, $type ) if $print;
+  svParser::write_summary ( $SVs, $name, $summary_out, $type ) if $print;
 }
 
 if ($type eq 'snp') {
   # Dump all variants to screen
-  SV_parser::dump_variants( $SVs, $info, $filter, $chromosome, $type) if $dump;
+  svParser::dump_variants( $SVs, $info, $filter, $chromosome, $type) if $dump;
 
   if ($print or $id ){
     die "Print and get variants not suported for SNP data\n";
