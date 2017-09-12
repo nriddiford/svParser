@@ -161,7 +161,6 @@ arguments:
                         -l = LUMPY
                         -d = DELLY
                         -n = novobreak
-                        -snp = snp data (e.g. Mutect2, Freebayes)
   -i STRING, --id
                         breakpoint id to inspect
   -d, --dump            cycle through breakpoints
