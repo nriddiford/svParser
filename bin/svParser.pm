@@ -84,11 +84,10 @@ sub parse {
     chomp;
 
     if (/^#{2}/){
-       push @headers, $_;
+      push @headers, $_;
       $filtered_SVs{$.} = $_;
 
       if (/##FORMAT/){
-
         my ($format_long) = $_ =~ /\"(.*?)\"/;
         my ($available_format_info) = $_ =~ /ID=(.*?),/;
         $format_long{$available_format_info} = $format_long;
@@ -103,7 +102,7 @@ sub parse {
     }
 
     if (/^#{1}/){
-       push @headers, $_;
+      push @headers, $_;
       $filtered_SVs{$.} = $_;
       my @split = split;
       push @samples, $_ foreach @split[9..$#split];
@@ -777,19 +776,19 @@ sub dump_variants {
       }
     }
 
-    my (@format)     = @{ $info->{$_}->[0] };
+    my (@format)        = @{ $info->{$_}->[0] };
     my (%format_long)   = @{ $info->{$_}->[1] };
-    my (%info_long)    = @{ $info->{$_}->[2] };
+    my (%info_long)     = @{ $info->{$_}->[2] };
 
-    my (@tumour_parts)   = @{ $info->{$_}->[3] };
-    my (@normal_parts)   = @{ $info->{$_}->[4] };
+    my (@tumour_parts)  = @{ $info->{$_}->[3] };
+    my (@normal_parts)  = @{ $info->{$_}->[4] };
 
-    my (%information)  = @{ $info->{$_}->[5] };
-    my (%sample_info)  = @{ $info->{$_}->[6] };
+    my (%information)   = @{ $info->{$_}->[5] };
+    my (%sample_info)   = @{ $info->{$_}->[6] };
 
-    my @filter_reasons = @{ $filters };
+    my @filter_reasons  = @{ $filters };
 
-    my @samples = @{ $samples };
+    my @samples         = @{ $samples };
 
     if ( scalar @filter_reasons > 0 ){
       next if $filter_flag;

@@ -27,6 +27,7 @@ my $dump;
 my $chromosome;
 my $type = "guess";
 my $print;
+my $sample;
 
 my %filters;
 
@@ -37,6 +38,7 @@ GetOptions( 'vcf=s'           =>    \$vcf_file,
             'filter:s'        =>    \%filters,
             'print'           =>    \$print,
             'chromosome=s'    =>    \$chromosome,
+            'sample=s'        =>    \$sample,
             'help'            =>    \$help
     ) or die usage();
 
@@ -45,7 +47,6 @@ if ($help) { exit usage() }
 if (not $vcf_file) {
    exit usage();
 }
-
 
 my ($filtered_out, $summary_out);
 if ($print){
@@ -140,10 +141,11 @@ if ($type eq 'snp') {
   }
 }
 
+
 sub usage {
   print
 "
-usage: $Script [-h] [-v FILE] [-p] [-t STR] [-i STR] [-d] [-f key=val] [-c STR]
+usage: $Script [-h] [-v vcf ] [-p] [-t str] [-i str] [-d] [-f key=val] [-c str]
 
 svParser
 author: Nick Riddiford (nick.riddiford\@curie.fr)
@@ -152,22 +154,25 @@ description: Browse vcf output from several SV callers LUMPY, DELLY and novobrea
 
 arguments:
   -h, --help            show this help message and exit
-  -v FILE, --vcf
+  -v vcf, --vcf
                         VCF input [required]
   -p, --print
                         print filtered vcf and summary file to './filtered'
-  -t STRING, --type
+  -t str, --type
                         specify input source [default: guess from input]
                         -l = LUMPY
                         -d = DELLY
                         -n = novobreak
-  -i STRING, --id
+                        -snp = snp/snv
+  -s str, --sample
+                        sample name [optional]
+  -i str, --id
                         breakpoint id to inspect
   -d, --dump            cycle through breakpoints
-  -c STRING, --chromosome
+  -c str, --chromosome
                         limit search to chromosome and/or region (e.g. X:10000-20000)
                         can be used in conjunction with -d
-  -f KEY=VAL, --filter
+  -f key=val, --filter
                         filters to apply:
                         -f su=INT [number of tumour reads supporting var]
                         -f dp=INT [minimum depth for both tumour normal at variant site]
