@@ -36,7 +36,7 @@ while getopts 'fmacsnh' flag; do
 done
 
 #script_bin=/Users/Nick/iCloud/Desktop/script_test/SV_Parser/script # home
-script_bin=/Users/Nick_curie/Desktop/script_test/SV_Parser/script # work
+script_bin=/Users/Nick_curie/Desktop/script_test/svParser/script # work
 
 if [[ $filter -eq 1 ]]
 then
