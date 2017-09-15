@@ -123,8 +123,8 @@ then
   for clustered_file in *clustered_SVs.txt
   do
     echo "Annotating $clustered_file"
-    echo "perl $script_bin/script/sv2gene.pl -f $features -i $clustered_file"
-    perl $script_bin/script/sv2gene.pl -f $features -i $clustered_file
+    echo "perl $script_bin/sv2gene.pl -f $features -i $clustered_file"
+    perl $script_bin/sv2gene.pl -f $features -i $clustered_file
     rm $clustered_file
   done
 
