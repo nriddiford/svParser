@@ -42,39 +42,40 @@ if [[ $filter -eq 1 ]]
 then
   for lumpy_file in data/lumpy/*.vcf
   do
-    echo "perl script/svParse.pl -v $lumpy_file -f a -t l -p"
-    perl script/svParse.pl -v $lumpy_file -f a -t l -p
+    echo "perl $script_bin/svParse.pl -v $lumpy_file -f a -t l -p"
+    perl $script_bin/svParse.pl -v $lumpy_file -f a -t l -p
   done
 
   for delly_file in data/delly/*.vcf
   do
-    echo "perl script/svParse.pl -v $delly_file -f a -t d -p"
-    perl script/svParse.pl -v $delly_file -f a -t d -p
+    echo "perl $script_bin/svParse.pl -v $delly_file -f a -t d -p"
+    perl $script_bin/svParse.pl -v $delly_file -f a -t d -p
   done
 
   for novo_file in data/novobreak/*.vcf
   do
-    echo "perl script/svParse.pl -v $novo_file -f a -t n -p"
-    perl script/svParse.pl -v $novo_file -f a -t n -p
+    echo "perl $script_bin/svParse.pl -v $novo_file -f a -t n -p"
+    perl $script_bin/svParse.pl -v $novo_file -f a -t n -p
   done
 
 fi
 
 cd filtered
 
-mergeVCF=`which mergevcf || true`
-
-if [[ -z "$mergeVCF" ]]
-then
-  usage
-  echo -e "Error: mergevcf was not found. Please set in path\n`pip install mergevcf`"
-  exit 1
-fi
-
 if [[ $merge -eq 1 ]]
 then
-  echo "perl ../script/merge_vcf.pl"
-  perl ../script/merge_vcf.pl
+
+  mergeVCF=`which mergevcf || true`
+
+  if [[ -z "$mergeVCF" ]]
+  then
+    usage
+    echo -e "Error: mergevcf was not found. Please set in path\n`pip install mergevcf`"
+    exit 1
+  fi
+
+  echo "perl $script_bin/merge_vcf.pl"
+  perl $script_bin/merge_vcf.pl
 fi
 
 cd summary
@@ -85,8 +86,8 @@ then
 
   for ((i=0;i<${#samples[@]};++i))
   do
-    echo "perl ../../script/svMerger.pl -f ${samples[i]}.*.txt"
-    perl ../../script/svMerger.pl -f ${samples[i]}.*.txt
+    echo "perl $script_bin/svMerger.pl -f ${samples[i]}.*.txt"
+    perl $script_bin/svMerger.pl -f ${samples[i]}.*.txt
   done
 
 fi
@@ -97,8 +98,8 @@ if [[ $merge -eq 1 ]]
 then
   for f in *_merged_SVs.txt
   do
-    echo "perl ../../../script/svClusters.pl $f"
-    perl ../../../script/svClusters.pl $f
+    echo "perl $script_bin/svClusters.pl $f"
+    perl $script_bin/svClusters.pl $f
     rm $f
   done
 fi
