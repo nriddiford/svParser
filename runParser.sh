@@ -67,7 +67,7 @@ mergeVCF=`which mergevcf || true`
 if [[ -z "$mergeVCF" ]]
 then
   usage
-  echo -e "Error: mergevcf was not found. Please set in path\n"
+  echo -e "Error: mergevcf was not found. Please set in path\n`pip install mergevcf`"
   exit 1
 fi
 
