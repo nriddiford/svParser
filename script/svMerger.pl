@@ -3,16 +3,10 @@ use strict;
 use warnings;
 
 use File::Basename;
-
-use feature qw/ say /;
-
-use FindBin qw($Bin);
-
-use Data::Printer;
-use Data::Dumper;
-
 use File::Path qw(make_path);
-
+use FindBin qw($Bin);
+use feature qw/ say /;
+use Data::Dumper;
 use Getopt::Long qw/ GetOptions /;
 
 my @files;
