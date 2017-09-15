@@ -2,6 +2,8 @@
 use strict;
 use warnings;
 
+use 5.18.2;
+
 use File::Basename;
 use File::Path qw(make_path);
 use FindBin qw($Bin);
