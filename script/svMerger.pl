@@ -63,10 +63,10 @@ foreach (@files){
 print $out "$header\n";
 
 for my $chr1 (sort keys %SVs){
-  for my $bp1 (sort { $a <=> $b } keys $SVs{$chr1}){
-    for my $chromosome2 (sort keys $SVs{$chr1}{$bp1}){
-      for my $bp2 (sort keys $SVs{$chr1}{$bp1}{$chromosome2} ){
-        print $out "$_\n" foreach @{$SVs{$chr1}{$bp1}{$chromosome2}{$bp2}};
+  for my $bp1 (sort { $a <=> $b } keys %{ $SVs{$chr1} }){
+    for my $chromosome2 (sort keys %{ $SVs{$chr1}{$bp1} }){
+      for my $bp2 (sort keys %{ $SVs{$chr1}{$bp1}{$chromosome2} }){
+        print $out "$_\n" foreach @{ $SVs{$chr1}{$bp1}{$chromosome2}{$bp2} };
       }
     }
   }
