@@ -3,7 +3,6 @@ use strict;
 use warnings;
 use autodie;
 use File::Basename;
-use Data::Printer;
 use Data::Dumper;
 use feature qw/ say /;
 
