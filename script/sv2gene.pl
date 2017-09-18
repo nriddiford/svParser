@@ -217,6 +217,7 @@ sub getbps {
         if ( (not exists $smallest_hit_feature{$gene}) or ($smallest_hit_feature{$gene} > ($feature_stop - $feature_start)) ){
           $smallest_hit_feature{$gene} = ($feature_stop - $feature_start);
           $bp_feature = $feature;
+          $feature = 'exon' if $feature eq 'CDS'; # Adapted from snv2gene
           $bp_gene = $gene;
           $hit_bp = "$gene, $feature";
         }
