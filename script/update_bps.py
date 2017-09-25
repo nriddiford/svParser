@@ -21,9 +21,9 @@ def filter(coords, false_calls, outfile, line):
         outfile.write(line)
 
 def remove_false_positives_from_bps(all_bps_file, all_bps_file_clean):
-    """Removes false positives from the files 'all_bps_new.txt' and 'bps_accross_genome_new.txt'"""
+    """Removes false positives from the files 'all_bps_filtered.txt' and 'bps_accross_genome_new.txt'"""
 
-    with open(all_bps,'U') as bps_in, open('all_bps_new.txt', 'w') as all_bps_out:
+    with open(all_bps,'U') as bps_in, open('all_bps_filtered.txt', 'w') as all_bps_out:
         for l in bps_in:
             parts = l.rstrip().split('\t')
             # print(parts)
@@ -33,4 +33,4 @@ def remove_false_positives_from_bps(all_bps_file, all_bps_file_clean):
 
             filter(coords, false_calls, all_bps_out, l)
 
-remove_false_positives_from_bps(all_bps_file=all_bps, all_bps_file_clean='all_bps_new.txt')
+remove_false_positives_from_bps(all_bps_file=all_bps, all_bps_file_clean='all_bps_filtered.txt')

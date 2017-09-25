@@ -23,8 +23,8 @@ out_base = base_name.split('_')[0]
 
 pattern = out_base + '*.cnv'
 
-big_window='/Users/Nick_curie/Desktop/script_test/CNV-Seq/Harry-Plotter/cnvs'
-samll_window='/Users/Nick_curie/Desktop/script_test/CNV-Seq/Harry-Plotter/cnvs/w_500'
+big_window='/Users/Nick_curie/Desktop/script_test/cnvPlotteR/data'
+samll_window='/Users/Nick_curie/Desktop/script_test/cnvPlotteR/data/w500'
 
 def select_cnvfile(sv_size, bp1, bp2):
     if float(sv_size) <= 1000:
@@ -37,7 +37,7 @@ def select_cnvfile(sv_size, bp1, bp2):
         files = os.listdir(samll_window)
         for name in files:
             if fnmatch.fnmatch(name, pattern):
-                name = "cnvs/w_500/" + name
+                name = "data/w500/" + name
                 return[name, start, stop, tick]
     else:
         start = bp1 - 1000000
@@ -49,11 +49,11 @@ def select_cnvfile(sv_size, bp1, bp2):
         files = os.listdir(big_window)
         for name in files:
             if fnmatch.fnmatch(name, pattern):
-                name = "cnvs/" + name
+                name = "data/" + name
                 return[name, start, stop, tick]
 
 def print_R_command(SV_calls):
-    """Generates command that can be used to plot CNVs with https://github.com/nriddiford/Harry-Plotter"""
+    """Generates command that can be used to plot CNVs with https://github.com/nriddiford/cnvPlotteR"""
     i=1
     with open(options.SV_calls, 'U') as calls:
         for l in calls:
@@ -75,6 +75,6 @@ def print_R_command(SV_calls):
                 end = fields[2]
                 tick = fields[3]
                 print("SV event: %s, type: %s, size: %s") % (event, type, size)
-                print("plot.region(cnv_file=\"%s\", from=%s, to=%s, bp1=%s,bp2=%s,chrom=\"%s\", tick=%s, title=\"%sKb %s on %s\")") % (cnv_file, start, end, bp1, bp2, chrom1, tick, size, type, chrom1)
+                print("regionPlot(cnv_file=\"%s\", from=%s, to=%s, bp1=%s,bp2=%s,chrom=\"%s\", tick=%s, title=\"%sKb %s on %s\")") % (cnv_file, start, end, bp1, bp2, chrom1, tick, size, type, chrom1)
 
 print_R_command(SV_calls=options.SV_calls)
