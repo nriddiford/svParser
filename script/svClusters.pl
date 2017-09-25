@@ -47,7 +47,7 @@ sub run {
             next;
         }
 
-        if (same_event($events[-1][-1], \%event, 10)) {
+        if (same_event($events[-1][-1], \%event, 50)) {
             push @{ $events[-1] }, \%event;
             next;
         }

@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 
 # this script reads each reannotated_SVs file and appends coordinates for bps to a new file 'all_bps_cleaned'
+# This has to be done in a second pass (i.e. not in sv2gene --reannotate) in case of modification of SV types etc - sv2gene.pl will ignore previously annotated calls
+
 import sys
 
 from optparse import OptionParser

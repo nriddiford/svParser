@@ -78,7 +78,7 @@ sub annotate_SVs {
     open $annotated_svs, '>', $sample . "_reannotated_SVs.txt";
     print "Reannotating SV calls from $sample\n";
     open $genes_out, '>>', 'all_genes.txt';
-    open $bp_out, '>>', 'all_bps_cleaned.txt';
+    open $bp_out, '>>', 'all_bps_cleaned1.txt';
   }
   else{
     open $annotated_svs, '>', $sample . "_annotated_SVs.txt";
@@ -105,7 +105,7 @@ sub annotate_SVs {
         next;
       }
       else {
-        print $annotated_svs join("\t", $_, "id,", "bp1 locus", "bp2 locus", "affected genes", "notes") . "\n";
+        print $annotated_svs join("\t", $_, "bp1_locus", "bp2_locus", "affected genes", "notes") . "\n";
         next;
       }
     }
@@ -126,25 +126,25 @@ sub annotate_SVs {
     my (%hits, $hits);
     my @hit_genes;
     my $hit_genes;
-    my $hit_id;
+    my ($bp1_id, $bp2_id);
     my $hit_bp1 = "intergenic";
     my $hit_bp2 = "intergenic";
 
     if ($type eq "DEL" or $type eq "DUP" or $type eq 'TANDUP'){
-      ($hit_bp1, $hit_genes, $hit_id, $hits) = getbps('bp1', $event, $type, $chrom1, $bp1, $hit_bp1, $length, \@hit_genes, \%hits);
+      ($hit_bp1, $hit_genes, $hits) = getbps('bp1', $event, $type, $chrom1, $bp1, $hit_bp1, $length, \@hit_genes, \%hits);
       ($hit_genes, $hits)           = getgenes($chrom1, $bp1, $bp2, $hit_genes, $hits);
-      ($hit_bp2, $hit_genes, $hit_id, $hits) = getbps('bp2', $event, $type, $chrom2, $bp2, $hit_bp2, $length, $hit_genes, $hits);
+      ($hit_bp2, $hit_genes, $hits) = getbps('bp2', $event, $type, $chrom2, $bp2, $hit_bp2, $length, $hit_genes, $hits);
       @hit_genes = @{ $hit_genes };
       %hits = %{ $hits };
     }
     else {
-      ($hit_bp1, $hit_genes, $hit_id, $hits) = getbps('bp1', $event, $type, $chrom1, $bp1, $hit_bp1, $length, \@hit_genes, \%hits);
-      ($hit_bp2, $hit_genes, $hit_id, $hits) = getbps('bp2', $event, $type, $chrom2, $bp2, $hit_bp2, $length, $hit_genes, $hits);
+      ($hit_bp1, $hit_genes, $hits) = getbps('bp1', $event, $type, $chrom1, $bp1, $hit_bp1, $length, \@hit_genes, \%hits);
+      ($hit_bp2, $hit_genes, $hits) = getbps('bp2', $event, $type, $chrom2, $bp2, $hit_bp2, $length, $hit_genes, $hits);
       @hit_genes = @{ $hit_genes };
       %hits = %{ $hits };
     }
 
-    print $genes_out $_ . "\n" foreach @hit_genes;
+    print $genes_out $_ . "\t" . $type . "\n" foreach @hit_genes;
 
     my $affected_genes = scalar @hit_genes;
     my $joined_genes = join(", ", @hit_genes);
@@ -162,7 +162,7 @@ sub annotate_SVs {
 
     my $joined_genes2print = join(", ", @hit_genes);
 
-    print $annotated_svs join("\t", $_, $hit_id, $hit_bp1, $hit_bp2, $joined_genes2print, " ") . "\n";
+    print $annotated_svs join("\t", $_, $hit_bp1, $hit_bp2, $joined_genes2print, " ") . "\n";
     $call++;
   }
 }
@@ -192,7 +192,7 @@ sub getbps {
   my %smallest_hit_feature;
   my $bp_feature = "intergenic";
   my $bp_gene = "intergenic";
-  my $bp_gene_id = "intergenic";
+  my $bp_gene_id = "-";
 
   for my $gene ( sort { $genes{$chrom}{$a}[0] <=> $genes{$chrom}{$b}[0] } keys %{$genes{$chrom}} ){
     # Smallest features are last (and will then replace larger overlapping features i.e. exon over CDS)
@@ -232,9 +232,9 @@ sub getbps {
   }
 
 }
-  print $bp_out join ("\t", $event, $bp_id, $sample, $chrom, $bp, $bp_gene, $bp_feature, $bp_gene_id, $type, $length) . "\n";
+  print $bp_out join ("\t", $event, $sample, $chrom, $bp, $bp_gene, $bp_feature, $type, $length) . "\n" unless $reannotate;
 
-  return ($hit_bp, \@hit_genes, $bp_gene_id, \%hits);
+  return ($hit_bp, \@hit_genes, \%hits);
 }
 
 sub usage {
