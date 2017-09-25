@@ -43,11 +43,12 @@ sub make_gene_hash {
 
   while(<$bed_in>){
     chomp;
-    my ($chrom, $feature, $start, $stop, $gene) = (split)[0,2,3,4,11];
+    my ($chrom, $feature, $start, $stop, $id, $gene) = (split)[0,2,3,4,9,11];
     ($gene) = $gene =~ /\"(.*)\";/;
+    ($id) = $id =~ /\"(.*)\";/;
 
     if ($feature eq 'gene'){
-      $genes{$chrom}{$gene} = [$start, $stop];
+      $genes{$chrom}{$gene} = [$start, $stop, $id];
     }
 
     else {
@@ -77,7 +78,7 @@ sub annotate_SVs {
     open $annotated_svs, '>', $sample . "_reannotated_SVs.txt";
     print "Reannotating SV calls from $sample\n";
     open $genes_out, '>>', 'all_genes.txt';
-    open $bp_out, '>>', 'all_bps.txt';
+    open $bp_out, '>>', 'all_bps_cleaned.txt';
   }
   else{
     open $annotated_svs, '>', $sample . "_annotated_SVs.txt";
@@ -104,7 +105,7 @@ sub annotate_SVs {
         next;
       }
       else {
-        print $annotated_svs join("\t", $_, "bp1 locus", "bp2 locus", "affected genes", "notes") . "\n";
+        print $annotated_svs join("\t", $_, "id,", "bp1 locus", "bp2 locus", "affected genes", "notes") . "\n";
         next;
       }
     }
@@ -125,19 +126,20 @@ sub annotate_SVs {
     my (%hits, $hits);
     my @hit_genes;
     my $hit_genes;
+    my $hit_id;
     my $hit_bp1 = "intergenic";
     my $hit_bp2 = "intergenic";
 
     if ($type eq "DEL" or $type eq "DUP" or $type eq 'TANDUP'){
-      ($hit_bp1, $hit_genes, $hits) = getbps('bp1', $event, $type, $chrom1, $bp1, $hit_bp1, $length, \@hit_genes, \%hits);
+      ($hit_bp1, $hit_genes, $hit_id, $hits) = getbps('bp1', $event, $type, $chrom1, $bp1, $hit_bp1, $length, \@hit_genes, \%hits);
       ($hit_genes, $hits)           = getgenes($chrom1, $bp1, $bp2, $hit_genes, $hits);
-      ($hit_bp2, $hit_genes, $hits) = getbps('bp2', $event, $type, $chrom2, $bp2, $hit_bp2, $length, $hit_genes, $hits);
+      ($hit_bp2, $hit_genes, $hit_id, $hits) = getbps('bp2', $event, $type, $chrom2, $bp2, $hit_bp2, $length, $hit_genes, $hits);
       @hit_genes = @{ $hit_genes };
       %hits = %{ $hits };
     }
     else {
-      ($hit_bp1, $hit_genes, $hits) = getbps('bp1', $event, $type, $chrom1, $bp1, $hit_bp1, $length, \@hit_genes, \%hits);
-      ($hit_bp2, $hit_genes, $hits) = getbps('bp2', $event, $type, $chrom2, $bp2, $hit_bp2, $length, $hit_genes, $hits);
+      ($hit_bp1, $hit_genes, $hit_id, $hits) = getbps('bp1', $event, $type, $chrom1, $bp1, $hit_bp1, $length, \@hit_genes, \%hits);
+      ($hit_bp2, $hit_genes, $hit_id, $hits) = getbps('bp2', $event, $type, $chrom2, $bp2, $hit_bp2, $length, $hit_genes, $hits);
       @hit_genes = @{ $hit_genes };
       %hits = %{ $hits };
     }
@@ -160,7 +162,7 @@ sub annotate_SVs {
 
     my $joined_genes2print = join(", ", @hit_genes);
 
-    print $annotated_svs join("\t", $_, $hit_bp1, $hit_bp2, $joined_genes2print, " ") . "\n";
+    print $annotated_svs join("\t", $_, $hit_id, $hit_bp1, $hit_bp2, $joined_genes2print, " ") . "\n";
     $call++;
   }
 }
@@ -190,11 +192,13 @@ sub getbps {
   my %smallest_hit_feature;
   my $bp_feature = "intergenic";
   my $bp_gene = "intergenic";
-
+  my $bp_gene_id = "intergenic";
 
   for my $gene ( sort { $genes{$chrom}{$a}[0] <=> $genes{$chrom}{$b}[0] } keys %{$genes{$chrom}} ){
     # Smallest features are last (and will then replace larger overlapping features i.e. exon over CDS)
     my %smallest_hit_feature;
+
+    my $gene_id = $genes{$chrom}{$gene}[2];
 
     for my $transcript ( sort keys %{$transcript_length{$chrom}{$gene}}){
 
@@ -219,6 +223,7 @@ sub getbps {
           $bp_feature = $feature;
           $feature = 'exon' if $feature eq 'CDS'; # Adapted from snv2gene
           $bp_gene = $gene;
+          $bp_gene_id = $gene_id;
           $hit_bp = "$gene, $feature";
         }
 
@@ -227,9 +232,9 @@ sub getbps {
   }
 
 }
-  print $bp_out join ("\t", $event, $bp_id, $sample, $chrom, $bp, $bp_gene, $bp_feature, $type, $length) . "\n";
+  print $bp_out join ("\t", $event, $bp_id, $sample, $chrom, $bp, $bp_gene, $bp_feature, $bp_gene_id, $type, $length) . "\n";
 
-  return ($hit_bp, \@hit_genes, \%hits);
+  return ($hit_bp, \@hit_genes, $bp_gene_id, \%hits);
 }
 
 sub usage {
