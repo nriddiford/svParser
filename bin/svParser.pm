@@ -200,6 +200,8 @@ sub parse {
     if ( $filter_flags{'chr'} ){
       $filter_list = chrom_filter( $chr, $chr2, $filter_list );
     }
+
+    $SV_length = abs($SV_length);
     $SVs{$id} = [ @fields[0..10], $SV_type, $SV_length, $stop, $chr2, $t_SR, $t_PE, $filter_list, \@samples ];
 
     $info{$id} = [ [@format], [%format_long], [%info_long], [@tumour_parts], [@normal_parts], [%information], [%sample_info] ];
