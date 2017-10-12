@@ -913,7 +913,7 @@ sub write_summary {
 
   say "Writing useful info to " . "'$summary_out" . $name . ".filtered.summary.txt'";
 
-  print $info_file join("\t", "source", "type", "chromosome1", "bp1", "chromosome2", "bp2", "split reads", "pe reads", "id", "length(Kb)", "position", "consensus", "microhomology length", "configuration", "read depth ratio", "read depth evidence") . "\n";
+  print $info_file join("\t", "source", "type", "chromosome1", "bp1", "chromosome2", "bp2", "split reads", "pe reads", "id", "length(Kb)", "position", "consensus", "microhomology", "configuration", "read_depth_ratio", "misc") . "\n";
 
   for ( sort { @{ $SVs->{$a}}[0] cmp @{ $SVs->{$b}}[0] or
         @{ $SVs->{$a}}[1] <=> @{ $SVs->{$b}}[1]

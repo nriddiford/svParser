@@ -58,6 +58,13 @@ then
     perl $script_bin/svParse.pl -v $novo_file -f a -t n -p
   done
 
+  meer_files+=( $(ls -1 data/meerkat/*.variants | cut -d '.' -f 1 | sort -u ) )
+  for ((i=0;i<${#meer_files[@]};++i))
+  do
+    echo "perl $script_bin/parseMeerkat.pl ${meer_files[i]}.*.variants ${meer_files[i]}.*.fusions"
+    perl $script_bin/parseMeerkat.pl ${meer_files[i]}.*.variants ${meer_files[i]}.*.fusions
+  done
+
 fi
 
 cd filtered
@@ -82,6 +89,7 @@ cd summary
 
 if [[ $merge -eq 1 ]]
 then
+
   samples+=( $(ls -1 *.txt | cut -d '.' -f 1 | sort -u ) )
 
   for ((i=0;i<${#samples[@]};++i))

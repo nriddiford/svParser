@@ -31,9 +31,9 @@ my (%transcript_length, %genes, %features);
 
 my ($sample, $annotated_svs, $genes_out, $bp_out);
 
-make_gene_hash($features);
+# make_gene_hash($features);
 
-annotate_SVs($sv_calls);
+# annotate_SVs($sv_calls);
 
 sub make_gene_hash {
   my $bed_file = shift;
@@ -105,7 +105,7 @@ sub annotate_SVs {
         next;
       }
       else {
-        print $annotated_svs join("\t", $_, "bp1_locus", "bp2_locus", "affected genes", "notes") . "\n";
+        print $annotated_svs join("\t", $_, "bp1_locus", "bp2_locus", "affected_genes", "T/F", "notes") . "\n";
         next;
       }
     }
@@ -150,7 +150,7 @@ sub annotate_SVs {
     my $joined_genes = join(", ", @hit_genes);
 
     if ($type eq 'DEL' or $type eq 'DUP' or $type eq 'TANDUP'){
-      say "SV $call: $length kb $type affecting $affected_genes genes: $joined_genes Bp1: $hit_bp1 Bp2: $hit_bp2 ";
+      say "SV $call: $length kb $type affecting $affected_genes genes: Bp1: $hit_bp1 Bp2: $hit_bp2 ";
     }
     else {
       say "SV $call: $length kb $type with break points in $chrom1\:$bp1 ($hit_bp1) and $chrom2\:$bp2 ($hit_bp2)";
