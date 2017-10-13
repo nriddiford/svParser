@@ -128,11 +128,27 @@ then
     rm all_bps.txt
   fi
 
+  if [ -f all_samples_false_calls.txt ]
+  then
+    for annofile in *_annotated_SVs.txt
+    do
+      echo "Updating 'all_samples_false_calls.txt' with false positive calls from annotated files"
+      python $script_bin/clean.py -f $annofile
+    done
+    rm *cleaned_SVs.txt
+  fi
+
   for clustered_file in *clustered_SVs.txt
   do
     echo "Annotating $clustered_file"
-    echo "perl $script_bin/sv2gene.pl -f $features -i $clustered_file"
-    perl $script_bin/sv2gene.pl -f $features -i $clustered_file
+    if [ -f all_samples_false_calls.txt ]
+    then
+      echo "perl $script_bin/sv2gene.pl -f $features -i $clustered_file -b all_samples_false_calls.txt"
+      perl $script_bin/sv2gene.pl -f $features -i $clustered_file -b all_samples_false_calls.txt
+    else
+      echo "perl $script_bin/sv2gene.pl -f $features -i $clustered_file"
+      perl $script_bin/sv2gene.pl -f $features -i $clustered_file
+    fi
     rm $clustered_file
   done
 

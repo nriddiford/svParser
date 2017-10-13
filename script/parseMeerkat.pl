@@ -60,7 +60,7 @@ sub extractFusions {
     ($event) = 'DEL' if $event =~ /del/;
     ($event) = 'DEL_INV' if $event =~ /del_inv/;
     ($event) = 'INV' if $event =~ /^inv/;
-    ($event) = 'DUP' if $event =~ /dup/;
+    ($event) = 'TANDUP' if $event =~ /dup/;
     ($event) = 'INS' if $event =~ /^ins/;
     ($event) = 'TRA' if $event =~ /^trans/;
 
@@ -70,9 +70,11 @@ sub extractFusions {
     # say "---";
 
     my $size = $var_parts[8];
+    $size = sprintf("%.1f", abs($size)/1000);
+
     $size = 'NA' if $event eq 'TRA';
 
-    push @lines, join("\t", "Meerkat", $event, $parts[3], $parts[4], $parts[8], $parts[9], $parts[17], $parts[16], $parts[15], $size, "$parts[3]:$parts[4]-$parts[9]", $parts[18], $config, $parts[13], "-", $var_parts[1] );
+    push @lines, join("\t", "Meerkat", $event, $parts[3], $parts[4], $parts[8], $parts[9], $parts[17], $parts[16], $parts[15], $size, "$parts[3]:$parts[4]-$parts[9]", "-", $parts[18], $config, $parts[13], "-", $var_parts[1] );
     # print join("\t", "Meerkat", $event, $parts[3], $parts[4], $parts[8], $parts[9], $parts[17], $parts[16], $parts[15], $size, "$parts[3]:$parts[4]-$parts[9]", $parts[18], $config, $parts[13], $var_parts[1] ) . "\n";
 
   }
@@ -99,17 +101,3 @@ sub extractFusions {
 
 # source	type	chromosome1	bp1	chromosome2	bp2	split reads	pe reads	id	length(Kb)	position	consensus_microhomology_length	configuration	read_depth_ratio	read_depth_evidence
 # source	type	chromosome1	bp1	chromosome2	bp2	split_reads	pe_reads	id	length(Kb)	position	consensus_microhomology_length	configuration	mechanism	read_depth_evidence
-
-
-__DATA__
-del	 mechanism	 cluster id	 number of supporting read pairs	 number of supporting split reads	 chr	 range of deletion (2 col)	 deletion size	 homology sizes	 annotation of break points
-del_ins	 mechanism	 cluster id	 number of supporting read pairs	 number of supporting split reads	 chr	 range of deletion (2 col)	 deletion size	 chr (donor)	 range of insertion (2 col)	 insert size	 annotation of break points
-del_inss/o*	 mechanism	 cluster id	 number of supporting read pairs	 number of supporting split reads	 chr	 range of deletion (2 col)	 deletion size	 chr (donor)	 range of insertion (2 col)	 insert size	 distance of deletion and insertion	 homology at break points
-del_invers	 mechanism	 cluster id	 number of supporting read pairs	 number of supporting split reads	 chr	 range of deletion (2 col)	 deletion size	 chr (donor)	 range of inversion (2 col)	 inversion size	 distance of inverstion and deletion (2 col)	 homology at break points
-inss/o*	 mechanism	 cluster id	 number of supporting read pairs	 number of supporting split reads	 chr	 range of deletion (2 col)	 deletion size	 rchr (donor)	 ange of insertion (2 col)	 insert size	 distance of deletion and insertion	 homology at break points
-invers	 mechanism	 cluster id	 number of supporting read pairs	 number of supporting split reads	 chr	 inversion left boundary	 inversion right boundary	 inversion size	 homology at break points	 annotation of break points
-invers_*	 mechanism	 cluster id	 number of supporting read pairs	 number of supporting split reads	 chr	 inversion left boundary	 inversion right boundary	 inversion size	 homology at break points	 annotation of break points
-tandem_dup	 mechanism	 cluster id	 number of supporting read pairs	 number of supporting split reads	 chr	 tandem duplication boundary 1	 tandem duplication boundary 2	 tandem duplication size	 homology at break points	 annotation of break points
-del_inss/o	 mechanism	 cluster id	 number of supporting read pairs	 number of supporting split reads	 chr	 range of deletion (2 col)	 deletion size	 chr of insertion donor	 range of insertion (2 col)	 insert size	 homology at break points	 annotation of break points
-inss/o	 mechanism	 cluster id	 number of supporting read pairs	 number of supporting split reads	 chr	 range of insert site	 insert site size	 chr of insertion donor	 range of insertion (2 col)	 insert size	 homology at break points	 annotation of break points
-transl_inter	 mechanism	 cluster id	 number of supporting read pairs	 number of supporting split reads	 chr of 1st cluster	 boundary of 1st cluster	 orientation of 1st cluster	 chr of 2nd cluster	 boundary of 2nd cluster	 orientation of 2nd cluster	 homology at break points	 annotation of break points
