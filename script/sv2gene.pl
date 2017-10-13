@@ -14,11 +14,13 @@ my $sv_calls;
 my $help;
 my $features;
 my $reannotate;
+my $blacklist;
 
 GetOptions( 'infile=s'         =>    \$sv_calls,
             'features=s'       =>    \$features,
-            'help'             =>    \$help,
-            're-annotate'      =>    \$reannotate
+            're-annotate'      =>    \$reannotate,
+            'blacklist=s'      =>    \$blacklist,
+            'help'             =>    \$help
     ) or die usage();
 
 if ($help) { exit usage() }
@@ -27,13 +29,23 @@ if (not $sv_calls and not $features ){
   exit usage();
 }
 
+my %false_positives;
+
+if ($blacklist){
+  open my $blacklist_file, '<', $blacklist;
+  while(<$blacklist_file>){
+    chomp;
+    $false_positives{$_}++;
+    }
+}
+
 my (%transcript_length, %genes, %features);
 
 my ($sample, $annotated_svs, $genes_out, $bp_out);
 
-# make_gene_hash($features);
+make_gene_hash($features);
 
-# annotate_SVs($sv_calls);
+annotate_SVs($sv_calls);
 
 sub make_gene_hash {
   my $bed_file = shift;
@@ -162,8 +174,23 @@ sub annotate_SVs {
 
     my $joined_genes2print = join(", ", @hit_genes);
 
-    print $annotated_svs join("\t", $_, $hit_bp1, $hit_bp2, $joined_genes2print, " ") . "\n";
-    $call++;
+#B241R61_2L_6585179_3R_22087365
+    if ($blacklist){
+      my $blacklist_lookup = join("_", $sample, $chrom1, $bp1, $chrom2, $bp2 );
+      if (exists $false_positives{$blacklist_lookup}){
+        say "* Marking blacklisted call as FP: $blacklist_lookup";
+        print $annotated_svs join("\t", $_, $hit_bp1, $hit_bp2, $joined_genes2print, "F") . "\n";
+      }
+      else {
+        print $annotated_svs join("\t", $_, $hit_bp1, $hit_bp2, $joined_genes2print, " ") . "\n";
+        $call++;
+      }
+
+    }
+    else {
+      print $annotated_svs join("\t", $_, $hit_bp1, $hit_bp2, $joined_genes2print, " ") . "\n";
+      $call++;
+    }
   }
 }
 
