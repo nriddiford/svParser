@@ -8,6 +8,7 @@ use 5.18.2;
 
 use feature qw/ say /;
 use Data::Dumper;
+use Data::Printer;
 
 sub typer {
   my ($file, $type, %filters) = @_;
@@ -173,14 +174,14 @@ sub parse {
 
     my ($SV_type) = $info_block =~ /SVTYPE=(.*?);/;
 
-    my ($SV_length, $chr2, $stop, $t_SR, $t_PE, $filter_list);
+    my ($SV_length, $chr2, $stop, $t_SR, $t_PE, $ab, $filter_list);
 
     if ($type eq 'lumpy'){
-      ( $SV_length, $chr2, $stop, $t_SR, $t_PE, $filter_list ) = lumpy( $id, $info_block, $SV_type, $alt, $start, \%sample_info, $tumour_name, $control_name, \@samples, \@normals, \@filter_reasons, \%filter_flags );
+      ( $SV_length, $chr2, $stop, $t_SR, $t_PE, $ab, $filter_list ) = lumpy( $id, $info_block, $SV_type, $alt, $start, \%sample_info, $tumour_name, $control_name, \@samples, \@normals, \@filter_reasons, \%filter_flags );
     }
 
     elsif ($type eq 'delly'){
-      ( $SV_length, $chr2, $stop, $t_SR, $t_PE, $filter_list ) = delly( $info_block, $start, $SV_type, \@filter_reasons, \%filter_flags );
+      ( $SV_length, $chr2, $stop, $t_SR, $t_PE, $ab, $filter_list ) = delly( $id, $info_block, $start, $SV_type, \@filter_reasons, \%filter_flags, $tumour_name, \%sample_info );
     }
 
     elsif ($type eq 'novobreak'){
@@ -188,6 +189,7 @@ sub parse {
       my ( $sample_info_novo, $format_novo, $format_long_novo );
       ( $SV_length, $chr2, $stop, $t_PE, $t_SR, $filter_list, $sample_info_novo, $format_novo, $format_long_novo ) = novobreak( $id, $info_block, $start, $SV_type, \@filter_reasons, \@sample_info, \%filter_flags );
       %sample_info = %{ $sample_info_novo };
+      $ab = "-";
       @format = @{ $format_novo };
       %format_long = %{ $format_long_novo };
     }
@@ -202,7 +204,7 @@ sub parse {
     }
 
     $SV_length = abs($SV_length);
-    $SVs{$id} = [ @fields[0..10], $SV_type, $SV_length, $stop, $chr2, $t_SR, $t_PE, $filter_list, \@samples ];
+    $SVs{$id} = [ @fields[0..10], $SV_type, $SV_length, $stop, $chr2, $t_SR, $t_PE, $ab, $filter_list, \@samples ];
 
     $info{$id} = [ [@format], [%format_long], [%info_long], [@tumour_parts], [@normal_parts], [%information], [%sample_info] ];
 
@@ -265,7 +267,7 @@ sub novobreak {
   $t_PE = $t_PE/2;
 
   $t_SR = int($t_SR + 0.5);
-  $t_PE = int($t_SR + 0.5);
+  $t_PE = int($t_PE + 0.5);
 
   # my $t_PE = 0; # Don't believe PE read support!
 
@@ -366,6 +368,9 @@ sub lumpy {
   my ($SV_length) = $info_block =~ /SVLEN=(.*?);/;
 
   my ($t_PE, $t_SR, $all_c_PE, $all_c_SR, $c_PE, $c_SR) = (0,0,0,0,0,0);
+
+  # Get allele balance
+  my $ab = $sample_info{$id}{$tumour}{'AB'};
 
   ########################
   # Read support filters #
@@ -486,15 +491,22 @@ sub lumpy {
 
   }
 
-  return ($SV_length, $chr2, $stop, $t_SR, $t_PE, \@filter_reasons);
+  return ($SV_length, $chr2, $stop, $t_SR, $t_PE, $ab, \@filter_reasons);
 }
 
 sub delly {
-  my ($info_block, $start, $SV_type, $filters, $filter_flags) = @_;
+  my ($id, $info_block, $start, $SV_type, $filters, $filter_flags, $tumour_name, $sample_ref) = @_;
 
   my @filter_reasons = @{ $filters };
 
   my %filter_flags = %{ $filter_flags };
+
+  my %sample_info = % { $sample_ref };
+
+  my $dv = $sample_info{$id}{$tumour_name}{'DV'};
+  my $dr = $sample_info{$id}{$tumour_name}{'DR'};
+
+  my $ab = $dv/($dv+$dr);
 
   my ($stop) = $info_block =~ /;END=(.*?);/;
 
@@ -530,7 +542,7 @@ sub delly {
     my ($chr2) = $info_block =~ /CHR2=(.*?);/;
   # }
 
-  return ($SV_length, $chr2, $stop, $t_SR, $t_PE, \@filter_reasons );
+  return ($SV_length, $chr2, $stop, $t_SR, $t_PE, $ab, \@filter_reasons );
 }
 
 sub summarise_variants {
@@ -575,7 +587,7 @@ sub summarise_variants {
 
   for (keys %{ $SVs } ){
 
-    my ( $chr, $start, $id, $ref, $alt, $quality_score, $filt, $info_block, $format_block, $tumour_info_block, $normal_info_block, $sv_type, $SV_length, $stop, $chr2, $SR, $PE, $filters ) = @{ $SVs->{$_} };
+    my ( $chr, $start, $id, $ref, $alt, $quality_score, $filt, $info_block, $format_block, $tumour_info_block, $normal_info_block, $sv_type, $SV_length, $stop, $chr2, $SR, $PE, $ab, $filters ) = @{ $SVs->{$_} };
 
     if ( $chromosome ){
       next if $chr ne $chromosome;
@@ -762,7 +774,7 @@ sub dump_variants {
         @{ $SVs->{$a}}[1] <=> @{ $SVs->{$b}}[1]
       }  keys %{ $SVs } ){
 
-    my ( $chr, $start, $id, $ref, $alt, $quality_score, $filt, $info_block, $format_block, $tumour_info_block, $normal_info_block, $sv_type, $SV_length, $stop, $chr2, $SR, $PE, $filters, $samples ) = @{ $SVs->{$_} };
+    my ( $chr, $start, $id, $ref, $alt, $quality_score, $filt, $info_block, $format_block, $tumour_info_block, $normal_info_block, $sv_type, $SV_length, $stop, $chr2, $SR, $PE, $ab, $filters, $samples ) = @{ $SVs->{$_} };
 
     $id = $_;
 
@@ -913,12 +925,12 @@ sub write_summary {
 
   say "Writing useful info to " . "'$summary_out" . $name . ".filtered.summary.txt'";
 
-  print $info_file join("\t", "source", "type", "chromosome1", "bp1", "chromosome2", "bp2", "split reads", "pe reads", "id", "length(Kb)", "position", "consensus", "microhomology", "configuration", "read_depth_ratio", "misc") . "\n";
+  print $info_file join("\t", "source", "type", "chromosome1", "bp1", "chromosome2", "bp2", "split reads", "pe reads", "id", "length(Kb)", "position", "consensus|type", "microhomology", "configuration", "allele_frequency", "mechanism|cnv") . "\n";
 
   for ( sort { @{ $SVs->{$a}}[0] cmp @{ $SVs->{$b}}[0] or
         @{ $SVs->{$a}}[1] <=> @{ $SVs->{$b}}[1]
       }  keys %{ $SVs } ){
-    my ( $chr, $start, $id, $ref, $alt, $quality_score, $filt, $info_block, $format_block, $tumour_info_block, $normal_info_block, $sv_type, $SV_length, $stop, $chr2, $SR, $PE, $filters, $samples ) = @{ $SVs->{$_} };
+    my ( $chr, $start, $id, $ref, $alt, $quality_score, $filt, $info_block, $format_block, $tumour_info_block, $normal_info_block, $sv_type, $SV_length, $stop, $chr2, $SR, $PE, $ab, $filters, $samples ) = @{ $SVs->{$_} };
     if (scalar @{$filters} == 0){
 
       my $bp_id = $_;
@@ -929,6 +941,8 @@ sub write_summary {
       next if $connected_bps{$bp_id}++;
 
       my ($length_in_kb) = sprintf("%.1f", abs($SV_length)/1000);
+
+      $ab = sprintf("%.2f", $ab) unless $type eq 'novobreak';
 
       # Don't include DELS < 1kb with split read support == 0
       if ( ( $sv_type eq "DEL" and $length_in_kb < 1 ) and $SR == 0 ){
@@ -954,13 +968,13 @@ sub write_summary {
         $rdr = '-';
       }
 
-      # Read depth evidence (lumpy)
-      if ($info_block =~ /BD=(\d+)/){
-        $rde = $1;
-      }
-      else {
-        $rde = '-';
-      }
+      # # Read depth evidence (lumpy)
+      # if ($info_block =~ /BD=(\d+)/){
+      #   $rde = $1;
+      # }
+      # else {
+      #   $rde = '-';
+      # }
 
       # Microhology length (delly)
       if ($info_block =~ /HOMLEN=(\d+);/){
@@ -982,10 +996,10 @@ sub write_summary {
       }
 
       if ( $chr2 and ($chr2 ne $chr) ){
-        print $info_file join("\t", $type, $sv_type, $chr, $start, $chr2, $stop, $SR, $PE, $_, $length_in_kb, "$chr:$start $chr2:$stop", $consensus, $mh_length, $ct, $rdr, $rde ) . "\n";
+        print $info_file join("\t", $type, $sv_type, $chr, $start, $chr2, $stop, $SR, $PE, $_, $length_in_kb, "$chr:$start $chr2:$stop", $consensus, $mh_length, $ct, $ab, $rdr ) . "\n";
       }
       else {
-        print $info_file join("\t", $type, $sv_type, $chr, $start, $chr, $stop, $SR, $PE, $_, $length_in_kb, "$chr:$start-$stop", $consensus, $mh_length, $ct, $rdr, $rde ) . "\n";
+        print $info_file join("\t", $type, $sv_type, $chr, $start, $chr, $stop, $SR, $PE, $_, $length_in_kb, "$chr:$start-$stop", $consensus, $mh_length, $ct, $ab, $rdr) . "\n";
       }
 
     }

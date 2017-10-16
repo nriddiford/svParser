@@ -180,6 +180,7 @@ sub annotate_SVs {
       if (exists $false_positives{$blacklist_lookup}){
         say "* Marking blacklisted call as FP: $blacklist_lookup";
         print $annotated_svs join("\t", $_, $hit_bp1, $hit_bp2, $joined_genes2print, "F") . "\n";
+        $call++;
       }
       else {
         print $annotated_svs join("\t", $_, $hit_bp1, $hit_bp2, $joined_genes2print, " ") . "\n";
