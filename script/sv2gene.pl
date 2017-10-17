@@ -156,7 +156,8 @@ sub annotate_SVs {
       %hits = %{ $hits };
     }
 
-    print $genes_out $_ . "\t" . $type . "\n" foreach @hit_genes;
+    # new
+    print $genes_out join("\t", $event, $sample, $type, $chrom1, $_) . "\n" foreach @hit_genes;
 
     my $affected_genes = scalar @hit_genes;
     my $joined_genes = join(", ", @hit_genes);
@@ -174,7 +175,6 @@ sub annotate_SVs {
 
     my $joined_genes2print = join(", ", @hit_genes);
 
-#B241R61_2L_6585179_3R_22087365
     if ($blacklist){
       my $blacklist_lookup = join("_", $sample, $chrom1, $bp1, $chrom2, $bp2 );
       if (exists $false_positives{$blacklist_lookup}){

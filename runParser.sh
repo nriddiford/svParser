@@ -65,6 +65,13 @@ then
     perl $script_bin/parseMeerkat.pl ${meer_files[i]}.*.variants ${meer_files[i]}.*_af ${meer_files[i]}.*.fusions
   done
 
+  for cnv_file in data/cnv/*.txt
+  do
+    echo "perl $script_bin/parseCNV.pl $cnv_file"
+    perl $script_bin/parseCNV.pl $cnv_file
+  done
+
+
 fi
 
 cd filtered
@@ -156,7 +163,7 @@ fi
 
 if [[ $clean -eq 1 ]]
 then
-  echo "Removing calls marked as flase positives in 'all_samples_false_calls.txt'"
+  echo "Removing calls marked as false positives in 'all_samples_false_calls.txt'"
   for annofile in *_annotated_SVs.txt
   do
     python $script_bin/clean.py -f $annofile

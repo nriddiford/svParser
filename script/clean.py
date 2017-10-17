@@ -23,8 +23,8 @@ outfile = out_base + "_" + "cleaned_SVs.txt"
 
 false_calls_file = 'all_samples_false_calls.txt'
 
-def index_exists(ls, i):
-    return (0 <= i < len(ls)) or (-len(ls) <= i < 0)
+# def index_exists(ls, i):
+#     return (0 <= i < len(ls)) or (-len(ls) <= i < 0)
 
 def remove_false_positives(false_calls_file, input_file, clean_output):
     """Remove entries in input_file if the 20th column equals F"""
@@ -33,7 +33,7 @@ def remove_false_positives(false_calls_file, input_file, clean_output):
     with open(false_calls_file, 'a+') as false_calls, open(input_file,'U') as infile, open(clean_output, 'w') as clean_files:
         false_calls.seek(0)
         seen_lines = {line.rstrip() for line in false_calls}
-        wrote_header = False
+        written_header = False
         for l in infile:
             parts = l.rstrip().split('\t')
 
@@ -42,10 +42,11 @@ def remove_false_positives(false_calls_file, input_file, clean_output):
                 continue
 
             match = "%s_" % out_base + "_".join(parts[3:7])
-            notes = '-'
 
-            if index_exists(parts, 20):
+            try:
                 notes = parts[20]
+            except IndexError:
+                notes = '-'
 
             if notes == 'F':
                 filtered_calls += 1
@@ -56,9 +57,9 @@ def remove_false_positives(false_calls_file, input_file, clean_output):
                 filtered_calls += 1
 
             elif notes != 'F':
-                if not wrote_header:  # do this only once
+                if not written_header:  # do this only once
                     clean_files.write(header)
-                    wrote_header = True
+                    written_header = True
                 clean_files.write(l)
             i += 1
     if filtered_calls:
