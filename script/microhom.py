@@ -17,7 +17,6 @@ pos = args.location
 split_read = args.split
 n=args.homspace
 
-
 genome = pysam.Fastafile("/Users/Nick_curie/Documents/Curie/Data/Genomes/Dmel_v6.12/Dmel_6.12.fasta")
 
 def reversed_seq(x):
@@ -71,10 +70,6 @@ def longestMatch(seq1, seq2):
     downstream_end = match[1]+match[2]
     return(upstream_start, upstream_end, downstream_start, downstream_end, seq)
 
-
-# pos = sys.argv[1]
-# split_read = sys.argv[2]
-
 (chrom1, bp1, bp2) = get_parts(pos)
 
 upstream = bp1 - 200
@@ -86,6 +81,9 @@ upstream_seq = reversed_seq(upstream_n)
 
 # upstream_seq = 'ATACATTGGCCTTGGCTTAGACTTAGATCTAGACCTGAAAATAACCTGCCGAAAAGACCCGCCCGACTGTTAATACTTTACGCGAGGCTCACCTTTTTGTTGTGCTCCC'
 # downstream_seq = 'ATACACGAAAAGCGTTCTTTTTTTGCCACTTTTTTTTTATGTTTCAAAACGGAAAATGTCGCCGTCGTCGGGAGAGTGCCTCCTCTTAGTTTATCAAATAAAGCTTTCG'
+
+
+# split_read = reversed_seq(split_read)
 
 ##################
 ## Microomology ##
@@ -104,7 +102,10 @@ if(longest_hom>=1):
     print(" Downstream:    %s") % (downstream_seq)
     print(" Microhomology: %s") % (marker)
     if args.homspace is None:
-        n=200
+        if longest_hom<=3:
+            n=10
+        else:
+            n=200
 
 else:
     print("\n* No microhomology found\n")
@@ -129,7 +130,7 @@ print(" Homology:      %s") % (umarker)
 print(" Downstream:    %s") % (downstream_seq)
 print(" Homology:      %s\n") % (dmarker)
 
-if n <= 10 and len(seq) > 4:
+if n <= 10 and len(seq) >= 3:
     longest_hom=len(seq)
 
 if args.split is not None:
@@ -157,10 +158,25 @@ if args.split is not None:
 
     # Split read length - aligned portion = insetion size
     insertion_size = len(split_read) - aligned_up - aligned_down
+    print(len(split_read) - aligned_up - aligned_down)
 
-    if insertion_size >= 1:
+    if insertion_size >= 1 and insertion_size < 10:
         inserted_seq = split_read[bp_start:bp_start+insertion_size]
         print("* %s bp insertion '%s' at breakpoint\n") % (insertion_size, inserted_seq)
+    elif insertion_size >= 10:
+        inserted_seq = split_read[bp_start:bp_start+insertion_size]
+        print("* %s bp insertion '%s' at breakpoint\n") % (insertion_size, inserted_seq)
+
+        (upstream_start, upstream_end, inserted_start, inserted_end, aligned) = longestMatch(upstream_n, inserted_seq)
+        if len(aligned) > insertion_size/3:
+            print(" Upstream:      %s") % (upstream_n[upstream_start:upstream_end])
+            print(" Insertion:     %s\n") % (inserted_seq)
+        (downstream_start, downstream_end, inserted_start, inserted_end, aligned) = longestMatch(downstream_seq, inserted_seq)
+        if len(aligned) > insertion_size/3:
+            print(" Downstream:      %s--/--%s") % (downstream_seq[downstream_start:downstream_end], downstream_seq[downstream_end:len(downstream_seq)])
+            print(" Insertion:       %s\n") % (inserted_seq)
+            print("%s bp of inserted sequence found on downstream sequence") % (len(aligned))
+
 
 else:
     print("No split read sequence provided. Unable to find insetion at bp")
