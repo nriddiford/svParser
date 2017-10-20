@@ -140,6 +140,7 @@ then
     for annofile in *_annotated_SVs.txt
     do
       echo "Updating 'all_samples_false_calls.txt' with false positive calls from annotated files"
+      echo "Updating 'all_samples_whitelist.txt' with whitelisted calls from annotated files"
       python $script_bin/clean.py -f $annofile
     done
     rm *cleaned_SVs.txt
@@ -148,10 +149,11 @@ then
   for clustered_file in *clustered_SVs.txt
   do
     echo "Annotating $clustered_file"
+    # Should check both files individually
     if [ -f all_samples_false_calls.txt ]
     then
-      echo "perl $script_bin/sv2gene.pl -f $features -i $clustered_file -b all_samples_false_calls.txt"
-      perl $script_bin/sv2gene.pl -f $features -i $clustered_file -b all_samples_false_calls.txt
+      echo "perl $script_bin/sv2gene.pl -f $features -i $clustered_file -b all_samples_false_calls.txt -w all_samples_whitelist.txt"
+      perl $script_bin/sv2gene.pl -f $features -i $clustered_file -b all_samples_false_calls.txt -w all_samples_whitelist.txt
     else
       echo "perl $script_bin/sv2gene.pl -f $features -i $clustered_file"
       perl $script_bin/sv2gene.pl -f $features -i $clustered_file

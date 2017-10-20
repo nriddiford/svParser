@@ -4,6 +4,8 @@ use warnings;
 use autodie;
 use File::Basename;
 use Data::Dumper;
+use Data::Printer;
+
 use feature qw/ say /;
 
 use FindBin '$Script';
@@ -15,12 +17,15 @@ my $help;
 my $features;
 my $reannotate;
 my $blacklist;
+my $whitelist;
 
 GetOptions( 'infile=s'         =>    \$sv_calls,
             'features=s'       =>    \$features,
             're-annotate'      =>    \$reannotate,
             'blacklist=s'      =>    \$blacklist,
+            'whitelist=s'      =>    \$whitelist,
             'help'             =>    \$help
+
     ) or die usage();
 
 if ($help) { exit usage() }
@@ -29,7 +34,7 @@ if (not $sv_calls and not $features ){
   exit usage();
 }
 
-my %false_positives;
+my (%false_positives, %true_positives);
 
 if ($blacklist){
   open my $blacklist_file, '<', $blacklist;
@@ -38,6 +43,21 @@ if ($blacklist){
     $false_positives{$_}++;
     }
 }
+
+if ($whitelist){
+  say "Using whitelist $whitelist";
+  open my $whitelist_file, '<', $whitelist;
+  while(<$whitelist_file>){
+    chomp;
+    my @line = split;
+    my $lookup = (split, @line)[0];
+    $lookup = $lookup . "_" . $line[2];
+    my @cols = @line[1..$#line];
+    $true_positives{$lookup} = [@cols];
+    }
+}
+
+# p(%true_positives);
 
 my (%transcript_length, %genes, %features);
 
@@ -130,7 +150,7 @@ sub annotate_SVs {
       next;
     }
     # if it hasn't been annotated, trim off blank cells and proceed
-    elsif ( $reannotate ){
+    elsif ( $reannotate or $whitelist ){
       no warnings;
       $_ = join("\t", @cells[0..16]);
     }
@@ -175,23 +195,48 @@ sub annotate_SVs {
 
     my $joined_genes2print = join(", ", @hit_genes);
 
+    # If blacklist specified, check to see if location is blacklisted (this is done by adding 'F' to T/F col, and running the file through 'clean.py')
+    # If location is blacklisted, then carry over the 'F' tag
+
+    my $whitelookup = join("_", $sample, $chrom1, $bp1, $chrom2, $bp2, $source);
+    my $blacklookup = join("_", $sample, $chrom1, $bp1, $chrom2, $bp2);
+
     if ($blacklist){
-      my $blacklist_lookup = join("_", $sample, $chrom1, $bp1, $chrom2, $bp2 );
-      if (exists $false_positives{$blacklist_lookup}){
-        say "* Marking blacklisted call as FP: $blacklist_lookup";
+      if (exists $false_positives{$blacklookup}){
+        say "* Marking blacklisted call as FP: $blacklookup";
         print $annotated_svs join("\t", $_, $hit_bp1, $hit_bp2, $joined_genes2print, "F") . "\n";
+        $call++;
+        next;
+      }
+      else {
+        unless($whitelist and exists $true_positives{$whitelookup}){
+          print $annotated_svs join("\t", $_, $hit_bp1, $hit_bp2, $joined_genes2print, " ") . "\n";
+          $call++;
+          next;
+        }
+      }
+    }
+
+    if ($whitelist){
+      if (exists $true_positives{$whitelookup}){
+        say "* Annotating call from whitelist: $whitelookup";
+        my @cols = @{$true_positives{$whitelookup}};
+        print $annotated_svs join("\t", $event, @cols[1..$#cols]) . "\n";
         $call++;
       }
       else {
-        print $annotated_svs join("\t", $_, $hit_bp1, $hit_bp2, $joined_genes2print, " ") . "\n";
-        $call++;
+        unless($blacklist and exists $false_positives{$blacklookup}){
+          print $annotated_svs join("\t", $_, $hit_bp1, $hit_bp2, $joined_genes2print, " ") . "\n";
+          $call++;
+        }
       }
-
     }
+
     else {
       print $annotated_svs join("\t", $_, $hit_bp1, $hit_bp2, $joined_genes2print, " ") . "\n";
       $call++;
     }
+
   }
 }
 

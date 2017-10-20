@@ -925,7 +925,7 @@ sub write_summary {
 
   say "Writing useful info to " . "'$summary_out" . $name . ".filtered.summary.txt'";
 
-  print $info_file join("\t", "source", "type", "chromosome1", "bp1", "chromosome2", "bp2", "split reads", "pe reads", "id", "length(Kb)", "position", "consensus|type", "microhomology", "configuration", "allele_frequency", "mechanism|cnv") . "\n";
+  print $info_file join("\t", "source", "type", "chromosome1", "bp1", "chromosome2", "bp2", "split reads", "pe reads", "id", "length(Kb)", "position", "consensus|type", "microhomology", "configuration", "allele_frequency", "mechanism|log2(cnv)") . "\n";
 
   for ( sort { @{ $SVs->{$a}}[0] cmp @{ $SVs->{$b}}[0] or
         @{ $SVs->{$a}}[1] <=> @{ $SVs->{$b}}[1]
@@ -962,7 +962,8 @@ sub write_summary {
 
       # Read depth ratio (delly)
       if ($info_block =~ /RDRATIO=(\d+\.?\d*)/){
-        $rdr = $1;
+        $rdr = log($1)/log(2);
+        $rdr = sprintf("%.2f", $rdr)
       }
       else{
         $rdr = '-';

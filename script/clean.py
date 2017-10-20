@@ -22,17 +22,19 @@ out_base = base_name.split('_')[0]
 outfile = out_base + "_" + "cleaned_SVs.txt"
 
 false_calls_file = 'all_samples_false_calls.txt'
-
-# def index_exists(ls, i):
-#     return (0 <= i < len(ls)) or (-len(ls) <= i < 0)
+true_calls_file = 'all_samples_whitelist.txt'
 
 def remove_false_positives(false_calls_file, input_file, clean_output):
     """Remove entries in input_file if the 20th column equals F"""
     i = 1
     filtered_calls = 0
-    with open(false_calls_file, 'a+') as false_calls, open(input_file,'U') as infile, open(clean_output, 'w') as clean_files:
+    whitelisted_calls = 0
+    with open(false_calls_file, 'a+') as false_calls, open(true_calls_file, 'a+') as true_calls, open(input_file,'U') as infile, open(clean_output, 'w') as clean_files:
         false_calls.seek(0)
-        seen_lines = {line.rstrip() for line in false_calls}
+        seen_lines = {false_line.rstrip() for false_line in false_calls}
+
+        true_calls.seek(0)
+        seen_whitelisted_call = {true_line.rstrip().split('\t')[0] for true_line in true_calls}
         written_header = False
         for l in infile:
             parts = l.rstrip().split('\t')
@@ -56,7 +58,12 @@ def remove_false_positives(false_calls_file, input_file, clean_output):
             elif match in seen_lines:
                 filtered_calls += 1
 
-            elif notes != 'F':
+            elif notes == 'T':
+                if not match in seen_whitelisted_call:
+                    whitelisted_calls += 1
+                    true_calls.write("%s\t%s" % (match, l))
+
+            if notes != 'F':
                 if not written_header:  # do this only once
                     clean_files.write(header)
                     written_header = True
@@ -64,5 +71,8 @@ def remove_false_positives(false_calls_file, input_file, clean_output):
             i += 1
     if filtered_calls:
         print "Removed %s false positives from %s" % (filtered_calls, input_file)
+    if whitelisted_calls:
+        print "Added %s calls to whitelist for %s" % (whitelisted_calls, input_file)
+
 
 remove_false_positives(false_calls_file=false_calls_file, input_file=options.in_file, clean_output=outfile)

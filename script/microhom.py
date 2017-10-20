@@ -5,6 +5,19 @@ import sys
 import re
 from difflib import SequenceMatcher
 
+import argparse
+
+parser = argparse.ArgumentParser()
+parser.add_argument('-p', action="store", help="Breakpoint position (chr:bp1-bp2) [Required]", dest='location', required=True)
+parser.add_argument('-s', action="store", help="Split read sequence for detection of insertions", dest="split")
+parser.add_argument('-n', action="store", help="Number of bases to look for extended homology. [Default: 200 if microhomology found, 10 if not]", dest='homspace',type=int)
+
+args = parser.parse_args()
+pos = args.location
+split_read = args.split
+n=args.homspace
+
+
 genome = pysam.Fastafile("/Users/Nick_curie/Documents/Curie/Data/Genomes/Dmel_v6.12/Dmel_6.12.fasta")
 
 def reversed_seq(x):
@@ -12,13 +25,12 @@ def reversed_seq(x):
 
 def get_parts(lookup):
     (chrom1, bp1, bp2) = re.split(':|-',lookup)
-    bp2 = (int(bp2) -1)
     return(chrom1, int(bp1), int(bp2))
 
 def getMechanism(homlen, inslen):
     if inslen >= 10:
-        mechanism="false_positives"
-    elif homlen <= 2 or inslen >=1 and inslen <= 10:
+        mechanism="FoSTeS"
+    elif (homlen <= 2) or (inslen >=1 and inslen <= 10):
         mechanism="NHEJ"
     elif homlen >= 3 and homlen <= 100:
         mechanism="Alt-EJ"
@@ -34,7 +46,7 @@ def microhomology(seq1, seq2):
     pos_count = 0
     seq = ""
     position =""
-    longest_hom=""
+    longest_hom=0
     for i in range(len(upstream_seq)):
         pos_count += 1
         if upstream_seq[i] == downstream_seq[i]:
@@ -45,7 +57,7 @@ def microhomology(seq1, seq2):
 
         else:
             mh = 0
-            longest_hom=0
+            # longest_hom=0
             break
     return(position , longest_hom, seq)
 
@@ -60,8 +72,8 @@ def longestMatch(seq1, seq2):
     return(upstream_start, upstream_end, downstream_start, downstream_end, seq)
 
 
-pos = sys.argv[1]
-split_read = sys.argv[2]
+# pos = sys.argv[1]
+# split_read = sys.argv[2]
 
 (chrom1, bp1, bp2) = get_parts(pos)
 
@@ -71,7 +83,6 @@ downstream = bp2 + 200
 upstream_n = genome.fetch(chrom1, upstream, bp1)
 downstream_seq = genome.fetch(chrom1, bp2, downstream)
 upstream_seq = reversed_seq(upstream_n)
-
 
 # upstream_seq = 'ATACATTGGCCTTGGCTTAGACTTAGATCTAGACCTGAAAATAACCTGCCGAAAAGACCCGCCCGACTGTTAATACTTTACGCGAGGCTCACCTTTTTGTTGTGCTCCC'
 # downstream_seq = 'ATACACGAAAAGCGTTCTTTTTTTGCCACTTTTTTTTTATGTTTCAAAACGGAAAATGTCGCCGTCGTCGGGAGAGTGCCTCCTCTTAGTTTATCAAATAAAGCTTTCG'
@@ -92,11 +103,13 @@ if(longest_hom>=1):
     print(" Upstream:      %s") % (upstream_seq)
     print(" Downstream:    %s") % (downstream_seq)
     print(" Microhomology: %s") % (marker)
-    n=200
+    if args.homspace is None:
+        n=200
 
 else:
     print("\n* No microhomology found\n")
-    n=10
+    if args.homspace is None:
+        n=10
 
 
 ##############
@@ -115,35 +128,43 @@ print(" Upstream:      %s") % (upstream_seq)
 print(" Homology:      %s") % (umarker)
 print(" Downstream:    %s") % (downstream_seq)
 print(" Homology:      %s\n") % (dmarker)
-# print("Upstream: %s:%s-%s") % (chrom1, upstream_start, upstream_end)
-# print("Downstream: %s:%s-%s") % (chrom1, downstream_start, downstream_end)
 
-###############
-## Inserions ##
-###############
+if n <= 10 and len(seq) > 4:
+    longest_hom=len(seq)
 
-# Align split read to upstream seq (normal orientation)
-(upstream_start, upstream_end, split_start, split_end, upseq) = longestMatch(upstream_n, split_read)
-print(" Upstream:      %s") % (upstream_n[upstream_start:upstream_end])
-print(" Split read:    %s--/--%s\n") % (split_read[split_start:split_end], split_read[split_end:len(split_read)])
+if args.split is not None:
+    ###############
+    ## Inserions ##
+    ###############
 
-bp_start = split_end # for extracting the inserted seq
+    # Align split read to upstream seq (normal orientation)
+    (upstream_start, upstream_end, split_start, split_end, upseq) = longestMatch(upstream_n, split_read)
+    print(" Upstream:      %s") % (upstream_n[upstream_start:upstream_end])
+    print(" Split read:    %s--/--%s\n") % (split_read[split_start:split_end], split_read[split_end:len(split_read)])
 
-# Align split read to downstream seq (normal orientation)
-(downstream_start, downstream_end, split_start, split_end, downseq) = longestMatch(downstream_seq, split_read)
+    bp_start = split_end # for extracting the inserted seq
 
-# Calculate length of aligned sequences
-aligned_up = len(upseq)
-aligned_down = len(downseq)
-seqbuffer = " "*len(split_read[0:split_start])
+    # Align split read to downstream seq (normal orientation)
+    (downstream_start, downstream_end, split_start, split_end, downseq) = longestMatch(downstream_seq, split_read)
 
-print(" Split read:    %s--/--%s") % (split_read[0:split_start], split_read[split_start:split_end])
-print(" Downstream:    %s     %s\n") % (seqbuffer, downstream_seq[downstream_start:downstream_end])
+    # Calculate length of aligned sequences
+    aligned_up = len(upseq)
+    aligned_down = len(downseq)
+    seqbuffer = " "*len(split_read[0:split_start])
 
-# Split read length - aligned portion = insetion size
-insertion_size = len(split_read) - aligned_up - aligned_down
-print("* %s bp insertion '%s' at breakpoint\n") % (insertion_size, split_read[bp_start:bp_start+insertion_size])
+    print(" Split read:    %s--/--%s") % (split_read[0:split_start], split_read[split_start:split_end])
+    print(" Downstream:    %s     %s\n") % (seqbuffer, downstream_seq[downstream_start:downstream_end])
 
+    # Split read length - aligned portion = insetion size
+    insertion_size = len(split_read) - aligned_up - aligned_down
+
+    if insertion_size >= 1:
+        inserted_seq = split_read[bp_start:bp_start+insertion_size]
+        print("* %s bp insertion '%s' at breakpoint\n") % (insertion_size, inserted_seq)
+
+else:
+    print("No split read sequence provided. Unable to find insetion at bp")
+    insertion_size = 0
 
 ###############
 ## Mechanism ##
@@ -151,7 +172,10 @@ print("* %s bp insertion '%s' at breakpoint\n") % (insertion_size, split_read[bp
 
 # Calculate mechanism
 mechanism=getMechanism(longest_hom, insertion_size)
-print("* Mechanism: %s\n") % (mechanism)
+print("* Mechanism: %s") % (mechanism)
+print("  * %s bp insertion") % (insertion_size)
+print("  * %s bp homology at breakpoints") % (longest_hom)
+
 
 
 

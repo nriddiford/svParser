@@ -8,10 +8,9 @@ use autodie;
 
 use File::Basename;
 use FindBin qw($Bin);
+use FindBin '$Script';
 
-# open my $vars, '<', '/Users/Nick_curie/Desktop/script_test/svParser/data/A573R25.RG.somatic_g.variants';
-# open my $fusions, '<', '/Users/Nick_curie/Desktop/script_test/svParser/data/A573R25.RG.somatic_g.fusions';
-# open my $var_hads, '<', '/Users/Nick_curie/Desktop/script_test/svParser/data/Meerkat_vars_heads.txt';
+exit usage() unless scalar @ARGV == 3;
 
 my @keys = qw / 2L 2R 3L 3R 4 X Y /;
 my %chrom_filt;
@@ -20,19 +19,19 @@ $chrom_filt{$_} = 1 for (@keys);
 
 
 my $vars_in = shift;
-my $var_ref = extractVars($vars_in);
+my ($var_ref, $clustered_events_ref) = extractVars($vars_in);
 
 my $allele_bal = shift;
 my $al_ref = extractAlleles($allele_bal);
 #
 my $fusions_in = shift;
-my ($line_ref) = extractFusions($fusions_in, $var_ref, $al_ref);
+my ($line_ref) = extractFusions($fusions_in, $var_ref, $al_ref, $clustered_events_ref);
 
 my @name_fields = split( /\./, basename($vars_in) );
 my $dir = "$Bin/../filtered/summary/";
 
 open my $out, '>', "$dir" . $name_fields[0] . ".meerkat.filtered.summary.txt";
-print $out join("\t", "source", "type", "chromosome1", "bp1", "chromosome2", "bp2", "split reads", "pe reads", "id", "length(Kb)", "position", "consensus|type", "microhomology", "configuration", "allele_frequency", "mechanism|cnv") . "\n";
+print $out join("\t", "source", "type", "chromosome1", "bp1", "chromosome2", "bp2", "split reads", "pe reads", "id", "length(Kb)", "position", "consensus|type", "microhomology", "configuration", "allele_frequency", "mechanism|log2(cnv)") . "\n";
 
 my @lines = @{$line_ref};
 print $out "$_\n" foreach @lines;
@@ -41,6 +40,7 @@ sub extractVars {
   my $in = shift;
   open my $vars, '<', $in;
   my %vars;
+  my %clustered_events;
   while(<$vars>){
     chomp;
     my @parts = split(/\t/);
@@ -48,6 +48,7 @@ sub extractVars {
     my @clusters = (split(/\//, $id));
 
     for my $i ( 0 .. $#clusters ){
+      $clustered_events{$clusters[$i]} = $id if scalar @clusters > 1;
       foreach my $item (@parts) {
         if ( scalar (split /\//, $item) > 1 ){
           # say "$item can be split";
@@ -62,7 +63,7 @@ sub extractVars {
 
   }
   # p(%vars);
-  return(\%vars);
+  return(\%vars, \%clustered_events );
 }
 
 sub extractAlleles {
@@ -92,13 +93,14 @@ sub extractAlleles {
 }
 
 sub extractFusions {
-  my ($in, $var_ref, $al_ref ) = @_;
+  my ($in, $var_ref, $al_ref, $clustered_events_ref ) = @_;
   open my $fusions, '<', $in;
   my @cols = qw(type1	type2	type3	chrA	posA	oriA	geneA	exon_intronA	chrB	posB	oriB	geneB	exon_intronB	event_type	mechanism	event_id	disc_pair	split_read	homology	partners);
   my @lines;
 
   my %variants = %{ $var_ref };
   my %alleles = %{ $al_ref };
+  my %clusters = %{ $clustered_events_ref };
 
   while(<$fusions>){
     chomp;
@@ -172,6 +174,18 @@ sub extractFusions {
     # Skip var unless one of the chroms is fully assembled
     next unless (exists $chrom_filt{$parts[3]} or exists $chrom_filt{$parts[8]});
 
+
+    my $mehanism;
+    if ( $clusters{$parts[15]} ){
+      my @linked_events = split /\//, $clusters{$parts[15]};
+      my $linked = join(', ', @linked_events);
+      $mehanism = $var_parts[1] . " ($linked)";
+    }
+    else{
+      $mehanism = $var_parts[1];
+    }
+    next if $allele_frequency < 0.1;
+
     push @lines, join("\t", "Meerkat",                          # source
                             $event,                             # type
                             $chr1,                              # chrom1
@@ -187,10 +201,25 @@ sub extractFusions {
                             $parts[18],                         # microhomology
                             $config,                            # configuration
                             $allele_frequency,                  # allele frequency
-                            $var_parts[1]);                     # misc (mechanism)
+                            $mehanism);                         # misc (mechanism)
 
-    # print join("\t", "Meerkat", $event, $chr1, $bp1, $chr2, $bp2, $parts[17], $parts[16], $parts[15], $length, $lookup, $parts[13], $parts[18], $config, $allele_frequency, $var_parts[1] ) . "\n";
+    # print join("\t", "Meerkat", $event, $chr1, $bp1, $chr2, $bp2, $parts[17], $parts[16], $parts[15], $length, $lookup, $parts[13], $parts[18], $config, $allele_frequency, $mehanism ) . "\n";
 
   }
   return(\@lines);
+}
+
+sub usage {
+  print
+"
+usage: $Script [variants file] [allele_frequency file] [fusions file]
+
+sv2gene
+author: Nick Riddiford (nick.riddiford\@curie.fr)
+version: v.0.1
+description: Extract breakpoint info for Meerkat data
+
+example:
+  perl $Script sample.variants sample.variants_af sample.fusions
+"
 }
