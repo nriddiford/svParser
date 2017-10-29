@@ -173,7 +173,7 @@ sub extractFusions {
 
     # Skip var unless one of the chroms is fully assembled
     next unless (exists $chrom_filt{$parts[3]} or exists $chrom_filt{$parts[8]});
-
+    next if $allele_frequency < 0.1;
 
     my $mehanism;
     if ( $clusters{$parts[15]} ){

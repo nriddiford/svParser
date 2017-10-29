@@ -165,6 +165,12 @@ fi
 
 if [[ $clean -eq 1 ]]
 then
+  echo "Adding and new CNV calls to data/cnv'"
+  for annofile in *_annotated_SVs.txt
+  do
+    python $script_bin/getCNVs.py -f $annofile
+  done
+
   echo "Removing calls marked as false positives in 'all_samples_false_calls.txt'"
   for annofile in *_annotated_SVs.txt
   do
@@ -207,6 +213,10 @@ then
   echo "Removing false positives from bp file 'all_bps_cleaned.txt', writing new bp file to 'all_bps_filtered.txt'"
   python $script_bin/update_bps.py
   rm 'all_bps_cleaned.txt'
+
+  # Merge all samples
+  echo "Merging all samples into single file..."
+  perl $script_bin/merge_samples.pl *reannotated_SVs.txt
 
 fi
 

@@ -5,6 +5,8 @@ import sys
 import re
 from difflib import SequenceMatcher
 
+from Bio.Seq import Seq
+
 import argparse
 
 parser = argparse.ArgumentParser()
@@ -72,6 +74,8 @@ def longestMatch(seq1, seq2):
 
 (chrom1, bp1, bp2) = get_parts(pos)
 
+# bp1 -= 1
+bp2 -= 1
 upstream = bp1 - 200
 downstream = bp2 + 200
 
@@ -100,7 +104,7 @@ if(longest_hom>=1):
     marker = "^"*len(mhseq)
     print(" Upstream:      %s") % (upstream_seq)
     print(" Downstream:    %s") % (downstream_seq)
-    print(" Microhomology: %s") % (marker)
+    print(" Microhomology: %s\n") % (marker)
     if args.homspace is None:
         if longest_hom<=3:
             n=10
@@ -146,6 +150,9 @@ if args.split is not None:
     bp_start = split_end # for extracting the inserted seq
 
     # Align split read to downstream seq (normal orientation)
+    # seq = Seq(split_read)
+    ###
+    #split_read = seq.reverse_complement()
     (downstream_start, downstream_end, split_start, split_end, downseq) = longestMatch(downstream_seq, split_read)
 
     # Calculate length of aligned sequences
@@ -158,7 +165,7 @@ if args.split is not None:
 
     # Split read length - aligned portion = insetion size
     insertion_size = len(split_read) - aligned_up - aligned_down
-    print(len(split_read) - aligned_up - aligned_down)
+    insertion_size = int(insertion_size)
 
     if insertion_size >= 1 and insertion_size < 10:
         inserted_seq = split_read[bp_start:bp_start+insertion_size]
@@ -177,6 +184,10 @@ if args.split is not None:
             print(" Insertion:       %s\n") % (inserted_seq)
             print("%s bp of inserted sequence found on downstream sequence") % (len(aligned))
 
+    elif insertion_size < 0:
+        insertion_size = abs(insertion_size)
+        # inserted_seq = split_read[bp_start:bp_start+insertion_size]
+        print("* %s bp deletion at insertion\n") % (insertion_size)
 
 else:
     print("No split read sequence provided. Unable to find insetion at bp")
