@@ -37,7 +37,7 @@ def remove_false_positives(false_calls_file, input_file, clean_output):
         seen_whitelisted_call = {true_line.rstrip().split('\t')[0] for true_line in true_calls}
         written_header = False
         for l in infile:
-            parts = l.rstrip().split('\t')
+            parts = l.rstrip().strip('\"').split('\t')
 
             if i == 1 and parts[0] == 'event':
                 header = l
