@@ -28,16 +28,15 @@ event = ''
 firstline = True
 with open(options.SV_calls, 'U') as sv_calls_file, open('all_bps_cleaned.txt', 'a+') as all_bps_out:
     for l in sv_calls_file:
-        parts = l.rstrip().split('\t')
+        parts = l.rstrip('').split('\t')
 
         if firstline:
             firstline = False
             continue
 
-        if event == parts[0]:
-            continue
-
         event = parts[0]
+
+        print parts[17]
 
         if parts[17] == '-' or parts[18] == '-':
             continue
@@ -45,14 +44,16 @@ with open(options.SV_calls, 'U') as sv_calls_file, open('all_bps_cleaned.txt', '
         if parts[17] == 'intergenic':
             bp1_feature = 'intergenic'
             bp1_gene = 'intergenic'
+
         else:
             bp1_gene, bp1_feature = parts[17].split(',')
-
+            print(bp1_gene, bp1_feature)
         if parts[18] == 'intergenic':
             bp2_feature = 'intergenic'
             bp2_gene = 'intergenic'
 
         else:
+            print(parts[18])
             bp2_gene, bp2_feature = parts[18].split(',')
 
 
@@ -64,6 +65,9 @@ with open(options.SV_calls, 'U') as sv_calls_file, open('all_bps_cleaned.txt', '
 
         bp1_line = [event, 'bp1', sample, parts[3], parts[4], bp1_gene, bp1_feature, parts[2], parts[10]]
         bp2_line = [event, 'bp2', sample, parts[5], parts[6], bp2_gene, bp2_feature, parts[2], parts[10]]
+
+        print('\t'.join(bp1_line) + '\n')
+        print('\t'.join(bp2_line) + '\n')
 
         all_bps_out.write('\t'.join(bp1_line) + '\n')
         all_bps_out.write('\t'.join(bp2_line) + '\n')

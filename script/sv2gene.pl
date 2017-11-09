@@ -49,7 +49,7 @@ if ($whitelist){
   open my $whitelist_file, '<', $whitelist;
   while(<$whitelist_file>){
     chomp;
-    my @line = split;
+    my @line = split(/\t/);
     my $lookup = (split, @line)[0];
     $lookup = $lookup . "_" . $line[2];
     my @cols = @line[1..$#line];
@@ -77,6 +77,7 @@ sub make_gene_hash {
     chomp;
     my ($chrom, $feature, $start, $stop, $id, $gene) = (split)[0,2,3,4,9,11];
     ($gene) = $gene =~ /\"(.*)\";/;
+    $gene =~ s/\"//g;
     ($id) = $id =~ /\"(.*)\";/;
 
     if ($feature eq 'gene'){
