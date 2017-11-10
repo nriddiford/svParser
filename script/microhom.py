@@ -72,8 +72,8 @@ def longestMatch(seq1, seq2):
     seq2_start = match[1]
     seq2_end = match[1]+match[2]
 
-    # print("Seq1:%s\nSeq2:%s") % (seq1, seq2)
-    # print(match)
+    print("Seq1:%s\nSeq2:%s") % (seq1, seq2)
+    print(match)
     return(seq1_start, seq1_end, seq2_start, seq2_end, seq)
 
 (chrom1, bp1, bp2) = get_parts(pos)
@@ -101,7 +101,7 @@ print("Downstream: %s") % (downstream_seq)
 
 (position, longest_hom, mhseq) =  microhomology(upstream_seq, downstream_seq)
 
-if(longest_hom>=1):
+if(longest_hom>0):
     print("")
     print("* Microhomology at breakpoint: %s (%s bp)") % (mhseq, longest_hom)
     downstream_spacer = (len(upstream_seq) - len(mhseq))
@@ -168,23 +168,30 @@ if args.split is not None:
     ###
     #split_read = seq.reverse_complement()
 
-    # split_read = split_read[split_end:]
-    (downstream_start, downstream_end, split_start, split_end, downseq) = longestMatch(downstream_seq, split_read[bp_start:])
+    (downstream_start, downstream_end, split_start, split_end, downseq) = longestMatch(downstream_seq, split_read)
     # Calculate length of aligned sequences
     split_len = len(split_read)
     aligned_up = len(upseq)
     aligned_down = len(downseq)
+    print(aligned_up, aligned_down, split_len)
+    print(downstream_start, downstream_end, split_start, split_end)
     # Split read length - aligned portion = insetion size
     insertion_size = int(split_len - aligned_up - aligned_down)
     inserted_seq = split_read[bp_start:bp_start+insertion_size]
 
-    print("\n* Split read aligned to downstream sequence:")
+    print("* Split read aligned to downstream sequence:")
     if insertion_size <= 0:
         deleted_bases = "."*(downstream_start)
-        seqbuffer = " "*(5+len(split_read[bp_start:]))
+        deletion_size = len(deleted_bases)
+        seqbuffer = " "*(5+len(split_read[0:bp_start]))
 
-        print(" Split read:    %s--/--%s") % (split_read[0:split_end], split_read[split_end:])
+        print(" Split read:    %s--/--%s%s") % (split_read[0:bp_start],deleted_bases, split_read[bp_start:])
         print(" Downstream:    %s%s\n") % (seqbuffer, downstream_seq[0:downstream_end])
+
+        if deletion_size:
+            deleted_seq = downstream_seq[0:deletion_size]
+            print("* %s bp deletion '%s' at breakpoint\n") % (deletion_size, deleted_seq)
+
 
     else:
         seqbuffer = " "*(downstream_start+5+insertion_size)
@@ -192,10 +199,9 @@ if args.split is not None:
         print(" Split read:    %s--/--%s") % (split_read[0:split_end-1], split_read[split_end-1:])
         print(" Downstream:    %s     %s\n") % (seqbuffer, downstream_seq[downstream_start:])
 
-    print("* %s bp insertion '%s' at breakpoint\n") % (insertion_size, inserted_seq)
+        print("* %s bp insertion '%s' at breakpoint\n") % (insertion_size, inserted_seq)
 
     if insertion_size >= 3:
-        deletion = 0
         (inserted_start, inserted_end, upstream_start, upstream_end, aligned) = longestMatch(inserted_seq,upstream_seq)
         if len(aligned) > 3:
             splitbuffer = " "*upstream_start
@@ -212,17 +218,6 @@ if args.split is not None:
             print(" Insertion:      %s%s\n") % (splitbuffer, inserted_seq)
             print("* %s bp of inserted sequence +%s bps from breakpoint on downstream sequence\n") % (len(aligned),downstream_start)
 
-    elif insertion_size < 0:
-        insertion_size -= downstream_start
-
-        deletion = 1
-        insertion_size = abs(insertion_size)
-        deleted_seq = split_read[bp_start-1:bp_start]
-        print("* %s bp deletion '%s' at breakpoint\n") % (insertion_size, deleted_seq)
-
-    else:
-        deletion = 0
-
 else:
     print("No split read sequence provided. Unable to find insetion at bp")
     insertion_size = 0
@@ -234,8 +229,8 @@ else:
 # Calculate mechanism
 mechanism=getMechanism(longest_hom, insertion_size)
 print("* Mechanism: %s") % (mechanism)
-if deletion:
-    print("  * %s bp deletion") % (insertion_size)
+if deletion_size:
+    print("  * %s bp deletion") % (deletion_size)
 else:
     print("  * %s bp insertion") % (insertion_size)
 print("  * %s bp homology at breakpoints") % (longest_hom)
