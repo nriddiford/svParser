@@ -35,8 +35,18 @@ while getopts 'fmacsnh' flag; do
   esac
 done
 
+if [[ $# -eq 0 ]] ; then
+    usage
+    exit 0
+fi
+
 #script_bin=/Users/Nick/iCloud/Desktop/script_test/SV_Parser/script # home
 script_bin=/Users/Nick_curie/Desktop/script_test/svParser/script # work
+
+if [ ! -d $script_bin/../filtered/summary/merged/ ]
+then
+    mkdir -p $script_bin/../filtered/summary/merged/
+fi
 
 if [[ $filter -eq 1 ]]
 then
