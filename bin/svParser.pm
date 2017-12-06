@@ -380,28 +380,6 @@ sub novobreak {
   return ($SV_length, $chr2, $stop, $t_PE, $t_SR, \@filter_reasons, \%sample_info, \@format, \%format_long );
 }
 
-# sub lumpy_germline {
-#   my ( $id, $info_block, $SV_type, $alt, $start, $sample_info, $tumour, $control, $samples, $normals, $filters, $filter_flags ) = @_;
-#
-#   my @filter_reasons = @{ $filters };
-#   my @normals = @{ $normals };
-#
-#   my %filter_flags = %{ $filter_flags };
-#
-#   my @samples = @{ $samples };
-#
-#   my %sample_info = %{ $sample_info };
-#
-#   my ($SV_length) = $info_block =~ /SVLEN=(.*?);/;
-#
-#   my ($t_PE, $t_SR, $all_c_PE, $all_c_SR, $c_PE, $c_SR) = (0,0,0,0,0,0);
-#
-#   # Get allele balance
-#   my $ab = $sample_info{$id}{$tumour}{'AB'};
-
-#   return ($SV_length, $chr2, $stop, $t_SR, $t_PE, $ab, \@filter_reasons);
-# }
-
 
 sub lumpy {
   my ( $id, $info_block, $SV_type, $alt, $start, $sample_info, $tumour, $control, $samples, $normals, $filters, $filter_flags ) = @_;
@@ -495,6 +473,10 @@ sub lumpy {
 
   }
 
+  # if running in germline mode, require
+  if ($filter_flags{'g'}){
+
+  }
 
   ######################
   # Read depth filters #
@@ -721,7 +703,13 @@ sub summarise_variants {
     next if $connected_bps{$bp_id}++;
     $top_count++;
 
-    print join("\n", "ID: $_", "TYPE: $support_by_chrom{$_}[1]", "CHROM: $support_by_chrom{$_}[2]", "START: $support_by_chrom{$_}[4]", "READS: $support_by_chrom{$_}[0]", "LENGTH: $support_by_chrom{$_}[3]\n") . "\n";
+    print join("\n",
+    "ID: $_",
+    "TYPE: $support_by_chrom{$_}[1]",
+    "CHROM: $support_by_chrom{$_}[2]",
+    "START: $support_by_chrom{$_}[4]",
+    "READS: $support_by_chrom{$_}[0]",
+    "LENGTH: $support_by_chrom{$_}[3]\n") . "\n";
 
     last if $top_count >= 5;
   }

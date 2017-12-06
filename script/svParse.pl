@@ -50,19 +50,38 @@ if (not $vcf_file) {
 
 my ($filtered_out, $summary_out);
 if ($print){
-  $filtered_out = "$Bin/../filtered/";
-  eval { make_path($filtered_out) };
+  if ($filters{'g'}){
+    $filtered_out = "$Bin/../germline/";
+    eval { make_path($filtered_out) };
 
-  if ($@) {
-    print "Couldn't create '$filtered_out': $@";
+    if ($@) {
+      print "Couldn't create '$filtered_out': $@";
+    }
+
+    $summary_out = "$Bin/../germline/summary/";
+    eval { make_path($summary_out) };
+
+    if ($@) {
+      print "Couldn't create '$summary_out': $@";
+    }
   }
 
-  $summary_out = "$Bin/../filtered/summary/";
-  eval { make_path($summary_out) };
+  else {
+    $filtered_out = "$Bin/../filtered/";
+    eval { make_path($filtered_out) };
 
-  if ($@) {
-    print "Couldn't create '$summary_out': $@";
+    if ($@) {
+      print "Couldn't create '$filtered_out': $@";
+    }
+
+    $summary_out = "$Bin/../filtered/summary/";
+    eval { make_path($summary_out) };
+
+    if ($@) {
+      print "Couldn't create '$summary_out': $@";
+    }
   }
+
 }
 
 my $filter = 0;
