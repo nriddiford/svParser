@@ -10,7 +10,8 @@ options:
   -a    annotate
   -c    clean-up false positives anad reannotate
   -s    stats
-  -ns   stats for notch-excluded hits
+  -n    stats for notch-excluded hits
+  -g    run svParser for germline events
   -h    show this message
 "
 }
@@ -60,37 +61,53 @@ fi
 
 if [[ $filter -eq 1 ]]
 then
-  for lumpy_file in data/lumpy/*.vcf
-  do
-    echo "perl $script_bin/svParse.pl -v $lumpy_file -f a -t l -p"
-    perl $script_bin/svParse.pl -v $lumpy_file -f a -t l -p
-  done
 
-  for delly_file in data/delly/*.vcf
-  do
-    echo "perl $script_bin/svParse.pl -v $delly_file -f a -t d -p"
-    perl $script_bin/svParse.pl -v $delly_file -f a -t d -p
-  done
+  # need to give differnt params for germline run; only lumpy so far
+  # these are the same as somatic, except here we require at least 6 reads supporting var
+  if [[ $germline -eq 1 ]]
+  then
 
-  for novo_file in data/novobreak/*.vcf
-  do
-    echo "perl $script_bin/svParse.pl -v $novo_file -f a -t n -p"
-    perl $script_bin/svParse.pl -v $novo_file -f a -t n -p
-  done
+    for lumpy_file in data/lumpy/*.vcf
+    do
+      echo "Running in germline mode"
+      echo "perl $script_bin/svParse.pl -v $lumpy_file -t l -f chr=1 -f g=1 -f su=6 -f dp=10 -f rdr=0.1 -f sq=10 -p"
 
-  # meer_files+=( $(ls -1 data/meerkat/*.variants | cut -d '.' -f 1 | sort -u ) )
-  # for ((i=0;i<${#meer_files[@]};++i))
-  # do
-  #   echo "perl $script_bin/parseMeerkat.pl ${meer_files[i]}.*.variants ${meer_files[i]}.*_af ${meer_files[i]}.*.fusions"
-  #   perl $script_bin/parseMeerkat.pl ${meer_files[i]}.*.variants ${meer_files[i]}.*_af ${meer_files[i]}.*.fusions
-  # done
-  #
-  # for cnv_file in data/cnv/*.txt
-  # do
-  #   echo "perl $script_bin/parseCNV.pl $cnv_file"
-  #   perl $script_bin/parseCNV.pl $cnv_file
-  # done
+      perl $script_bin/svParse.pl -v $lumpy_file -t l -f chr=1 -f g=1 -f su=6 -f dp=10 -f rdr=0.1 -f sq=10 -p
+    done
 
+  else
+    for lumpy_file in data/lumpy/*.vcf
+    do
+      echo "perl $script_bin/svParse.pl -v $lumpy_file -f a -t l -p"
+      perl $script_bin/svParse.pl -v $lumpy_file -f a -t l -p
+    done
+
+    for delly_file in data/delly/*.vcf
+    do
+      echo "perl $script_bin/svParse.pl -v $delly_file -f a -t d -p"
+      perl $script_bin/svParse.pl -v $delly_file -f a -t d -p
+    done
+
+    for novo_file in data/novobreak/*.vcf
+    do
+      echo "perl $script_bin/svParse.pl -v $novo_file -f a -t n -p"
+      perl $script_bin/svParse.pl -v $novo_file -f a -t n -p
+    done
+
+    meer_files+=( $(ls -1 data/meerkat/*.variants | cut -d '.' -f 1 | sort -u ) )
+    for ((i=0;i<${#meer_files[@]};++i))
+    do
+      echo "perl $script_bin/parseMeerkat.pl ${meer_files[i]}.*.variants ${meer_files[i]}.*_af ${meer_files[i]}.*.fusions"
+      perl $script_bin/parseMeerkat.pl ${meer_files[i]}.*.variants ${meer_files[i]}.*_af ${meer_files[i]}.*.fusions
+    done
+
+    for cnv_file in data/cnv/*.txt
+    do
+      echo "perl $script_bin/parseCNV.pl $cnv_file"
+      perl $script_bin/parseCNV.pl $cnv_file
+    done
+
+  fi
 
 fi
 
