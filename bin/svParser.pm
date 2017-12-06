@@ -145,13 +145,33 @@ sub parse {
     # Genotype filter #
     ###################
 
-    # Filter if ANY of the controls are NOT 'GT = 0/0' (hom ref)
+    if ( $filter_flags{'g'} ){
 
-    for my $normal (@normals){
-      if ($sample_info{$id}{$normal}{'GT'} eq '1/1' or $sample_info{$id}{$normal}{'GT'} eq '0/1'){
-        push @filter_reasons, "$normal\_not_homo_ref=" . $sample_info{$id}{$normal}{'GT'};
+      #############################
+      # Filter OUT somatic events #
+      #############################
+      # Filter if ANY of the panel of normals (but not direct control) are NOT 'GT = 0/0' (hom ref)
+      for my $normal (@normals[1..$#normals]){
+        if ( $sample_info{$id}{$normal}{'GT'} eq '1/1' or $sample_info{$id}{$normal}{'GT'} eq '0/1' ){
+          push @filter_reasons, "$normal\_not_homo_ref=" . $sample_info{$id}{$normal}{'GT'};
+        }
+      }
+      # If tumour is het/hom alt (0/1, 1/1), but direct control is hom ref(0/0), filter as somatic
+      if ( ( $sample_info{$id}{$tumour_name}{'GT'} eq '0/1' or $sample_info{$id}{$tumour_name}{'GT'} eq '1/1' ) and $sample_info{$id}{$control_name}{'GT'} eq '0/0' ){
+          push @filter_reasons, "$tumour_name\_somatic_event=" . $sample_info{$id}{$tumour_name}{'GT'};
+        }
+
+    }
+    else{
+      # Filter if ANY of the controls are NOT 'GT = 0/0' (hom ref)
+
+      for my $normal (@normals){
+        if ( $sample_info{$id}{$normal}{'GT'} eq '1/1' or $sample_info{$id}{$normal}{'GT'} eq '0/1' ){
+          push @filter_reasons, "$normal\_not_homo_ref=" . $sample_info{$id}{$normal}{'GT'};
+        }
       }
     }
+
 
     ###################
 
@@ -219,11 +239,17 @@ sub parse {
 
 sub print_variants {
 
-  my ( $SVs, $filtered_SVs, $name, $output_dir ) = @_;
+  my ( $SVs, $filtered_SVs, $name, $output_dir, $germline ) = @_;
+  my $out;
+  if ($germline){
+    open $out, '>', $output_dir . $name . ".germline_filtered.vcf" or die $!;
+    say "Writing output to " . "'$output_dir" . $name . ".germline_filtered.vcf'";
+  }
+  else{
+    open $out, '>', $output_dir . $name . ".filtered.vcf" or die $!;
+    say "Writing output to " . "'$output_dir" . $name . ".filtered.vcf'";
+  }
 
-  open my $out, '>', $output_dir . $name . ".filtered.vcf" or die $!;
-
-  say "Writing output to " . "'$output_dir" . $name . ".filtered.vcf'";
 
   my %filtered_SVs = %{ $filtered_SVs };
   my $sv_count = 0;
@@ -255,7 +281,7 @@ sub novobreak {
   my %sample_info;
   my %format_long;
 
-  my $bp1_SR = $info[9]; # high qual split reads bp1
+  my $bp1_SR = $info[9];  # high qual split reads bp1
   my $bp1_PE = $info[26]; # PE reads bp1
   my $bp2_SR = $info[19]; # high qual split reads bp2
   my $bp2_PE = $info[28]; # PE reads bp2
@@ -276,6 +302,7 @@ sub novobreak {
   ########################
   # Read support filters #
   ########################
+
 
   if (exists $filter_flags{'su'}){
     my $filtered_on_reads = read_support_filter($tumour_read_support, $filter_flags{'su'}, \@filter_reasons);
@@ -353,6 +380,29 @@ sub novobreak {
   return ($SV_length, $chr2, $stop, $t_PE, $t_SR, \@filter_reasons, \%sample_info, \@format, \%format_long );
 }
 
+# sub lumpy_germline {
+#   my ( $id, $info_block, $SV_type, $alt, $start, $sample_info, $tumour, $control, $samples, $normals, $filters, $filter_flags ) = @_;
+#
+#   my @filter_reasons = @{ $filters };
+#   my @normals = @{ $normals };
+#
+#   my %filter_flags = %{ $filter_flags };
+#
+#   my @samples = @{ $samples };
+#
+#   my %sample_info = %{ $sample_info };
+#
+#   my ($SV_length) = $info_block =~ /SVLEN=(.*?);/;
+#
+#   my ($t_PE, $t_SR, $all_c_PE, $all_c_SR, $c_PE, $c_SR) = (0,0,0,0,0,0);
+#
+#   # Get allele balance
+#   my $ab = $sample_info{$id}{$tumour}{'AB'};
+
+#   return ($SV_length, $chr2, $stop, $t_SR, $t_PE, $ab, \@filter_reasons);
+# }
+
+
 sub lumpy {
   my ( $id, $info_block, $SV_type, $alt, $start, $sample_info, $tumour, $control, $samples, $normals, $filters, $filter_flags ) = @_;
 
@@ -366,6 +416,13 @@ sub lumpy {
   my %sample_info = %{ $sample_info };
 
   my ($SV_length) = $info_block =~ /SVLEN=(.*?);/;
+
+  # switch tumour normal
+  if ($filter_flags{'g'}){
+    my $tum2norm = $control;
+    $control = $tumour;
+    $tumour = $tum2norm;
+  }
 
   my ($t_PE, $t_SR, $all_c_PE, $all_c_SR, $c_PE, $c_SR) = (0,0,0,0,0,0);
 
@@ -393,45 +450,49 @@ sub lumpy {
     @filter_reasons = @{$filtered_on_reads};
   }
 
-  if (@samples > 1){ # In case there are no control samples...
+  if (not $filter_flags{'g'}){
 
-    # for precise variants:
-    if ($info_block !~ /IMPRECISE;/){
+    if (@samples > 1){ # In case there are no control samples...
 
-      # We want to be strict, so include all controls used for genotyping (and sum read support)
-      for my $normal (@normals){
-        $sample_info{$id}{$normal}{'PE'} eq '.' ? $sample_info{$id}{$normal}{'PE'} = '0' : $all_c_PE += $sample_info{$id}{$normal}{'PE'};
-        $sample_info{$id}{$normal}{'SR'} eq '.' ? $sample_info{$id}{$normal}{'SR'} = '0' : $all_c_SR += $sample_info{$id}{$normal}{'SR'};
+      # for precise variants:
+      if ($info_block !~ /IMPRECISE;/){
+
+        # We want to be strict, so include all controls used for genotyping (and sum read support)
+        for my $normal (@normals){
+          $sample_info{$id}{$normal}{'PE'} eq '.' ? $sample_info{$id}{$normal}{'PE'} = '0' : $all_c_PE += $sample_info{$id}{$normal}{'PE'};
+          $sample_info{$id}{$normal}{'SR'} eq '.' ? $sample_info{$id}{$normal}{'SR'} = '0' : $all_c_SR += $sample_info{$id}{$normal}{'SR'};
+        }
+
+        my $all_control_read_support = ( $all_c_PE + $all_c_SR );
+
+        # Filter if there are more than 1 control reads
+        if ( $all_control_read_support > 1 ){
+          push @filter_reasons, "precise var with read support in a normal sample=" . $all_control_read_support;
+        }
       }
 
-      my $all_control_read_support = ( $all_c_PE + $all_c_SR );
+      # for imprecise variants:
+      if ($info_block =~ /IMPRECISE;/){
 
-      # Filter if there are more than 1 control reads
-      if ( $all_control_read_support > 1 ){
-        push @filter_reasons, "precise var with read support in a normal sample=" . $all_control_read_support;
+        # Get read support for direct control only
+        $c_PE =  $sample_info{$id}{$control}{'PE'};
+        $c_SR =  $sample_info{$id}{$control}{'SR'};
+
+        my $direct_control_read_support = ( $c_PE + $c_SR );
+        $pc_direct_control_read_support = $direct_control_read_support + 0.001;
+
+        # Filter if # tumour reads supporting var is less than 5 * control reads
+        # Or if there are more than 2 control reads
+        if ( $pc_tumour_read_support/$pc_direct_control_read_support < 5 ){
+          push @filter_reasons, 'imprecise var with less than 5 * more tum reads than control=' . $direct_control_read_support;
+        }
+        if ( $direct_control_read_support > 1 ){
+          push @filter_reasons, 'imprecise var with control read support=' . $direct_control_read_support;
+        }
+
       }
     }
 
-    # for imprecise variants:
-    if ($info_block =~ /IMPRECISE;/){
-
-      # Get read support for direct control only
-      $c_PE =  $sample_info{$id}{$control}{'PE'};
-      $c_SR =  $sample_info{$id}{$control}{'SR'};
-
-      my $direct_control_read_support = ( $c_PE + $c_SR );
-      $pc_direct_control_read_support = $direct_control_read_support + 0.001;
-
-      # Filter if # tumour reads supporting var is less than 5 * control reads
-      # Or if there are more than 2 control reads
-      if ( $pc_tumour_read_support/$pc_direct_control_read_support < 5 ){
-        push @filter_reasons, 'imprecise var with less than 5 * more tum reads than control=' . $direct_control_read_support;
-      }
-      if ( $direct_control_read_support > 1 ){
-        push @filter_reasons, 'imprecise var with control read support=' . $direct_control_read_support;
-      }
-
-    }
   }
 
 
@@ -461,8 +522,10 @@ sub lumpy {
 
     # Subtract control reads from tumour reads
     # If this number of SU is less than 10% of tumour read_depth then filter
+    if (not $filter_flags{'g'}){
       if ( exists $filter_flags{'rdr'} and ( $tumour_read_support - $pc_direct_control_read_support ) / ( $t_DP + 0.01 ) < $filter_flags{'rdr'} ){ # Maybe this is too harsh...
-      push @filter_reasons, 'tumour_reads/tumour_depth<' . ($filter_flags{'rdr'}*100) . "%" . '=' . $tumour_read_support . "/" . $t_DP;
+        push @filter_reasons, 'tumour_reads/tumour_depth<' . ($filter_flags{'rdr'}*100) . "%" . '=' . $tumour_read_support . "/" . $t_DP;
+      }
     }
 
   }
@@ -683,7 +746,7 @@ sub get_variant {
   my (%information)  = @{ $info->{$id_lookup}->[5]};
   my (%sample_info)  = @{ $info->{$id_lookup}->[6]};
 
-  my ($chr, $start, $id, $ref, $alt, $quality_score, $filt, $info_block, $format_block, $tumour_info_block, $normal_info_block, $sv_type, $SV_length, $stop, $chr2, $SR, $PE, $filters, $samples ) = @{ $SVs->{$id_lookup} };
+  my ($chr, $start, $id, $ref, $alt, $quality_score, $filt, $info_block, $format_block, $tumour_info_block, $normal_info_block, $sv_type, $SV_length, $stop, $chr2, $SR, $PE, $ab, $filters, $samples ) = @{ $SVs->{$id_lookup} };
 
   my @filter_reasons = @{ $filters };
 
@@ -876,54 +939,26 @@ sub dump_variants {
   }
 }
 
-sub read_support_filter {
-  my ($tumour_read_support, $read_support_flag, $filter_reasons ) = @_;
-  my @filter_reasons = @{ $filter_reasons };
-
-  # Filter if tum reads below specified threshold [default=4]
-  if ( $tumour_read_support < $read_support_flag ){
-    push @filter_reasons, 'tumour_reads<' . $read_support_flag . '=' . $tumour_read_support;
-  }
-  return (\@filter_reasons);
-}
-
-# Only for Drosophila so far...
-sub chrom_filter {
-  my ( $chr, $chr2, $filters ) = @_;
-  my @keys = qw / 2L 2R 3L 3R 4 X Y /;
-  my %chrom_filt;
-
-  $chrom_filt{$_} = 1 for (@keys);
-  my @filter_reasons = @{ $filters };
-
-  if ($chr2 eq '0'){
-    $chr2 = $chr;
-  }
-
-  if ( not $chrom_filt{$chr} ){
-    push @filter_reasons, 'chrom1=' . $chr;
-  }
-
-  elsif ( not $chrom_filt{$chr2} ){
-    push @filter_reasons, 'chrom2=' . $chr2;
-  }
-
-  return (\@filter_reasons);
-
-}
 
 sub write_summary {
-  my ( $SVs, $name, $summary_out, $type ) = @_;
+  my ( $SVs, $name, $summary_out, $type, $germline ) = @_;
 
-  open my $info_file, '>', $summary_out . $name . ".filtered.summary.txt" or die $!;
+  my $info_file;
+
+  if ($germline){
+    open $info_file, '>', $summary_out . $name . ".germline_filtered.summary.txt" or die $!;
+    say "Writing useful info to " . "'$summary_out" . $name . ".germline_filtered.summary.txt'";
+  }
+  else{
+    open $info_file, '>', $summary_out . $name . ".filtered.summary.txt" or die $!;
+    say "Writing useful info to " . "'$summary_out" . $name . ".filtered.summary.txt'";
+  }
 
   $type = "lumpy" if $type eq 'l';
   $type = "delly" if $type eq 'd';
   $type = "novobreak" if $type eq 'n';
 
   my %connected_bps;
-
-  say "Writing useful info to " . "'$summary_out" . $name . ".filtered.summary.txt'";
 
   print $info_file join("\t", "source", "type", "chromosome1", "bp1", "chromosome2", "bp2", "split reads", "pe reads", "id", "length(Kb)", "position", "consensus|type", "microhomology", "configuration", "allele_frequency", "mechanism|log2(cnv)") . "\n";
 
@@ -1006,5 +1041,43 @@ sub write_summary {
     }
   }
 }
+
+sub read_support_filter {
+  my ($tumour_read_support, $read_support_flag, $filter_reasons ) = @_;
+  my @filter_reasons = @{ $filter_reasons };
+
+  # Filter if tum reads below specified threshold [default=4]
+  if ( $tumour_read_support < $read_support_flag ){
+    push @filter_reasons, 'tumour_reads<' . $read_support_flag . '=' . $tumour_read_support;
+  }
+  return (\@filter_reasons);
+}
+
+# Only for Drosophila so far...
+sub chrom_filter {
+  my ( $chr, $chr2, $filters ) = @_;
+  my @keys = qw / 2L 2R 3L 3R 4 X Y /;
+  my %chrom_filt;
+
+  $chrom_filt{$_} = 1 for (@keys);
+  my @filter_reasons = @{ $filters };
+
+  if ($chr2 eq '0'){
+    $chr2 = $chr;
+  }
+
+  if ( not $chrom_filt{$chr} ){
+    push @filter_reasons, 'chrom1=' . $chr;
+  }
+
+  elsif ( not $chrom_filt{$chr2} ){
+    push @filter_reasons, 'chrom2=' . $chr2;
+  }
+
+  return (\@filter_reasons);
+
+}
+
+
 
 1;

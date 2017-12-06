@@ -41,7 +41,7 @@ if [[ $# -eq 0 ]] ; then
 fi
 
 #script_bin=/Users/Nick/iCloud/Desktop/script_test/SV_Parser/script # home
-script_bin=/Users/Nick_curie/Desktop/script_test/svParser/script # work
+script_bin=/Users/Nick_curie/Desktop/svParser/script # work
 
 if [ ! -d $script_bin/../filtered/summary/merged/ ]
 then
@@ -68,18 +68,18 @@ then
     perl $script_bin/svParse.pl -v $novo_file -f a -t n -p
   done
 
-  meer_files+=( $(ls -1 data/meerkat/*.variants | cut -d '.' -f 1 | sort -u ) )
-  for ((i=0;i<${#meer_files[@]};++i))
-  do
-    echo "perl $script_bin/parseMeerkat.pl ${meer_files[i]}.*.variants ${meer_files[i]}.*_af ${meer_files[i]}.*.fusions"
-    perl $script_bin/parseMeerkat.pl ${meer_files[i]}.*.variants ${meer_files[i]}.*_af ${meer_files[i]}.*.fusions
-  done
-
-  for cnv_file in data/cnv/*.txt
-  do
-    echo "perl $script_bin/parseCNV.pl $cnv_file"
-    perl $script_bin/parseCNV.pl $cnv_file
-  done
+  # meer_files+=( $(ls -1 data/meerkat/*.variants | cut -d '.' -f 1 | sort -u ) )
+  # for ((i=0;i<${#meer_files[@]};++i))
+  # do
+  #   echo "perl $script_bin/parseMeerkat.pl ${meer_files[i]}.*.variants ${meer_files[i]}.*_af ${meer_files[i]}.*.fusions"
+  #   perl $script_bin/parseMeerkat.pl ${meer_files[i]}.*.variants ${meer_files[i]}.*_af ${meer_files[i]}.*.fusions
+  # done
+  #
+  # for cnv_file in data/cnv/*.txt
+  # do
+  #   echo "perl $script_bin/parseCNV.pl $cnv_file"
+  #   perl $script_bin/parseCNV.pl $cnv_file
+  # done
 
 
 fi

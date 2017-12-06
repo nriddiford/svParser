@@ -72,7 +72,7 @@ if ( scalar keys %filters > 0 ){
   if ( exists $filters{'a'} ){
     say "Running in filter mode, using all default filters:";
     say " o Read support >= 4";
-    say " o Read depth (in both tumor and normal) > 10";
+    say " o Read depth (in both tumour and normal) > 10";
     say " o Read support / depth > 0.1";
     say " o SQ quality > 10";
     say " o Chromosomes 2L 2R 3L 3R 4 X Y";
@@ -86,13 +86,14 @@ if ( scalar keys %filters > 0 ){
     $filter = 1;
 
   }
-  elsif ( $filters{'su'} or $filters{'dp'} or $filters{'rdr'} or $filters{'sq'} or $filters{'chr'} ) {
+  elsif ( $filters{'su'} or $filters{'dp'} or $filters{'rdr'} or $filters{'sq'} or $filters{'chr'} or $filters{'g'} ) {
     say "Running in filter mode, using custom filters:";
     say " o Read support >= $filters{'su'}" if $filters{'su'};
     say " o Read depth (in both tumor and normal) > $filters{'dp'}" if $filters{'dp'};
     say " o Read support / depth > $filters{'rdr'}" if $filters{'rdr'};
     say " o SQ quality > $filters{'sq'}" if $filters{'sq'};
     say " o Chromosomes 2L 2R 3L 3R 4 X Y" if $filters{'chr'};
+    say " o Running in germline mode" if $filters{'g'};
     $filter = 1;
   }
   else {
@@ -126,10 +127,16 @@ if ($type ne 'snp') {
   svParser::dump_variants( $SVs, $info, $filter, $chromosome, $type) if $dump;
 
   # Write out variants passing filters
-  svParser::print_variants ( $SVs, $filtered_vars, $name, $filtered_out ) if $print;
-
   # Write out some useful info to txt file
-  svParser::write_summary ( $SVs, $name, $summary_out, $type ) if $print;
+  if ( $filters{'g'} ){
+    print "Germline printing\n";
+    svParser::print_variants( $SVs, $filtered_vars, $name, $filtered_out, 1 ) if $print;
+    svParser::write_summary( $SVs, $name, $summary_out, $type, 1) if $print;
+  }
+  else{
+    svParser::print_variants( $SVs, $filtered_vars, $name, $filtered_out, 0 ) if $print;
+    svParser::write_summary( $SVs, $name, $summary_out, $type, 0 ) if $print;
+  }
 }
 
 if ($type eq 'snp') {
@@ -179,6 +186,6 @@ arguments:
                         -f rdr=FLOAT [supporting reads/tumour depth - a value of 1 would mean all reads support variant]
                         -f sq=INT [phred-scaled variant likelihood]
                         -f chr=1 [only show chromosomes 2L 2R 3L 3R 4 X Y. Only use for Drosophila]
-                        -f, -f a = apply default filters [ -f su=4 -f dp=10 -f rdr=0.1 -f sq=10 ]
+                        -f, -f a = apply default filters [ -f su=4 -f dp=10 -f rdr=0.1 -f sq=10 -f chr=1 ]
 "
 }
