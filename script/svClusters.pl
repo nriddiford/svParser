@@ -9,17 +9,21 @@ use File::Basename;
 use feature qw/ say /;
 
 use FindBin qw($Bin);
+use Cwd;
+
 
 my $in = $ARGV[0];
 
-my $dir = "$Bin/../filtered/summary/merged/";
+# my $dir = "$Bin/../filtered/summary/merged/";
+my $dir = getcwd;
 
 my @parts = split( /\_/, basename($in) );
 
-open my $out, '>', "$dir" . $parts[0] . "_clustered_SVs.txt" or die $!;
-
-say "Writing clustered sv file to: " . "'$dir" . $parts[0] . "_clustered_SVs.txt'";
-
+open my $out, '>', "$dir/" . $parts[0] . "_clustered_SVs.txt" or die $!;
+say "Writing clustered sv file to: " . "'$dir/" . $parts[0] . "_clustered_SVs.txt'";
+#
+# open my $out, '>', $parts[0] . "_clustered_SVs.txt" or die $!;
+# say "Writing clustered sv file to: " . $parts[0] . "_clustered_SVs.txt'";
 
 my $sample_count;
 

@@ -136,9 +136,10 @@ fi
 
 cd summary
 
+
 if [[ $merge -eq 1 ]]
 then
-
+  
   samples+=( $(ls -1 *.txt | cut -d '.' -f 1 | sort -u ) )
 
   for ((i=0;i<${#samples[@]};++i))
