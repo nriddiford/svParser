@@ -161,7 +161,7 @@ sub parse {
           push @filter_reasons, "$tumour_name\_somatic_event=" . $sample_info{$id}{$tumour_name}{'GT'};
         }
       elsif ( $sample_info{$id}{$tumour_name}{'GT'} eq '0/0' and $sample_info{$id}{$control_name}{'GT'} ne '0/0' ){
-          push @filter_reasons, "$tumour_name\_normal_event=" . $sample_info{$id}{$tumour_name}{'GT'};
+          push @filter_reasons, "$control_name\_exclusive_normal_event=" . $sample_info{$id}{$control_name}{'GT'};
         }
 
     }
@@ -226,12 +226,16 @@ sub parse {
       $filter_list = chrom_filter( $chr, $chr2, $filter_list );
     }
 
+    # my @vars_filtered = @{ $filter_list };
+    # say "variant: $id\t $_" for @vars_filtered;
+
     $SV_length = abs($SV_length);
     $SVs{$id} = [ @fields[0..10], $SV_type, $SV_length, $stop, $chr2, $t_SR, $t_PE, $ab, $filter_list, \@samples ];
 
     $info{$id} = [ [@format], [%format_long], [%info_long], [@tumour_parts], [@normal_parts], [%information], [%sample_info] ];
 
     if (scalar @{$filter_list} == 0){
+      # say "$id passes all filters";
       $filtered_SVs{$.} = $_;
     }
 
