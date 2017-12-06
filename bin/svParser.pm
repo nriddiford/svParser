@@ -160,6 +160,9 @@ sub parse {
       if ( ( $sample_info{$id}{$tumour_name}{'GT'} eq '0/1' or $sample_info{$id}{$tumour_name}{'GT'} eq '1/1' ) and $sample_info{$id}{$control_name}{'GT'} eq '0/0' ){
           push @filter_reasons, "$tumour_name\_somatic_event=" . $sample_info{$id}{$tumour_name}{'GT'};
         }
+      elsif ( $sample_info{$id}{$tumour_name}{'GT'} eq '0/0' and $sample_info{$id}{$control_name}{'GT'} ne '0/0' ){
+          push @filter_reasons, "$tumour_name\_normal_event=" . $sample_info{$id}{$tumour_name}{'GT'};
+        }
 
     }
     else{
