@@ -28,7 +28,7 @@ if (@files == 0){
   exit usage();
 }
 
-my $dir = getcwd;
+my $dir = 'merged/';
 # my $dir = "$Bin/../filtered/summary/merged/";
 #
 # eval { make_path($dir) };
@@ -39,7 +39,7 @@ my $dir = getcwd;
 my @parts = split( /\./, basename($files[0]) );
 
 
-open my $out, '>', "$dir/" . $parts[0] . "_merged_SVs.txt" or die $!;
+open my $out, '>', "$dir" . $parts[0] . "_merged_SVs.txt" or die $!;
 
 say "Writing merged files to: " . "'$dir/" . $parts[0] . "_merged_SVs.txt'";
 
