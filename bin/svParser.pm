@@ -1040,10 +1040,10 @@ sub write_summary {
   }
 }
 
-# sub region_exclude_filter {
-#   my ($chr1, $bp1, $chr2, $bp2) = @_;
-#
-# }
+sub region_exclude_filter {
+  my ($chr1, $bp1, $chr2, $bp2) = @_;
+
+}
 
 sub read_support_filter {
   my ($tumour_read_support, $read_support_flag, $filter_reasons ) = @_;
