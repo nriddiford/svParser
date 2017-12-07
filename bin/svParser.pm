@@ -961,6 +961,9 @@ sub write_summary {
         @{ $SVs->{$a}}[1] <=> @{ $SVs->{$b}}[1]
       }  keys %{ $SVs } ){
     my ( $chr, $start, $id, $ref, $alt, $quality_score, $filt, $info_block, $format_block, $tumour_info_block, $normal_info_block, $sv_type, $SV_length, $stop, $chr2, $SR, $PE, $ab, $filters, $samples ) = @{ $SVs->{$_} };
+
+    # $filters = region_exclude_filter($chr, $start, $chr2, $stop, $filters);
+
     if (scalar @{$filters} == 0){
 
       my $bp_id = $_;
@@ -1036,6 +1039,11 @@ sub write_summary {
     }
   }
 }
+
+# sub region_exclude_filter {
+#   my ($chr1, $bp1, $chr2, $bp2) = @_;
+#
+# }
 
 sub read_support_filter {
   my ($tumour_read_support, $read_support_flag, $filter_reasons ) = @_;

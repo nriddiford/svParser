@@ -28,6 +28,7 @@ my $chromosome;
 my $type = "guess";
 my $print;
 my $sample;
+# my $exclude;
 
 my %filters;
 
