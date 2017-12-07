@@ -10,6 +10,7 @@ use FindBin qw($Bin);
 use feature qw/ say /;
 use Data::Dumper;
 use Getopt::Long qw/ GetOptions /;
+use Cwd;
 
 my @files;
 my $help;
@@ -27,18 +28,21 @@ if (@files == 0){
   exit usage();
 }
 
-my $dir = "$Bin/../filtered/summary/merged/";
-
-eval { make_path($dir) };
-if ($@) {
-  print "Couldn't create $dir: $@";
-}
+my $dir = 'merged/';
+# my $dir = "$Bin/../filtered/summary/merged/";
+#
+# eval { make_path($dir) };
+# if ($@) {
+#   print "Couldn't create $dir: $@";
+# }
 
 my @parts = split( /\./, basename($files[0]) );
 
+
 open my $out, '>', "$dir" . $parts[0] . "_merged_SVs.txt" or die $!;
 
-say "Writing merged files to: " . "'$dir" . $parts[0] . "_merged_SVs.txt'";
+say "Writing merged files to: " . "'$dir/" . $parts[0] . "_merged_SVs.txt'";
+
 
 say "Merging files: ";
 my %SVs;
