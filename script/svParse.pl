@@ -5,8 +5,8 @@ use warnings;
 
 use 5.18.2;
 
-use FindBin qw($Bin);
-use FindBin '$Script';
+use FindBin qw/ $Bin /;
+use FindBin qw/ $Script /;
 
 use File::Spec;
 use lib File::Spec->catdir($FindBin::Bin, '..', 'bin/');
@@ -18,7 +18,7 @@ use Data::Dumper;
 use Getopt::Long qw/ GetOptions /;
 
 use File::Basename;
-use File::Path qw(make_path);
+use File::Path qw/ make_path / ;
 
 my $vcf_file;
 my $help;
@@ -28,7 +28,7 @@ my $chromosome;
 my $type = "guess";
 my $print;
 my $sample;
-# my $exclude;
+my $exclude;
 
 my %filters;
 
@@ -40,6 +40,7 @@ GetOptions( 'vcf=s'           =>    \$vcf_file,
             'print'           =>    \$print,
             'chromosome=s'    =>    \$chromosome,
             'sample=s'        =>    \$sample,
+            'exclude=s'       =>    \$exclude,
             'help'            =>    \$help
     ) or die usage();
 
@@ -47,6 +48,29 @@ if ($help) { exit usage() }
 
 if (not $vcf_file) {
    exit usage();
+}
+
+my @exclude_regions;
+if ($exclude){
+  # say "\nFiltering variants that fall within an exclude region in provided file: $exclude";
+  use File::Slurp;
+  my @exclude = read_file($exclude, chomp=>1);
+
+  my @keys = qw / 2L 2R 3L 3R 4 X Y /;
+
+  my %chroms;
+
+  @chroms{@keys} = ();
+
+  foreach(@exclude){
+    my $chrom = (split)[0];
+    next unless exists $chroms{$chrom};
+    push @exclude_regions, $_;
+  }
+
+  undef @exclude;
+
+  $filters{'e'} = 1;
 }
 
 my ($filtered_out, $summary_out);
@@ -101,12 +125,13 @@ if ( scalar keys %filters > 0 ){
                 "dp"  =>  10,
                 "rdr" =>  0.1,
                 "sq"  =>  10,
-                "chr" =>  1
+                "chr" =>  1,
+                'e'   => 1
                );
     $filter = 1;
 
   }
-  elsif ( $filters{'su'} or $filters{'dp'} or $filters{'rdr'} or $filters{'sq'} or $filters{'chr'} or $filters{'g'} ) {
+  elsif ( $filters{'su'} or $filters{'dp'} or $filters{'rdr'} or $filters{'sq'} or $filters{'chr'} or $filters{'g'} or $filters{'e'} or $filters{'q'} ) {
     say "Running in filter mode, using custom filters:";
     say " o Read support >= $filters{'su'}" if $filters{'su'};
     say " o Read depth (in both tumor and normal) > $filters{'dp'}" if $filters{'dp'};
@@ -114,6 +139,7 @@ if ( scalar keys %filters > 0 ){
     say " o SQ quality > $filters{'sq'}" if $filters{'sq'};
     say " o Chromosomes 2L 2R 3L 3R 4 X Y" if $filters{'chr'};
     say " o Running in germline mode" if $filters{'g'};
+    say " o Excluding calls overlapping: $exclude" if $filters{'e'};
     $filter = 1;
   }
   else {
@@ -125,6 +151,8 @@ if ( scalar keys %filters > 0 ){
     say " o Read support / depth: rdr=FLOAT";
     say " o SQ quality: sq=INT";
     say " o Chromosomes 2L 2R 3L 3R 4 X Y";
+    say " o Germline only: g=1";
+    say " o Exclude calls in bed file: e [bed file]";
     die "Please check filter specification\n";
      }
 }
@@ -134,7 +162,7 @@ my ($name, $extention) = split(/\.([^.]+)$/, basename($vcf_file), 2);
 print "\n";
 
 # Retun SV and info hashes
-my ( $SVs, $info, $filtered_vars ) = svParser::typer($vcf_file, $type, %filters);
+my ( $SVs, $info, $filtered_vars ) = svParser::typer( $vcf_file, $type, \@exclude_regions, \%filters );
 
 if ($type ne 'snp') {
   # Print all info for specified id
@@ -149,11 +177,11 @@ if ($type ne 'snp') {
   # Write out variants passing filters
   # Write out some useful info to txt file
   if ( $filters{'g'} ){
-    print "Germline printing\n";
+    print "Printing germline events\n";
     svParser::print_variants( $SVs, $filtered_vars, $name, $filtered_out, 1 ) if $print;
     svParser::write_summary( $SVs, $name, $summary_out, $type, 1) if $print;
   }
-  else{
+  else {
     svParser::print_variants( $SVs, $filtered_vars, $name, $filtered_out, 0 ) if $print;
     svParser::write_summary( $SVs, $name, $summary_out, $type, 0 ) if $print;
   }

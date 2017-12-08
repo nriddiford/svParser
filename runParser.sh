@@ -43,7 +43,9 @@ if [[ $# -eq 0 ]] ; then
 fi
 
 #script_bin=/Users/Nick/iCloud/Desktop/script_test/SV_Parser/script # home
-script_bin=/Users/Nick_curie/Desktop/svParser/script # work
+script_bin=/Users/Nick_curie/Desktop/script_test/svParser/script # work
+
+exclude_file=/Users/Nick_curie/Documents/Curie/Data/Genomes/Dmel_v6.12/Mappability/dmel6_unmappable.bed
 
 if [[ $germline -eq 1 ]]
 then
@@ -70,9 +72,8 @@ then
     for lumpy_file in data/lumpy/*.vcf
     do
       echo "Running in germline mode"
-      echo "perl $script_bin/svParse.pl -v $lumpy_file -t l -f chr=1 -f g=1 -f su=6 -f dp=10 -f rdr=0.1 -f sq=10 -p"
-
-      perl $script_bin/svParse.pl -v $lumpy_file -t l -f chr=1 -f g=1 -f su=6 -f dp=10 -f rdr=0.1 -f sq=10 -p
+      echo "perl $script_bin/svParse.pl -v $lumpy_file -t l -f chr=1 -f g=1 -f su=6 -f dp=10 -f rdr=0.1 -f sq=10 -e $exclude_file -p"
+      perl $script_bin/svParse.pl -v $lumpy_file -t l -f chr=1 -f g=1 -f su=6 -f dp=10 -f rdr=0.1 -f sq=10 -e $exclude_file -p
     done
 
   else
@@ -139,7 +140,7 @@ cd summary
 
 if [[ $merge -eq 1 ]]
 then
-  
+
   samples+=( $(ls -1 *.txt | cut -d '.' -f 1 | sort -u ) )
 
   for ((i=0;i<${#samples[@]};++i))
@@ -208,7 +209,7 @@ fi
 
 if [[ $clean -eq 1 ]]
 then
-  echo "Adding and new CNV calls to data/cnv'"
+  echo "Adding any new CNV calls to data/cnv'"
   for annofile in *_annotated_SVs.txt
   do
     python $script_bin/getCNVs.py -f $annofile
