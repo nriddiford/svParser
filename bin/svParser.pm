@@ -1052,7 +1052,7 @@ sub write_summary {
 sub region_exclude_filter {
   my ( $chr1, $bp1, $chr2, $bp2, $exclude_regions, $filter_reasons ) = @_;
 
-  my $slop = 50;
+  my $slop = 500;
 
   my @filter_reasons = @{ $filter_reasons };
 
