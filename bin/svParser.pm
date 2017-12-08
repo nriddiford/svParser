@@ -164,6 +164,7 @@ sub parse {
           push @filter_reasons, "$control_name\_exclusive_normal_event=" . $sample_info{$id}{$control_name}{'GT'};
         }
 
+      next if @filter_reasons > 0 and $filter_flags{'e'};
     }
 
     else {
@@ -172,6 +173,7 @@ sub parse {
       for my $normal (@normals){
         if ( $sample_info{$id}{$normal}{'GT'} eq '1/1' or $sample_info{$id}{$normal}{'GT'} eq '0/1' ){
           push @filter_reasons, "$normal\_not_homo_ref=" . $sample_info{$id}{$normal}{'GT'};
+          next if @filter_reasons > 0 and $filter_flags{'e'};
         }
       }
     }
@@ -223,8 +225,11 @@ sub parse {
       $filter_list = \@filter_reasons;
     }
 
+    # General filters
+
     if ( $filter_flags{'chr'} ){
       $filter_list = chrom_filter( $chr, $chr2, $filter_list );
+      next if @$filter_list > 0 and $filter_flags{'e'};
     }
 
     if ( $filter_flags{'e'} ){
@@ -232,7 +237,7 @@ sub parse {
       # Region exclude ##
       ###################
 
-      $filter_list = region_exclude_filter($chr, $start, $chr2, $stop, $exclude_regions, \@filter_reasons);
+      $filter_list = region_exclude_filter($chr, $start, $chr2, $stop, $exclude_regions, $filter_list);
     }
 
     $SV_length = abs($SV_length);
@@ -1056,7 +1061,6 @@ sub region_exclude_filter {
   my @bed = @{ $exclude_regions };
 
   foreach(@bed){
-    chomp;
     my ($chromosome, $start, $stop) = split;
 
     if ( $bp1 >= $start and $bp1 <= $stop ) {

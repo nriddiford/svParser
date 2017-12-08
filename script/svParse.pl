@@ -54,7 +54,22 @@ my @exclude_regions;
 if ($exclude){
   # say "\nFiltering variants that fall within an exclude region in provided file: $exclude";
   use File::Slurp;
-  @exclude_regions = read_file($exclude);
+  my @exclude = read_file($exclude, chomp=>1);
+
+  my @keys = qw / 2L 2R 3L 3R 4 X Y /;
+
+  my %chroms;
+
+  @chroms{@keys} = ();
+
+  foreach(@exclude){
+    my $chrom = (split)[0];
+    next unless exists $chroms{$chrom};
+    push @exclude_regions, $_;
+  }
+
+  undef @exclude;
+
   $filters{'e'} = 1;
 }
 
@@ -116,7 +131,7 @@ if ( scalar keys %filters > 0 ){
     $filter = 1;
 
   }
-  elsif ( $filters{'su'} or $filters{'dp'} or $filters{'rdr'} or $filters{'sq'} or $filters{'chr'} or $filters{'g'} or $filters{'e'} ) {
+  elsif ( $filters{'su'} or $filters{'dp'} or $filters{'rdr'} or $filters{'sq'} or $filters{'chr'} or $filters{'g'} or $filters{'e'} or $filters{'q'} ) {
     say "Running in filter mode, using custom filters:";
     say " o Read support >= $filters{'su'}" if $filters{'su'};
     say " o Read depth (in both tumor and normal) > $filters{'dp'}" if $filters{'dp'};
