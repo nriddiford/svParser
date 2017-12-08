@@ -9,33 +9,30 @@ use feature qw/ say /;
 use Data::Dumper;
 use Data::Printer;
 
-use File::Slurp;
-my @bed = read_file('/Users/Nick_curie/Documents/Curie/Data/Genomes/Dmel_v6.12/Mappability/dmel6_unmappable.bed');
-
 sub typer {
-  my ($file, $type, %filters, $exclude_regions) = @_;
+  my ($file, $type, $exclude_regions, $filters ) = @_;
 
   if ( $type eq 'l' ){
     say "Specified $file as Lumpy output";
     $type = 'lumpy';
-    parse($file, $type, $exclude_regions, \%filters);
+    parse($file, $type, $exclude_regions, $filters);
   }
 
   elsif ( $type eq 'd' ){
     say "Specified $file as Delly output";
     $type = 'delly';
-    parse($file, $type, $exclude_regions, \%filters);
+    parse($file, $type, $exclude_regions, $filters);
   }
 
   elsif ( $type eq 'n' ){
     say "Specified $file as novoBreak output";
     $type = 'novobreak';
-    parse($file, $type, $exclude_regions, \%filters);
+    parse($file, $type, $exclude_regions, $filters);
   }
   elsif ($type eq 'snp'){
     say "Forcing parsing of $file";
     $type = 'snp';
-    parse($file, $type, $exclude_regions, \%filters);
+    parse($file, $type, $exclude_regions, $filters);
   }
 
   elsif ( $type eq 'guess' ){
@@ -43,17 +40,17 @@ sub typer {
     if ( `grep "source=LUMPY" $file` ){
       say "Recognised $file as Lumpy input";
       $type = 'lumpy';
-      parse($file, $type, $exclude_regions, \%filters);
+      parse($file, $type, $exclude_regions, $filters);
     }
     elsif ( `grep "DELLY" $file` ){
       say "Recognised $file as Delly input";
       $type = 'delly';
-      parse($file, $type, $exclude_regions, \%filters);
+      parse($file, $type, $exclude_regions, $filters);
     }
     elsif ( `grep "bamsurgeon spike-in" $file` ){
       say "Recognised $file as novoBreak input";
       $type = 'novobreak';
-      parse($file, $type, $exclude_regions, \%filters);
+      parse($file, $type, $exclude_regions, $filters);
     }
     else {
       die "This VCF can not be parsed. Try specfiying type '-t' explicitly. See -h for details. Abort";
@@ -235,7 +232,7 @@ sub parse {
       # Region exclude ##
       ###################
 
-      $filter_list = region_exclude_filter($chr, $start, $chr2, $stop, \@filter_reasons);
+      $filter_list = region_exclude_filter($chr, $start, $chr2, $stop, $exclude_regions, \@filter_reasons);
     }
 
     $SV_length = abs($SV_length);
@@ -1052,11 +1049,11 @@ sub write_summary {
 
 
 sub region_exclude_filter {
-  my ( $chr1, $bp1, $chr2, $bp2, $filter_reasons ) = @_;
+  my ( $chr1, $bp1, $chr2, $bp2, $exclude_regions, $filter_reasons ) = @_;
 
   my @filter_reasons = @{ $filter_reasons };
 
-  # my @bed = @{ $bed_file };
+  my @bed = @{ $exclude_regions };
 
   foreach(@bed){
     chomp;
