@@ -155,6 +155,13 @@ sub parse {
         if ( $sample_info{$id}{$normal}{'GT'} eq '1/1' or $sample_info{$id}{$normal}{'GT'} eq '0/1' ){
           push @filter_reasons, "$normal\_not_homo_ref=" . $sample_info{$id}{$normal}{'GT'};
         }
+
+        # Filter if more than 2 spit reads in any normal supporting var
+        # Should probably use this for somaitc too... (maybe even in place of SQ?)
+        if ( $sample_info{$id}{$normal}{'QA'} >= 2){
+          push @filter_reasons, "$normal\_has_quality_alt_support=" . $sample_info{$id}{$normal}{'QA'};
+        }
+
       }
       # If tumour is het/hom alt (0/1, 1/1), but direct control is hom ref(0/0), filter as somatic
       if ( ( $sample_info{$id}{$tumour_name}{'GT'} eq '0/1' or $sample_info{$id}{$tumour_name}{'GT'} eq '1/1' ) and $sample_info{$id}{$control_name}{'GT'} eq '0/0' ){
