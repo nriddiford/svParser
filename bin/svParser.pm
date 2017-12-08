@@ -164,7 +164,6 @@ sub parse {
           push @filter_reasons, "$control_name\_exclusive_normal_event=" . $sample_info{$id}{$control_name}{'GT'};
         }
 
-      next if @filter_reasons > 0 and $filter_flags{'e'};
     }
 
     else {
@@ -173,7 +172,6 @@ sub parse {
       for my $normal (@normals){
         if ( $sample_info{$id}{$normal}{'GT'} eq '1/1' or $sample_info{$id}{$normal}{'GT'} eq '0/1' ){
           push @filter_reasons, "$normal\_not_homo_ref=" . $sample_info{$id}{$normal}{'GT'};
-          next if @filter_reasons > 0 and $filter_flags{'e'};
         }
       }
     }
@@ -229,10 +227,9 @@ sub parse {
 
     if ( $filter_flags{'chr'} ){
       $filter_list = chrom_filter( $chr, $chr2, $filter_list );
-      next if @$filter_list > 0 and $filter_flags{'e'};
     }
 
-    if ( $filter_flags{'e'} ){
+    if ( $filter_flags{'e'} and @$filter_list == 0 ){
       ###################
       # Region exclude ##
       ###################
@@ -246,7 +243,6 @@ sub parse {
     $info{$id} = [ [@format], [%format_long], [%info_long], [@tumour_parts], [@normal_parts], [%information], [%sample_info] ];
 
     if (scalar @{$filter_list} == 0){
-      # say "$id passes all filters";
       $filtered_SVs{$.} = $_;
     }
 
