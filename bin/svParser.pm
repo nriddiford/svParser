@@ -3,37 +3,39 @@
 package svParser;
 use strict;
 use warnings;
-
-use 5.18.2;
+use autodie;
 
 use feature qw/ say /;
 use Data::Dumper;
 use Data::Printer;
 
+use File::Slurp;
+my @bed = read_file('/Users/Nick_curie/Documents/Curie/Data/Genomes/Dmel_v6.12/Mappability/dmel6_unmappable.bed');
+
 sub typer {
-  my ($file, $type, %filters) = @_;
+  my ($file, $type, %filters, $exclude_regions) = @_;
 
   if ( $type eq 'l' ){
     say "Specified $file as Lumpy output";
     $type = 'lumpy';
-    parse($file, $type, \%filters);
+    parse($file, $type, $exclude_regions, \%filters);
   }
 
   elsif ( $type eq 'd' ){
     say "Specified $file as Delly output";
     $type = 'delly';
-    parse($file, $type, \%filters);
+    parse($file, $type, $exclude_regions, \%filters);
   }
 
   elsif ( $type eq 'n' ){
     say "Specified $file as novoBreak output";
     $type = 'novobreak';
-    parse($file, $type, \%filters);
+    parse($file, $type, $exclude_regions, \%filters);
   }
   elsif ($type eq 'snp'){
     say "Forcing parsing of $file";
     $type = 'snp';
-    parse($file, $type, \%filters);
+    parse($file, $type, $exclude_regions, \%filters);
   }
 
   elsif ( $type eq 'guess' ){
@@ -41,17 +43,17 @@ sub typer {
     if ( `grep "source=LUMPY" $file` ){
       say "Recognised $file as Lumpy input";
       $type = 'lumpy';
-      parse($file, $type, \%filters);
+      parse($file, $type, $exclude_regions, \%filters);
     }
     elsif ( `grep "DELLY" $file` ){
       say "Recognised $file as Delly input";
       $type = 'delly';
-      parse($file, $type, \%filters);
+      parse($file, $type, $exclude_regions, \%filters);
     }
     elsif ( `grep "bamsurgeon spike-in" $file` ){
       say "Recognised $file as novoBreak input";
       $type = 'novobreak';
-      parse($file, $type, \%filters);
+      parse($file, $type, $exclude_regions, \%filters);
     }
     else {
       die "This VCF can not be parsed. Try specfiying type '-t' explicitly. See -h for details. Abort";
@@ -64,7 +66,7 @@ sub typer {
 }
 
 sub parse {
-  my ($file, $type, $filter_flags ) = @_;
+  my ($file, $type, $exclude_regions, $filter_flags ) = @_;
   open my $in, '<', $file or die $!;
 
   my @headers;
@@ -150,6 +152,7 @@ sub parse {
       #############################
       # Filter OUT somatic events #
       #############################
+
       # Filter if ANY of the panel of normals (but not direct control) are NOT 'GT = 0/0' (hom ref)
       for my $normal (@normals[1..$#normals]){
         if ( $sample_info{$id}{$normal}{'GT'} eq '1/1' or $sample_info{$id}{$normal}{'GT'} eq '0/1' ){
@@ -165,7 +168,8 @@ sub parse {
         }
 
     }
-    else{
+
+    else {
       # Filter if ANY of the controls are NOT 'GT = 0/0' (hom ref)
 
       for my $normal (@normals){
@@ -200,7 +204,7 @@ sub parse {
     my ($SV_length, $chr2, $stop, $t_SR, $t_PE, $ab, $filter_list);
 
     if ($type eq 'lumpy'){
-      ( $SV_length, $chr2, $stop, $t_SR, $t_PE, $ab, $filter_list ) = lumpy( $id, $info_block, $SV_type, $alt, $start, \%sample_info, $tumour_name, $control_name, \@samples, \@normals, \@filter_reasons, \%filter_flags );
+      ( $SV_length, $chr2, $stop, $t_SR, $t_PE, $ab, $filter_list ) = lumpy( $id, $chr, $info_block, $SV_type, $alt, $start, \%sample_info, $tumour_name, $control_name, \@samples, \@normals, \@filter_reasons, \%filter_flags );
     }
 
     elsif ($type eq 'delly'){
@@ -226,8 +230,13 @@ sub parse {
       $filter_list = chrom_filter( $chr, $chr2, $filter_list );
     }
 
-    # my @vars_filtered = @{ $filter_list };
-    # say "variant: $id\t $_" for @vars_filtered;
+    if ( $filter_flags{'e'} ){
+      ###################
+      # Region exclude ##
+      ###################
+
+      $filter_list = region_exclude_filter($chr, $start, $chr2, $stop, \@filter_reasons);
+    }
 
     $SV_length = abs($SV_length);
     $SVs{$id} = [ @fields[0..10], $SV_type, $SV_length, $stop, $chr2, $t_SR, $t_PE, $ab, $filter_list, \@samples ];
@@ -241,39 +250,6 @@ sub parse {
 
   }
   return (\%SVs, \%info, \%filtered_SVs);
-}
-
-
-sub print_variants {
-
-  my ( $SVs, $filtered_SVs, $name, $output_dir, $germline ) = @_;
-  my $out;
-  if ($germline){
-    open $out, '>', $output_dir . $name . ".germline_filtered.vcf" or die $!;
-    say "Writing output to " . "'$output_dir" . $name . ".germline_filtered.vcf'";
-  }
-  else{
-    open $out, '>', $output_dir . $name . ".filtered.vcf" or die $!;
-    say "Writing output to " . "'$output_dir" . $name . ".filtered.vcf'";
-  }
-
-
-  my %filtered_SVs = %{ $filtered_SVs };
-  my $sv_count = 0;
-
-  for (sort {$a <=> $b} keys %filtered_SVs){
-    my $line = $filtered_SVs{$_};
-
-    if ($line =~ /^#/){
-      print $out $line . "\n";
-    }
-    else {
-      $sv_count++;
-      my @cols = split("\t", $line);
-      print $out join("\t", @cols[0..5], "PASS", @cols[7..$#cols]) . "\n";
-    }
-  }
-  say "$sv_count variants passed all filters";
 }
 
 sub novobreak {
@@ -389,7 +365,7 @@ sub novobreak {
 
 
 sub lumpy {
-  my ( $id, $info_block, $SV_type, $alt, $start, $sample_info, $tumour, $control, $samples, $normals, $filters, $filter_flags ) = @_;
+  my ( $id, $chr, $info_block, $SV_type, $alt, $start, $sample_info, $tumour, $control, $samples, $normals, $filters, $filter_flags ) = @_;
 
   my @filter_reasons = @{ $filters };
   my @normals = @{ $normals };
@@ -431,8 +407,7 @@ sub lumpy {
 
   if (exists $filter_flags{'su'}){
     my $filtered_on_reads = read_support_filter($tumour_read_support, $filter_flags{'su'}, \@filter_reasons);
-
-    @filter_reasons = @{$filtered_on_reads};
+    @filter_reasons = @{ $filtered_on_reads };
   }
 
   if (not $filter_flags{'g'}){
@@ -480,10 +455,10 @@ sub lumpy {
 
   }
 
-  # if running in germline mode, require
-  if ($filter_flags{'g'}){
-
-  }
+  # # if running in germline mode, require
+  # if ($filter_flags{'g'}){
+  #
+  # }
 
   ######################
   # Read depth filters #
@@ -546,6 +521,7 @@ sub lumpy {
   return ($SV_length, $chr2, $stop, $t_SR, $t_PE, $ab, \@filter_reasons);
 }
 
+
 sub delly {
   my ($id, $info_block, $start, $SV_type, $filters, $filter_flags, $tumour_name, $sample_ref) = @_;
 
@@ -597,6 +573,7 @@ sub delly {
   return ($SV_length, $chr2, $stop, $t_SR, $t_PE, $ab, \@filter_reasons );
 }
 
+
 sub summarise_variants {
   my ( $SVs, $filter_switch, $chromosome ) = @_;
 
@@ -639,7 +616,7 @@ sub summarise_variants {
 
   for (keys %{ $SVs } ){
 
-    my ( $chr, $start, $id, $ref, $alt, $quality_score, $filt, $info_block, $format_block, $tumour_info_block, $normal_info_block, $sv_type, $SV_length, $stop, $chr2, $SR, $PE, $ab, $filters ) = @{ $SVs->{$_} };
+    my ( $chr, $start, $id, $ref, $alt, $quality_score, $filt, $info_block, $format_block, $tumour_info_block, $normal_info_block, $sv_type, $SV_length, $stop, $chr2, $SR, $PE, $ab, $filters, $samples ) = @{ $SVs->{$_} };
 
     if ( $chromosome ){
       next if $chr ne $chromosome;
@@ -722,6 +699,7 @@ sub summarise_variants {
   }
 }
 
+
 sub get_variant {
 
   my ($id_lookup, $SVs, $info, $filter_flag) = @_;
@@ -798,6 +776,7 @@ sub get_variant {
   say "____________________________________________________________________________________";
 
 }
+
 
 sub dump_variants {
   my ( $SVs, $info, $filter_flag, $chromosome, $type ) = @_;
@@ -935,6 +914,39 @@ sub dump_variants {
 }
 
 
+sub print_variants {
+
+  my ( $SVs, $filtered_SVs, $name, $output_dir, $germline ) = @_;
+  my $out;
+
+  if ($germline){
+    open $out, '>', $output_dir . $name . ".germline_filtered.vcf" or die $!;
+    say "Writing output to " . "'$output_dir" . $name . ".germline_filtered.vcf'";
+  }
+  else{
+    open $out, '>', $output_dir . $name . ".filtered.vcf" or die $!;
+    say "Writing output to " . "'$output_dir" . $name . ".filtered.vcf'";
+  }
+
+  my %filtered_SVs = %{ $filtered_SVs };
+  my $sv_count = 0;
+
+  for (sort {$a <=> $b} keys %filtered_SVs){
+    my $line = $filtered_SVs{$_};
+
+    if ($line =~ /^#/){
+      print $out $line . "\n";
+    }
+    else {
+      $sv_count++;
+      my @cols = split("\t", $line);
+      print $out join("\t", @cols[0..5], "PASS", @cols[7..$#cols]) . "\n";
+    }
+  }
+  say "$sv_count variants passed all filters";
+}
+
+
 sub write_summary {
   my ( $SVs, $name, $summary_out, $type, $germline ) = @_;
 
@@ -962,8 +974,6 @@ sub write_summary {
       }  keys %{ $SVs } ){
     my ( $chr, $start, $id, $ref, $alt, $quality_score, $filt, $info_block, $format_block, $tumour_info_block, $normal_info_block, $sv_type, $SV_length, $stop, $chr2, $SR, $PE, $ab, $filters, $samples ) = @{ $SVs->{$_} };
 
-    # $filters = region_exclude_filter($chr, $start, $chr2, $stop, $filters);
-
     if (scalar @{$filters} == 0){
 
       my $bp_id = $_;
@@ -975,7 +985,7 @@ sub write_summary {
 
       my ($length_in_kb) = sprintf("%.1f", abs($SV_length)/1000);
 
-      $ab = sprintf("%.2f", $ab) unless $type eq 'novobreak';
+      $ab = sprintf("%.2f", $ab) unless $type eq 'novobreak' or $ab eq '.';
 
       # Don't include DELS < 1kb with split read support == 0
       if ( ( $sv_type eq "DEL" and $length_in_kb < 1 ) and $SR == 0 ){
@@ -1040,10 +1050,31 @@ sub write_summary {
   }
 }
 
-sub region_exclude_filter {
-  my ($chr1, $bp1, $chr2, $bp2) = @_;
 
+sub region_exclude_filter {
+  my ( $chr1, $bp1, $chr2, $bp2, $filter_reasons ) = @_;
+
+  my @filter_reasons = @{ $filter_reasons };
+
+  # my @bed = @{ $bed_file };
+
+  foreach(@bed){
+    chomp;
+    my ($chromosome, $start, $stop) = split;
+
+    if ( $bp1 >= $start and $bp1 <= $stop ) {
+      next unless $chromosome eq $chr1;
+      push @filter_reasons, 'bp1_in_unmappable_region=' . "$chromosome:$bp1\_in:" . $start . '-' . $stop;
+    }
+    if ( $bp2 >= $start and $bp2 <= $stop ) {
+      next unless $chromosome eq $chr2;
+      push @filter_reasons, 'bp2_in_unmappable_region=' . "$chromosome:$bp2\_in:" . $start . '-' . $stop;
+    }
+  }
+
+  return (\@filter_reasons);
 }
+
 
 sub read_support_filter {
   my ($tumour_read_support, $read_support_flag, $filter_reasons ) = @_;
@@ -1053,8 +1084,9 @@ sub read_support_filter {
   if ( $tumour_read_support < $read_support_flag ){
     push @filter_reasons, 'tumour_reads<' . $read_support_flag . '=' . $tumour_read_support;
   }
-  return (\@filter_reasons);
+  return(\@filter_reasons);
 }
+
 
 # Only for Drosophila so far...
 sub chrom_filter {
@@ -1080,7 +1112,6 @@ sub chrom_filter {
   return (\@filter_reasons);
 
 }
-
 
 
 1;
