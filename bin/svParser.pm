@@ -1052,6 +1052,8 @@ sub write_summary {
 sub region_exclude_filter {
   my ( $chr1, $bp1, $chr2, $bp2, $exclude_regions, $filter_reasons ) = @_;
 
+  my $slop = 50;
+
   my @filter_reasons = @{ $filter_reasons };
 
   my @bed = @{ $exclude_regions };
@@ -1059,16 +1061,15 @@ sub region_exclude_filter {
   foreach(@bed){
     my ($chromosome, $start, $stop) = split;
 
-    if ( $bp1 >= $start and $bp1 <= $stop ) {
+    if ( $bp1 >= ($start - $slop) and $bp1 <= ($stop + $slop) ) {
       next unless $chromosome eq $chr1;
       push @filter_reasons, 'bp1_in_unmappable_region=' . "$chromosome:$bp1\_in:" . $start . '-' . $stop;
     }
-    if ( $bp2 >= $start and $bp2 <= $stop ) {
+    if ( $bp2 >= ($start - $slop) and $bp2 <= ($stop + $slop) ) {
       next unless $chromosome eq $chr2;
       push @filter_reasons, 'bp2_in_unmappable_region=' . "$chromosome:$bp2\_in:" . $start . '-' . $stop;
     }
   }
-
   return (\@filter_reasons);
 }
 
