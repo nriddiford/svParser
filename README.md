@@ -42,7 +42,7 @@ arguments:
                         -f dp=INT [minimum depth for both tumour normal at variant site]
                         -f rdr=FLOAT [supporting reads/tumour depth - a value of 1 would mean all reads support variant]
                         -f sq=INT [phred-scaled variant likelihood]
-                        -f chr=1 [only show chromosomes 2L 2R 3L 3R 4 X Y. Only use for Drosophila]
+                        -f chr=1 [only show chromosomes in 'chroms.txt'. [Default use Drosophila chroms: 2L 2R 3L 3R 4 X Y]
                         -f g=1 [only keep germline events - remove events that are common to multiple samples in a PON]
                         -f, -f a [apply default filters: -f su=4 -f dp=10 -f rdr=0.1 -f sq=10 -f chr=1 ]
 ```
