@@ -128,7 +128,7 @@ if ( scalar keys %filters > 0 ){
     say " o Read depth (in both tumour and normal) > 10";
     say " o Read support / depth > 0.1";
     say " o SQ quality > 10";
-    say " o Chromosomes 2L 2R 3L 3R 4 X Y";
+    say " o Chromosomes: " . join(' ', @keys);
 
     %filters = ("su"  =>  4,
                 "dp"  =>  10,
