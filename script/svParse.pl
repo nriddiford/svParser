@@ -111,6 +111,10 @@ if ($print){
 
 my $filter = 0;
 
+if ( $filters{'g'} and $filters{'n'}){
+  die "These two filters can't be used together";
+}
+
 if ( scalar keys %filters > 0 ){
   print "\n";
   if ( exists $filters{'a'} ){
@@ -131,7 +135,7 @@ if ( scalar keys %filters > 0 ){
     $filter = 1;
 
   }
-  elsif ( $filters{'su'} or $filters{'dp'} or $filters{'rdr'} or $filters{'sq'} or $filters{'chr'} or $filters{'g'} or $filters{'e'} or $filters{'q'} ) {
+  elsif ( $filters{'su'} or $filters{'dp'} or $filters{'rdr'} or $filters{'sq'} or $filters{'chr'} or $filters{'g'} or $filters{'e'} or $filters{'n'} ) {
     say "Running in filter mode, using custom filters:";
     say " o Read support >= $filters{'su'}" if $filters{'su'};
     say " o Read depth (in both tumor and normal) > $filters{'dp'}" if $filters{'dp'};
@@ -139,6 +143,7 @@ if ( scalar keys %filters > 0 ){
     say " o SQ quality > $filters{'sq'}" if $filters{'sq'};
     say " o Chromosomes 2L 2R 3L 3R 4 X Y" if $filters{'chr'};
     say " o Running in germline mode" if $filters{'g'};
+    say " o Running in somatic NORMAL mode" if $filters{'n'};
     say " o Excluding calls overlapping: $exclude" if $filters{'e'};
     $filter = 1;
   }
@@ -172,7 +177,7 @@ if ($type ne 'snp') {
   svParser::get_variant( $id, $SVs, $info, $filter ) if $id;
 
   # Dump all variants to screen
-  svParser::dump_variants( $SVs, $info, $filter, $chromosome, $type) if $dump;
+  svParser::dump_variants( $SVs, $info, $filter, $chromosome, $type ) if $dump;
 
   # Write out variants passing filters
   # Write out some useful info to txt file

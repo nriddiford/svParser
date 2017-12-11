@@ -173,6 +173,10 @@ sub parse {
 
     }
 
+    elsif ( $filter_flags{'n'} ){
+      
+    }
+
     else {
       # Filter if ANY of the controls are NOT 'GT = 0/0' (hom ref)
 
