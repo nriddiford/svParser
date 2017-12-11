@@ -20,6 +20,8 @@ use Getopt::Long qw/ GetOptions /;
 use File::Basename;
 use File::Path qw/ make_path / ;
 
+use File::Slurp;
+
 my $vcf_file;
 my $help;
 my $id;
@@ -27,9 +29,7 @@ my $dump;
 my $chromosome;
 my $type = "guess";
 my $print;
-my $sample;
 my $exclude;
-
 my %filters;
 
 GetOptions( 'vcf=s'           =>    \$vcf_file,
@@ -39,7 +39,6 @@ GetOptions( 'vcf=s'           =>    \$vcf_file,
             'filter:s'        =>    \%filters,
             'print'           =>    \$print,
             'chromosome=s'    =>    \$chromosome,
-            'sample=s'        =>    \$sample,
             'exclude=s'       =>    \$exclude,
             'help'            =>    \$help
     ) or die usage();
@@ -50,13 +49,21 @@ if (not $vcf_file) {
    exit usage();
 }
 
+my @keys;
+if (-e 'chroms.txt'){
+  say "\nReading chromosomes file from 'chroms.txt'";
+  @keys = read_file('chroms.txt', chomp=>1);
+}
+else {
+  say "\nFiltering for Drosophila chroms: 2L 2R 3L 3R 4 X Y ";
+  @keys = qw / 2L 2R 3L 3R 4 X Y /;
+}
+
 my @exclude_regions;
 if ($exclude){
   # say "\nFiltering variants that fall within an exclude region in provided file: $exclude";
-  use File::Slurp;
-  my @exclude = read_file($exclude, chomp=>1);
 
-  my @keys = qw / 2L 2R 3L 3R 4 X Y /;
+  my @exclude = read_file($exclude, chomp=>1);
 
   my %chroms;
 
@@ -141,7 +148,7 @@ if ( scalar keys %filters > 0 ){
     say " o Read depth (in both tumor and normal) > $filters{'dp'}" if $filters{'dp'};
     say " o Read support / depth > $filters{'rdr'}" if $filters{'rdr'};
     say " o SQ quality > $filters{'sq'}" if $filters{'sq'};
-    say " o Chromosomes 2L 2R 3L 3R 4 X Y" if $filters{'chr'};
+    say " o Chromosomes: " . join(' ', @keys) if $filters{'chr'};
     say " o Running in germline mode" if $filters{'g'};
     say " o Running in somatic NORMAL mode" if $filters{'n'};
     say " o Excluding calls overlapping: $exclude" if $filters{'e'};
@@ -167,7 +174,7 @@ my ($name, $extention) = split(/\.([^.]+)$/, basename($vcf_file), 2);
 print "\n";
 
 # Retun SV and info hashes
-my ( $SVs, $info, $filtered_vars ) = svParser::typer( $vcf_file, $type, \@exclude_regions, \%filters );
+my ( $SVs, $info, $filtered_vars ) = svParser::typer( $vcf_file, $type, \@exclude_regions, \@keys, \%filters );
 
 if ($type ne 'snp') {
   # Print all info for specified id
@@ -213,8 +220,9 @@ version: v1.0
 description: Browse vcf output from several SV callers LUMPY, DELLY and novobreak
 
 arguments:
-  -h, --help            show this help message and exit
-  -v vcf, --vcf
+  -h, --help
+                        show this help message and exit
+  -v file, --vcf
                         VCF input [required]
   -p, --print
                         print filtered vcf and summary file to './filtered'
@@ -224,14 +232,17 @@ arguments:
                         -d = DELLY
                         -n = novobreak
                         -snp = snp/snv
-  -s str, --sample
-                        sample name [optional]
   -i str, --id
                         breakpoint id to inspect
-  -d, --dump            cycle through breakpoints
+
+  -d, --dump
+                        print each variant called to screen, press any key to advance, q to exit
   -c str, --chromosome
                         limit search to chromosome and/or region (e.g. X:10000-20000)
                         can be used in conjunction with -d
+  -e file, --exclude
+                        path to .bed file containing regions to exlcude
+
   -f key=val, --filter
                         filters to apply:
                         -f su=INT [number of tumour reads supporting var]
@@ -239,6 +250,7 @@ arguments:
                         -f rdr=FLOAT [supporting reads/tumour depth - a value of 1 would mean all reads support variant]
                         -f sq=INT [phred-scaled variant likelihood]
                         -f chr=1 [only show chromosomes 2L 2R 3L 3R 4 X Y. Only use for Drosophila]
-                        -f, -f a = apply default filters [ -f su=4 -f dp=10 -f rdr=0.1 -f sq=10 -f chr=1 ]
+                        -f g=1 [only keep germline events - remove events that are common to multiple samples in a PON]
+                        -f, -f a [apply default filters: -f su=4 -f dp=10 -f rdr=0.1 -f sq=10 -f chr=1 ]
 "
 }

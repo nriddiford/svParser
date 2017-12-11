@@ -10,29 +10,29 @@ use Data::Dumper;
 use Data::Printer;
 
 sub typer {
-  my ($file, $type, $exclude_regions, $filters ) = @_;
+  my ($file, $type, $exclude_regions, $chrom_keys, $filters ) = @_;
 
   if ( $type eq 'l' ){
     say "Specified $file as Lumpy output";
     $type = 'lumpy';
-    parse($file, $type, $exclude_regions, $filters);
+    parse($file, $type, $exclude_regions, $chrom_keys, $filters);
   }
 
   elsif ( $type eq 'd' ){
     say "Specified $file as Delly output";
     $type = 'delly';
-    parse($file, $type, $exclude_regions, $filters);
+    parse($file, $type, $exclude_regions, $chrom_keys, $filters);
   }
 
   elsif ( $type eq 'n' ){
     say "Specified $file as novoBreak output";
     $type = 'novobreak';
-    parse($file, $type, $exclude_regions, $filters);
+    parse($file, $type, $exclude_regions, $chrom_keys, $filters);
   }
   elsif ($type eq 'snp'){
     say "Forcing parsing of $file";
     $type = 'snp';
-    parse($file, $type, $exclude_regions, $filters);
+    parse($file, $type, $exclude_regions, $chrom_keys, $filters);
   }
 
   elsif ( $type eq 'guess' ){
@@ -40,17 +40,17 @@ sub typer {
     if ( `grep "source=LUMPY" $file` ){
       say "Recognised $file as Lumpy input";
       $type = 'lumpy';
-      parse($file, $type, $exclude_regions, $filters);
+      parse($file, $type, $exclude_regions, $chrom_keys, $filters);
     }
     elsif ( `grep "DELLY" $file` ){
       say "Recognised $file as Delly input";
       $type = 'delly';
-      parse($file, $type, $exclude_regions, $filters);
+      parse($file, $type, $exclude_regions, $chrom_keys, $filters);
     }
     elsif ( `grep "bamsurgeon spike-in" $file` ){
       say "Recognised $file as novoBreak input";
       $type = 'novobreak';
-      parse($file, $type, $exclude_regions, $filters);
+      parse($file, $type, $exclude_regions, $chrom_keys, $filters);
     }
     else {
       die "This VCF can not be parsed. Try specfiying type '-t' explicitly. See -h for details. Abort";
@@ -63,7 +63,7 @@ sub typer {
 }
 
 sub parse {
-  my ($file, $type, $exclude_regions, $filter_flags ) = @_;
+  my ($file, $type, $exclude_regions, $chrom_keys, $filter_flags ) = @_;
   open my $in, '<', $file or die $!;
 
   my @headers;
@@ -174,7 +174,7 @@ sub parse {
     }
 
     elsif ( $filter_flags{'n'} ){
-      
+
     }
 
     else {
@@ -237,7 +237,7 @@ sub parse {
     # General filters
 
     if ( $filter_flags{'chr'} ){
-      $filter_list = chrom_filter( $chr, $chr2, $filter_list );
+      $filter_list = chrom_filter( $chr, $chr2, $filter_list, $chrom_keys );
     }
 
     if ( $filter_flags{'e'} and @$filter_list == 0 ){
@@ -1099,8 +1099,8 @@ sub read_support_filter {
 
 # Only for Drosophila so far...
 sub chrom_filter {
-  my ( $chr, $chr2, $filters ) = @_;
-  my @keys = qw / 2L 2R 3L 3R 4 X Y /;
+  my ( $chr, $chr2, $filters, $chrom_keys ) = @_;
+  my @keys = @{ $chrom_keys };
   my %chrom_filt;
 
   $chrom_filt{$_} = 1 for (@keys);

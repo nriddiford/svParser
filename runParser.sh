@@ -42,9 +42,11 @@ if [[ $# -eq 0 ]] ; then
     exit 0
 fi
 
+# Change to the 'script' dir in svParser
 #script_bin=/Users/Nick/iCloud/Desktop/script_test/SV_Parser/script # home
 script_bin=/Users/Nick_curie/Desktop/script_test/svParser/script # work
 
+# Change to the bed file to filter svs called in unmappable regions
 exclude_file=/Users/Nick_curie/Documents/Curie/Data/Genomes/Dmel_v6.12/Mappability/dmel6_unmappable.bed
 
 if [[ $germline -eq 1 ]]
@@ -65,7 +67,7 @@ if [[ $filter -eq 1 ]]
 then
 
   # need to give differnt params for germline run; only lumpy so far
-  # these are the same as somatic, except here we require at least 6 reads supporting var
+  # these are the same as somatic, except here we require at least 6 reads supporting var [ is this a good idea? ]
   if [[ $germline -eq 1 ]]
   then
 
