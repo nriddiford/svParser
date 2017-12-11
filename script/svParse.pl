@@ -61,20 +61,18 @@ else {
 
 my @exclude_regions;
 if ($exclude){
-  # say "\nFiltering variants that fall within an exclude region in provided file: $exclude";
-
   my @exclude = read_file($exclude, chomp=>1);
 
   my %chroms;
 
   @chroms{@keys} = ();
 
+  # Should speed things up a bit by removing any chromosomes in exclude (.bed) file that aren't in our list of chroms we want to look at (@keys)
   foreach(@exclude){
     my $chrom = (split)[0];
     next unless exists $chroms{$chrom};
     push @exclude_regions, $_;
   }
-
   undef @exclude;
 
   $filters{'e'} = 1;
@@ -177,7 +175,7 @@ print "\n";
 my ( $SVs, $info, $filtered_vars ) = svParser::typer( $vcf_file, $type, \@exclude_regions, \@keys, \%filters );
 
 if ($type ne 'snp') {
-  # Print all info for specified id
+  # Print summary to screen
   svParser::summarise_variants( $SVs, $filter, $chromosome ) unless $id or $dump;
 
   # Print all info for specified id
