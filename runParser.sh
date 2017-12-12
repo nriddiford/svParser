@@ -211,17 +211,30 @@ fi
 
 if [[ $clean -eq 1 ]]
 then
-  echo "Adding any new CNV calls to data/cnv'"
-  for annofile in *_annotated_SVs.txt
-  do
-    python $script_bin/getCNVs.py -f $annofile
-  done
+  if [[ ! $germline -eq 1 ]]
+  then
+    echo "Adding any new CNV calls to data/cnv'"
+    for annofile in *_annotated_SVs.txt
+    do
+      python $script_bin/getCNVs.py -f $annofile
+    done
+  fi
 
   echo "Removing calls marked as false positives in 'all_samples_false_calls.txt'"
   for annofile in *_annotated_SVs.txt
   do
     python $script_bin/clean.py -f $annofile
   done
+
+  if [[ -f 'all_genes_filtered.txt' ]]
+  then
+    rm 'all_genes_filtered.txt'
+  fi
+
+  if [[ -f 'all_bps_filtered.txt' ]]
+  then
+    rm 'all_bps_filtered.txt'
+  fi
 
   for clean_file in *cleaned_SVs.txt
   do
@@ -230,11 +243,7 @@ then
     if [[ ! -s $clean_file ]]
     then
       rm $clean_file
-    fi
-
-    # If file exists (not empty), reannotate - probably better written as an else to !-s
-    if [[ -f $clean_file ]]
-    then
+    else
       # Annotate un-annotated (manually added) calls
       # Append any new hit genes to 'all_genes.txt'
       perl $script_bin/sv2gene.pl -r -f $features -i $clean_file
@@ -244,21 +253,16 @@ then
 
   echo "Writing bp info for cleaned, reannotated SV calls to 'all_bps_cleaned.txt')"
 
-  if [[ -f 'all_bps_cleaned.txt' ]]
-  then
-    rm 'all_bps_cleaned.txt'
-  fi
-
-  for reanno_file in *reannotated_SVs.txt
-  do
-    # Grab some of the fields from these newly annotated files, and write them to 'all_bps_cleaned.txt'
-    python $script_bin/getbps.py -f $reanno_file
-  done
-
-  # This shouldn't be neccessary. All calls in this file are taken from 'reannotated' files, which should have FP removed already...
-  echo "Removing false positives from bp file 'all_bps_cleaned.txt', writing new bp file to 'all_bps_filtered.txt'"
-  python $script_bin/update_bps.py
-  rm 'all_bps_cleaned.txt'
+  # for reanno_file in *reannotated_SVs.txt
+  # do
+  #   # Grab some of the fields from these newly annotated files, and write them to 'all_bps_cleaned.txt'
+  #   python $script_bin/getbps.py -f $reanno_file
+  # done
+  #
+  # # This shouldn't be neccessary. All calls in this file are taken from 'reannotated' files, which should have FP removed already...
+  # echo "Removing false positives from bp file 'all_bps_cleaned.txt', writing new bp file to 'all_bps_filtered.txt'"
+  # python $script_bin/update_bps.py
+  # rm 'all_bps_cleaned.txt'
 
   # Merge all samples
   echo "Merging all samples into single file..."
@@ -266,32 +270,32 @@ then
 
 fi
 
-if [[ $stats -eq 1 ]]
-then
-
-  if [ -z all_genes.txt ]
-  then
-    echo "'all_genes' not found! Exiting"
-    exit 1
-  fi
-
-  echo "Calculating breakpoint stats..."
-  perl $script_bin/bpstats.pl all_bps_filtered.txt
-
-fi
-
-if [[ $nstats -eq 1 ]]
-then
-
-  if [ -z all_genes.txt ]
-  then
-    echo "'all_genes' not found! Exiting"
-    exit 1
-  fi
-
-  echo "Calculating breakpoint stats..."
-  perl $script_bin/bpstats.pl -n all_bps_filtered.txt
-
-fi
-
-exit 0
+# if [[ $stats -eq 1 ]]
+# then
+#
+#   if [ -z all_genes.txt ]
+#   then
+#     echo "'all_genes' not found! Exiting"
+#     exit 1
+#   fi
+#
+#   echo "Calculating breakpoint stats..."
+#   perl $script_bin/bpstats.pl all_bps_filtered.txt
+#
+# fi
+#
+# if [[ $nstats -eq 1 ]]
+# then
+#
+#   if [ -z all_genes.txt ]
+#   then
+#     echo "'all_genes' not found! Exiting"
+#     exit 1
+#   fi
+#
+#   echo "Calculating breakpoint stats..."
+#   perl $script_bin/bpstats.pl -n all_bps_filtered.txt
+#
+# fi
+#
+# exit 0
