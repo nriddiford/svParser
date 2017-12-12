@@ -106,8 +106,6 @@ perl script/svParse.pl \
 Browse variants using the `--dump` flag. This cycles through each line of the VCF file, printing an easy-to-read breakdown for each variant.
 Press any key to move to the next variant, or `q` to quit
 
-#### Examples
-
 `perl script/svParse.pl -v data/lumpy/HUM-7.tagged.SC.lumpy.gt_all.vcf -d`
 
 #### Browse all variants with su>=5 on X chromosome (`-c X -f su=5`):
@@ -124,7 +122,7 @@ Press any key to move to the next variant, or `q` to quit
 
 Write a new VCF file (`filtered/input.filtered.vcf`) and a summary txt file containing useful info (`filtered/summary/input.filtered.summary.txt`).
 
-* Print (`-p`) all variants that passed all defualt filters (`-f a`):
+#### Print (`-p`) all variants that passed all defualt filters (`-f a`):
 `perl script/svParse.pl -v data/lumpy/HUM-7.tagged.SC.lumpy.gt_all.vcf -f a -p`
 
 
@@ -134,7 +132,7 @@ Another useful feature of svParser is its ability to combine calls made by multi
 
 ### Run on all samples
 
-* Generate `filtered/input.filtered.vcf` and `filtered/summary/input.filtered.summary.txt` files for calls made by delly, lumpy and novoBreak:
+#### Generate `filtered/input.filtered.vcf` and `filtered/summary/input.filtered.summary.txt` files for calls made by delly, lumpy and novoBreak:
 
 ```
 for file in data/lumpy/*.vcf
@@ -158,7 +156,7 @@ done
 ```
 
 ### Merge calls together in VCF using merge_vcf
-* Run [merge_vcf](https://github.com/ljdursi/mergevcf/tree/master/mergevcf) on all filtered files. (Run from `filtered` directory):
+#### Run [merge_vcf](https://github.com/ljdursi/mergevcf/tree/master/mergevcf) on all filtered files. (Run from `filtered` directory):
 
 ```
 cd filtered
@@ -166,7 +164,7 @@ perl ../script/merge_vcf.pl
 ```
 
 ### Merge summary output foreach sample
-* Run svMerger.pl for all files in sample group. E.g. `input1.delly.filtered.summary.txt` `input1.lumpy.filtered.summary.txt` `input1.novobreak.filtered.summary.txt`
+#### Run svMerger.pl for all files in sample group. E.g. `input1.delly.filtered.summary.txt` `input1.lumpy.filtered.summary.txt` `input1.novobreak.filtered.summary.txt`
 
 ```
 cd filtered/summary
@@ -185,7 +183,7 @@ done
 
 ### Annotate calls from a .gtf file
 
-* This takes a user-provided .gtf file and annotates variants with what feature/gene they affect:
+#### This takes a user-provided .gtf file and annotates variants with what feature/gene they affect:
 
 ```
 features=/path/to/annotations.gtf
@@ -205,10 +203,12 @@ The recommended next step from here is to inspect calls that remain. Any obvious
 
 These can then be removed by using:
 
+```
 for annofile in *_annotated_SVs.txt
 do
   python ../../script/clean.py -f $annofile
 done
+```
 
 # Plotting results
 See [svBreaks](https://github.com/nriddiford/svBreaks) for plotting functions. This takes as input the annotated SV calls per sample
