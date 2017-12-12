@@ -53,10 +53,11 @@ arguments:
 
 A good place to start is to Print a summary of variants called in VCF file to see the number of DELS/DUPS/INV/TRA called
 
-* Read vcf file from lumpy (or delly/novobreak) and see summary of variants called:
+#### Read vcf file from lumpy (or delly/novobreak) and see summary of variants called:
 `perl script/svParse.pl -v data/lumpy/HUM-7.tagged.SC.lumpy.gt_all.vcf`
 
 * It's reccomended to explicity tag files on the caller that has produced them using the `--type` flag:
+
 `perl script/svParse.pl -v data/lumpy/HUM-7.tagged.SC.lumpy.gt_all.vcf -t l`
 
 ## Filtering variants
@@ -114,7 +115,7 @@ Press any key to move to the next variant, or `q` to quit
 * Browse all variants within a specific window on X chromosome (`-c X:3000000-3500000`):
 `perl script/svParse.pl -v data/lumpy/HUM-7.tagged.SC.lumpy.gt_all.vcf -t l -d -c X:3000000-3500000`
 
-* Browse all variants that passed read depth filter (`-f dp=20`) filter within a specific window on X chromosome:  
+* Browse all variants that passed read depth filter (`-f dp=20`) filter within a specific window on X chromosome:
 `perl script/svParse.pl -v data/lumpy/HUM-7.tagged.SC.lumpy.gt_all.vcf -t l -f dp=20 -d -c X:3000000-3500000`
 
 
