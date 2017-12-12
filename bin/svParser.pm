@@ -184,6 +184,9 @@ sub parse {
         if ( $sample_info{$id}{$normal}{'GT'} eq '1/1' or $sample_info{$id}{$normal}{'GT'} eq '0/1' ){
           push @filter_reasons, "$normal\_not_homo_ref=" . $sample_info{$id}{$normal}{'GT'};
         }
+        # if ( $sample_info{$id}{$normal}{'QA'} >= 2){
+        #   push @filter_reasons, "$normal\_has_quality_alt_support=" . $sample_info{$id}{$normal}{'QA'};
+        # }
       }
     }
 
