@@ -80,7 +80,7 @@ perl script/svParse.pl \
  -f dp=10 \    # min read depth of 10 in both tumour/normal
  -f rdr=0.1 \  # min 10% of reads at breakpoint supporting variant
  -f sq=10 \    # min likelihood of 10
- -f chr=1      # filter out calls on chromosomes not in 'chroms.txt'  
+ -f chr=1      # filter out calls on chromosomes not in 'chroms.txt'
  ```
 
 * In addition, users can provide a bed file containing regions to exclude by using `-e [path/to/exclude.bed]`
@@ -89,16 +89,16 @@ perl script/svParse.pl \
 
 * Filters can be used in combination with other features of svParser to experiment with filters that remove obvious false positives while retaining true positives. E.g:
 
-* See summary of variants that have >= 4 reads supporting call in tumour (`-f su=4`)
+#### See summary of variants that have >= 4 reads supporting call in tumour (`-f su=4`)
 `perl script/svParse.pl -v data/lumpy/HUM-7.tagged.SC.lumpy.gt_all.vcf -t l -f su=4`
 
-* See summary of variants that have >= 4 reads supporting call in tumour and have both breakpoints on chromosomes contained in `chroms.txt`
+#### See summary of variants that have >= 4 reads supporting call in tumour and have both breakpoints on chromosomes contained in `chroms.txt`
 `perl script/svParse.pl -v data/lumpy/HUM-7.tagged.SC.lumpy.gt_all.vcf -t l -f su=4 -f chr=1`
 
 
-## See specific variant
+## Inspect specific variant call
 
-* Investigate a specific variant (by ID) using the `--id` flag:
+#### Investigate a specific variant (by ID) using the `--id` flag:
 `perl script/svParse.pl -v data/lumpy/HUM-7.tagged.SC.lumpy.gt_all.vcf -t l -i 4706`
 
 ## Browse variants (-d)
@@ -110,13 +110,13 @@ Press any key to move to the next variant, or `q` to quit
 
 `perl script/svParse.pl -v data/lumpy/HUM-7.tagged.SC.lumpy.gt_all.vcf -d`
 
-* Browse all variants with su>=5 on X chromosome (`-c X -f su=5`):
+#### Browse all variants with su>=5 on X chromosome (`-c X -f su=5`):
 `perl script/svParse.pl -v data/lumpy/HUM-7.tagged.SC.lumpy.gt_all.vcf -t l -f su=5 -d -c X`
 
-* Browse all variants within a specific window on X chromosome (`-c X:3000000-3500000`):
+#### Browse all variants within a specific window on X chromosome (`-c X:3000000-3500000`):
 `perl script/svParse.pl -v data/lumpy/HUM-7.tagged.SC.lumpy.gt_all.vcf -t l -d -c X:3000000-3500000`
 
-* Browse all variants that passed read depth filter (`-f dp=20`) filter within a specific window on X chromosome:
+#### Browse all variants that passed read depth filter (`-f dp=20`) filter within a specific window on X chromosome:
 `perl script/svParse.pl -v data/lumpy/HUM-7.tagged.SC.lumpy.gt_all.vcf -t l -f dp=20 -d -c X:3000000-3500000`
 
 
