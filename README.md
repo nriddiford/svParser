@@ -66,20 +66,20 @@ A good place to start is to Print a summary of variants called in VCF file to se
 * Filter flags can be used wiith any of the other options aid in fine tuning
 
 * Filters available:
-     * su     - number of tumour reads supporting var. Expects integer e.g. -f su=5
-     * dp     - minimum depth for both tumour normal at variant site. Expects integer e.g. -f dp=10
-     * rdr    - supporting reads/tumour depth - a value of 1 would mean all reads support variant. Expects integer/float e.g. -f rdr=0.2
-     * sq     - phred-scaled variant likelihood. Expects integer e.g. -f sq=10
-     * chr    - filter out chromosomes not in 'chroms.txt' (if not provided, defaults to chromosomes 2L 2R 3L 3R 4 X Y). Expects binary e.g. -f chr=1
-     * g=1    - only keep germline events & remove events that are common to multiple samples in a PON. Writes to './germline' if used with --print. Expects binary e.g. -f g=1
-     * a      - apply default combination of filters. Equivalent to (e.g.):
-                 perl script/svParse.pl \
+     * `su`     - number of tumour reads supporting var. Expects integer e.g. `-f su=5`
+     * `dp`     - minimum depth for both tumour normal at variant site. Expects integer e.g. `-f dp=10`
+     * `rdr`    - supporting reads/tumour depth - a value of 1 would mean all reads support variant. Expects integer/float e.g. `-f rdr=0.2`
+     * `sq`     - phred-scaled variant likelihood. Expects integer e.g. `-f sq=10`
+     * `chr`    - filter out chromosomes not in `chroms.txt` (if not provided, defaults to chromosomes 2L 2R 3L 3R 4 X Y). Expects binary e.g. `-f chr=1`
+     * `g=1`    - only keep germline events & remove events that are common to multiple samples in a PON. Writes to './germline' if used with `--print`. Expects binary e.g. `-f g=1`
+     * `a`      - apply default combination of filters. Equivalent to (e.g.):
+                 ```perl script/svParse.pl \
                    -v data/lumpy/HUM-7.tagged.SC.lumpy.gt_all.vcf \
                    -f su=4 \     # min 4 reads supporting event in tumour
                    -f dp=10 \    # min read depth of 10 in both tumour/normal
                    -f rdr=0.1 \  # min 10% of reads at breakpoint supporting variant
                    -f sq=10 \    # min likelihood of 10
-                   -f chr=1      # filter out calls on chromosomes not in 'chroms.txt'
+                   -f chr=1      # filter out calls on chromosomes not in 'chroms.txt'```
 
 * In addition, users can provide a bed file containing regions to exclude by using `-e [path/to/exclude.bed]`
 
@@ -87,10 +87,10 @@ A good place to start is to Print a summary of variants called in VCF file to se
 
 * Filters can be used in combination with other features of svParser to experiment with filters that remove obvious false positives while retaining true positives. E.g:
 
-* See summary of variants that have >= 4 reads supporting call in tumour (-f su=4)
+* See summary of variants that have >= 4 reads supporting call in tumour (`-f su=4`)
 `perl script/svParse.pl -v data/lumpy/HUM-7.tagged.SC.lumpy.gt_all.vcf -t l -f su=4`
 
-* See summary of variants that have >= 4 reads supporting call in tumour and have both breakpoints on chromosomes contained in 'chroms.txt'
+* See summary of variants that have >= 4 reads supporting call in tumour and have both breakpoints on chromosomes contained in `chroms.txt`
 `perl script/svParse.pl -v data/lumpy/HUM-7.tagged.SC.lumpy.gt_all.vcf -t l -f su=4 -f chr=1`
 
 
@@ -108,13 +108,13 @@ Press any key to move to the next variant, or `q` to quit
 
 `perl script/svParse.pl -v data/lumpy/HUM-7.tagged.SC.lumpy.gt_all.vcf -d`
 
-* Browse all variants with su>=5 on X chromosome (-c X -f su=5):
+* Browse all variants with su>=5 on X chromosome (`-c X -f su=5`):
 `perl script/svParse.pl -v data/lumpy/HUM-7.tagged.SC.lumpy.gt_all.vcf -t l -f su=5 -d -c X`
 
-* Browse all variants within a specific window on X chromosome (-c X:3000000-3500000):
+* Browse all variants within a specific window on X chromosome (`-c X:3000000-3500000`):
 `perl script/svParse.pl -v data/lumpy/HUM-7.tagged.SC.lumpy.gt_all.vcf -t l -d -c X:3000000-3500000`
 
-* Browse all variants that passed read depth filter (`-f dp=20`) filter within a specific window on X chromosome:
+* Browse all variants that passed read depth filter (`-f dp=20`) filter within a specific window on X chromosome:  
 `perl script/svParse.pl -v data/lumpy/HUM-7.tagged.SC.lumpy.gt_all.vcf -t l -f dp=20 -d -c X:3000000-3500000`
 
 
