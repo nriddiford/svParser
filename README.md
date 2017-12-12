@@ -56,8 +56,7 @@ A good place to start is to Print a summary of variants called in VCF file to se
 #### Read vcf file from lumpy (or delly/novobreak) and see summary of variants called:
 `perl script/svParse.pl -v data/lumpy/HUM-7.tagged.SC.lumpy.gt_all.vcf`
 
-* It's reccomended to explicity tag files on the caller that has produced them using the `--type` flag:
-
+#### It's reccomended to explicity tag files on the caller that has produced them using the `--type` flag:
 `perl script/svParse.pl -v data/lumpy/HUM-7.tagged.SC.lumpy.gt_all.vcf -t l`
 
 ## Filtering variants
@@ -66,21 +65,23 @@ A good place to start is to Print a summary of variants called in VCF file to se
 * It is highly recommended to play around with differnt combinations of filters that suit your needs
 * Filter flags can be used wiith any of the other options aid in fine tuning
 
-* Filters available:
-     * `su`     - number of tumour reads supporting var. Expects integer e.g. `-f su=5`
-     * `dp`     - minimum depth for both tumour normal at variant site. Expects integer e.g. `-f dp=10`
-     * `rdr`    - supporting reads/tumour depth - a value of 1 would mean all reads support variant. Expects integer/float e.g. `-f rdr=0.2`
-     * `sq`     - phred-scaled variant likelihood. Expects integer e.g. `-f sq=10`
-     * `chr`    - filter out chromosomes not in `chroms.txt` (if not provided, defaults to chromosomes 2L 2R 3L 3R 4 X Y). Expects binary e.g. `-f chr=1`
-     * `g=1`    - only keep germline events & remove events that are common to multiple samples in a PON. Writes to './germline' if used with `--print`. Expects binary e.g. `-f g=1`
-     * `a`      - apply default combination of filters. Equivalent to (e.g.):
-                 ```perl script/svParse.pl \
-                   -v data/lumpy/HUM-7.tagged.SC.lumpy.gt_all.vcf \
-                   -f su=4 \     # min 4 reads supporting event in tumour
-                   -f dp=10 \    # min read depth of 10 in both tumour/normal
-                   -f rdr=0.1 \  # min 10% of reads at breakpoint supporting variant
-                   -f sq=10 \    # min likelihood of 10
-                   -f chr=1      # filter out calls on chromosomes not in 'chroms.txt'```
+#### Filters available:
+* `su`     - number of tumour reads supporting var. Expects integer e.g. `-f su=5`
+* `dp`     - minimum depth for both tumour normal at variant site. Expects integer e.g. `-f dp=10`
+* `rdr`    - supporting reads/tumour depth - a value of 1 would mean all reads support variant. Expects integer/float e.g. `-f rdr=0.2`
+* `sq`     - phred-scaled variant likelihood. Expects integer e.g. `-f sq=10`
+* `chr`    - filter out chromosomes not in `chroms.txt` (if not provided, defaults to chromosomes 2L 2R 3L 3R 4 X Y). Expects binary e.g. `-f chr=1`
+* `g=1`    - only keep germline events & remove events that are common to multiple samples in a PON. Writes to './germline' if used with `--print`. Expects binary e.g. `-f g=1`
+* `a`      - apply default combination of filters. Equivalent to (e.g.):
+```{perl}
+perl script/svParse.pl \
+ -v data/lumpy/HUM-7.tagged.SC.lumpy.gt_all.vcf \
+ -f su=4 \     # min 4 reads supporting event in tumour
+ -f dp=10 \    # min read depth of 10 in both tumour/normal
+ -f rdr=0.1 \  # min 10% of reads at breakpoint supporting variant
+ -f sq=10 \    # min likelihood of 10
+ -f chr=1      # filter out calls on chromosomes not in 'chroms.txt'  
+ ```
 
 * In addition, users can provide a bed file containing regions to exclude by using `-e [path/to/exclude.bed]`
 
