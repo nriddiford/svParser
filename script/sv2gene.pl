@@ -110,8 +110,8 @@ sub annotate_SVs {
   if ($reannotate){
     open $annotated_svs, '>', $sample . "_reannotated_SVs.txt";
     print "Reannotating SV calls from $sample\n";
-    open $genes_out, '>>', 'all_genes.txt';
-    open $bp_out, '>>', 'all_bps_cleaned1.txt';
+    open $genes_out, '>>', 'all_genes_filtered.txt';
+    open $bp_out, '>>', 'all_bps_filtered.txt';
   }
   else{
     open $annotated_svs, '>', $sample . "_annotated_SVs.txt";
@@ -127,7 +127,7 @@ sub annotate_SVs {
   local $/ = undef;
   my $content = <$SV_in>;
   my @lines = split /\r\n|\n|\r/, $content;
-
+  my %events;
   for (@lines){
     chomp;
     my @cells = split(/\t/);
@@ -147,13 +147,53 @@ sub annotate_SVs {
 
     # Check to see if the SV has already been annotated - print and skip if next
     if ( $cells[17] and $cells[17] ne ' ' and $cells[17] ne '-' and $reannotate ){
+
       print $annotated_svs "$_\n";
+
+      next if $events{$sample}{$event}++;
+
+      my (undef, undef, undef, undef, undef, undef, $bp1_locus, $bp2_locus, $affected_genes, undef, undef) = @cells[11..21];
+
+      my @genes;
+      if ($affected_genes =~ /\,/){
+        push @genes, split(', ', $affected_genes);
+      }
+      else{
+        push @genes, $affected_genes;
+      }
+      print $genes_out join("\t", $event, $sample, $type, $chrom1, $_) . "\n" foreach @genes;
+
+      $bp1_locus =~ s/"//g;
+      $bp2_locus =~ s/"//g;
+
+      my $bp1_feature = 'intergenic';
+      my $bp2_feature = 'intergenic';
+      my $bp1_gene    = 'intergenic';
+      my $bp2_gene    = 'intergenic';
+
+      if ($bp1_locus =~ /\,/){
+        ($bp1_gene, $bp1_feature ) = split(", ", $bp1_locus);
+      }
+      else{
+        $bp1_gene = $bp1_locus;
+      }
+
+      if ($bp2_locus =~ /\,/){
+        ($bp2_gene, $bp2_feature ) = split(", ", $bp2_locus);
+      }
+      else{
+        $bp2_gene = $bp2_locus;
+      }
+
+      print $bp_out join("\t", $event, 'bp1', $sample, $chrom1, $bp1, $bp1_gene, $bp1_feature, $type, $length) . "\n";
+      print $bp_out join("\t", $event, 'bp2', $sample, $chrom2, $bp2, $bp1_gene, $bp2_feature, $type, $length) . "\n";
+
       next;
     }
     # if it hasn't been annotated, trim off blank cells and proceed
     elsif ( $reannotate or $whitelist ){
       no warnings;
-      $_ = join("\t", @cells[0..16]);
+      $_ = join("\t", @cells[0..17]);
     }
 
     my (%hits, $hits);
@@ -177,7 +217,7 @@ sub annotate_SVs {
       %hits = %{ $hits };
     }
 
-    # new
+    # Does this really append to 'all_genes_filtered'? 12.12.17
     print $genes_out join("\t", $event, $sample, $type, $chrom1, $_) . "\n" foreach @hit_genes;
 
     my $affected_genes = scalar @hit_genes;
@@ -245,7 +285,7 @@ sub getgenes {
   my ($chrom1, $bp1, $bp2, $hit_genes, $hits) = @_;
 
   my @hit_genes = @{ $hit_genes };
-  my %hits = %{$hits};
+  my %hits = %{ $hits };
 
   for my $gene ( sort { $genes{$chrom1}{$a}[0] <=> $genes{$chrom1}{$b}[0] } keys %{$genes{$chrom1}} ){
     my ($gene_start, $gene_stop) = @{$genes{$chrom1}{$gene}};
@@ -306,7 +346,13 @@ sub getbps {
   }
 
 }
-  print $bp_out join ("\t", $event, $sample, $chrom, $bp, $bp_gene, $bp_feature, $type, $length) . "\n" unless $reannotate;
+  # if ( $reannotate ){
+  # Why did all_bps.txt not have the breakpoint id? 12.12.17
+  print $bp_out join("\t", $event, $bp_id, $sample, $chrom, $bp, $bp_gene, $bp_feature, $type, $length) . "\n";
+  # }
+  # else {
+  # print $bp_out join ("\t", $event, $sample, $chrom, $bp, $bp_gene, $bp_feature, $type, $length) . "\n";
+  # }
 
   return ($hit_bp, \@hit_genes, \%hits);
 }
@@ -326,6 +372,6 @@ arguments:
   -i INFILE, --infile
                         SV calls file (as produced by svParser)[required]
   -f FEATURES --features
-                        Features file to annotate from (should be in .gtf format)
+                        Features file to annotate from (must be in .gtf format)
 "
 }
