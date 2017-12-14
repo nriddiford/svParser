@@ -13,19 +13,19 @@ sub typer {
   my ($file, $type, $exclude_regions, $chrom_keys, $filters ) = @_;
 
   if ( $type eq 'l' ){
-    say "Specified $file as Lumpy output";
+    say "Specified $file as a Lumpy file";
     $type = 'lumpy';
     parse($file, $type, $exclude_regions, $chrom_keys, $filters);
   }
 
   elsif ( $type eq 'd' ){
-    say "Specified $file as Delly output";
+    say "Specified $file as a Delly file";
     $type = 'delly';
     parse($file, $type, $exclude_regions, $chrom_keys, $filters);
   }
 
   elsif ( $type eq 'n' ){
-    say "Specified $file as novoBreak output";
+    say "Specified $file as a novoBreak file";
     $type = 'novobreak';
     parse($file, $type, $exclude_regions, $chrom_keys, $filters);
   }
@@ -38,17 +38,17 @@ sub typer {
   elsif ( $type eq 'guess' ){
 
     if ( `grep "source=LUMPY" $file` ){
-      say "Recognised $file as Lumpy input";
+      say "Recognised $file as a Lumpy file";
       $type = 'lumpy';
       parse($file, $type, $exclude_regions, $chrom_keys, $filters);
     }
     elsif ( `grep "DELLY" $file` ){
-      say "Recognised $file as Delly input";
+      say "Recognised $file as a Delly file";
       $type = 'delly';
       parse($file, $type, $exclude_regions, $chrom_keys, $filters);
     }
     elsif ( `grep "bamsurgeon spike-in" $file` ){
-      say "Recognised $file as novoBreak input";
+      say "Recognised $file as a novoBreak file";
       $type = 'novobreak';
       parse($file, $type, $exclude_regions, $chrom_keys, $filters);
     }
