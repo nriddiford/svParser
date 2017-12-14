@@ -73,7 +73,7 @@ It is highly recommended to play around with differnt combinations of filters th
 
  ```
  perl script/svParse.pl \
- -v data/lumpy/HUM-7.tagged.SC.lumpy.gt_all.vcf \
+ -v data/Droso_R7.lumpy.vcf \
  -f su=4 \     # min 4 reads supporting event in tumour
  -f dp=10 \    # min read depth of 10 in both tumour/normal
  -f rdr=0.1 \  # min 10% of reads at breakpoint supporting variant
