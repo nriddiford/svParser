@@ -3,49 +3,6 @@
 Parse VCF output from structural variant callers LUMPY and DELLY (also supports input from novoBreak).
 Run without options or with `--help` or `-h` to print usage statement
 
-```
-usage: svParse.pl [-h] [-v vcf ] [-p] [-t str] [-i str] [-d] [-f key=val] [-c str]
-
-svParser
-author: Nick Riddiford (nick.riddiford@curie.fr)
-version: v1.0
-description: Browse vcf output from several SV callers LUMPY, DELLY and novobreak
-
-arguments:
-  -h, --help
-                        show this help message and exit
-  -v file, --vcf
-                        VCF input [required]
-  -p, --print
-                        print filtered vcf and summary file to './filtered'
-  -t str, --type
-                        specify input source [default: guess from input]
-                        -l = LUMPY
-                        -d = DELLY
-                        -n = novobreak
-                        -snp = snp/snv
-  -i str, --id
-                        breakpoint id to inspect
-
-  -d, --dump
-                        print each variant called to screen, press any key to advance, q to exit
-  -c str, --chromosome
-                        limit search to chromosome and/or region (e.g. X:10000-20000)
-                        can be used in conjunction with -d
-  -e file, --exclude
-                        path to .bed file containing regions to exlcude
-
-  -f key=val, --filter
-                        filters to apply:
-                        -f su=INT [number of tumour reads supporting var]
-                        -f dp=INT [minimum depth for both tumour normal at variant site]
-                        -f rdr=FLOAT [supporting reads/tumour depth - a value of 1 would mean all reads support variant]
-                        -f sq=INT [phred-scaled variant likelihood]
-                        -f chr=1 [only show chromosomes in 'chroms.txt'. [Default use Drosophila chroms: 2L 2R 3L 3R 4 X Y]
-                        -f g=1 [only keep germline events - remove events that are common to multiple samples in a PON]
-                        -f, -f a [apply default filters: -f su=4 -f dp=10 -f rdr=0.1 -f sq=10 -f chr=1 ]
-```
-
 # Parsing structural variants from VCF files called by LUMPY DELLY and novoBreak
 
 ## Summarise variants
