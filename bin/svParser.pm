@@ -152,20 +152,21 @@ sub parse {
 
       # Filter if ANY of the panel of normals (but not direct control) are NOT 'GT = 0/0' (hom ref)
       for my $normal (@normals[1..$#normals]){
-        if ( $sample_info{$id}{$normal}{'GT'} eq '1/1' or $sample_info{$id}{$normal}{'GT'} eq '0/1' ){
-          push @filter_reasons, "$normal\_not_homo_ref=" . $sample_info{$id}{$normal}{'GT'};
+        if ( $sample_info{$id}{$normal}{'GT'} and $sample_info{$id}{$normal}{'GT'} eq '1/1' or $sample_info{$id}{$normal}{'GT'} eq '0/1' ){
+          push @filter_reasons, "PON member '$normal' not homozygous for reference genotype=" . $sample_info{$id}{$normal}{'GT'};
         }
 
-        # Filter if more than 2 spit reads in any normal supporting var
-        # Should probably use this for somaitc too... (maybe even in place of SQ?)
-        if ( $sample_info{$id}{$normal}{'QA'} >= 2){
-          push @filter_reasons, "$normal\_has_quality_alt_support=" . $sample_info{$id}{$normal}{'QA'};
+        # Filter if more than 2 quality reads support var in any normal in PON
+        # Should probably use this for somatic too... (maybe even in place of SQ?)
+        if ( $sample_info{$id}{$normal}{'QA'} and $sample_info{$id}{$normal}{'QA'} != 0){
+          push @filter_reasons, "PON member '$normal' has quality support for alternative genotype=" . $sample_info{$id}{$normal}{'QA'};
         }
 
       }
+
       # If tumour is het/hom alt (0/1, 1/1), but direct control is hom ref(0/0), filter as somatic
       if ( ( $sample_info{$id}{$tumour_name}{'GT'} eq '0/1' or $sample_info{$id}{$tumour_name}{'GT'} eq '1/1' ) and $sample_info{$id}{$control_name}{'GT'} eq '0/0' ){
-          push @filter_reasons, "$tumour_name\_somatic_event=" . $sample_info{$id}{$tumour_name}{'GT'};
+          push @filter_reasons, "$tumour_name somatic tumour event=" . $sample_info{$id}{$tumour_name}{'GT'};
         }
       elsif ( $sample_info{$id}{$tumour_name}{'GT'} eq '0/0' and $sample_info{$id}{$control_name}{'GT'} ne '0/0' ){
           push @filter_reasons, "$control_name\_exclusive_normal_event=" . $sample_info{$id}{$control_name}{'GT'};
@@ -173,12 +174,31 @@ sub parse {
 
     }
 
+    # To filter for events that are somatic NORMAL
     elsif ( $filter_flags{'n'} ){
+      if ( $sample_info{$id}{$tumour_name}{'GT'} eq '1/1' or $sample_info{$id}{$tumour_name}{'GT'} eq '0/1' ){
+          push @filter_reasons, "Event exclusive to tumour '$tumour_name'=" . $sample_info{$id}{$control_name}{'GT'};
+        }
+      elsif ( $sample_info{$id}{$tumour_name}{'QA'} and $sample_info{$id}{$tumour_name}{'QA'} != 0){
+        push @filter_reasons, "Tumour  '$tumour_name' has quality support for alternative genotype=" . $sample_info{$id}{$tumour_name}{'QA'};
+      }
+      for my $normal (@normals[1..$#normals]){
+        if ( $sample_info{$id}{$normal}{'GT'} and $sample_info{$id}{$normal}{'GT'} eq '1/1' or $sample_info{$id}{$normal}{'GT'} eq '0/1' ){
+          push @filter_reasons, "PON member '$normal' not homozygous for reference genotype=" . $sample_info{$id}{$normal}{'GT'};
+        }
+
+        # Filter if more than 2 quality reads support var in any normal in PON
+        # Should probably use this for somatic too... (maybe even in place of SQ?)
+        if ( $sample_info{$id}{$normal}{'QA'} and $sample_info{$id}{$normal}{'QA'} != 0){
+          push @filter_reasons, "PON member '$normal' has quality support for alternative genotype=" . $sample_info{$id}{$normal}{'QA'};
+        }
+      }
+
 
     }
 
     else {
-      # Filter if ANY of the controls are NOT 'GT = 0/0' (hom ref)
+      # To filter for events that are somatic TUMOUR
 
       for my $normal (@normals){
         if ( $sample_info{$id}{$normal}{'GT'} eq '1/1' or $sample_info{$id}{$normal}{'GT'} eq '0/1' ){
@@ -256,7 +276,7 @@ sub parse {
 
     $info{$id} = [ [@format], [%format_long], [%info_long], [@tumour_parts], [@normal_parts], [%information], [%sample_info] ];
 
-    if (scalar @{$filter_list} == 0){
+    if (@$filter_list == 0){
       $filtered_SVs{$.} = $_;
     }
 
@@ -391,7 +411,7 @@ sub lumpy {
   my ($SV_length) = $info_block =~ /SVLEN=(.*?);/;
 
   # switch tumour normal
-  if ($filter_flags{'g'}){
+  if ( $filter_flags{'g'} or $filter_flags{'n'} ){
     my $tum2norm = $control;
     $control = $tumour;
     $tumour = $tum2norm;
