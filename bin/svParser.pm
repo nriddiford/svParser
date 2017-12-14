@@ -484,6 +484,7 @@ sub lumpy {
 
       my $c_DP =  $sample_info{$id}{$control}{'DP'};
 
+      $c_DP = 0 if $c_DP eq '.';
       # Flag if either control or tumour has depth < 10 at site
 
       if ( exists $filter_flags{'dp'} and $c_DP <= $filter_flags{'dp'} ){

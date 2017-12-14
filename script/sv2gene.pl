@@ -193,7 +193,7 @@ sub annotate_SVs {
     # if it hasn't been annotated, trim off blank cells and proceed
     elsif ( $reannotate or $whitelist ){
       no warnings;
-      $_ = join("\t", @cells[0..17]);
+      $_ = join("\t", @cells[0..16]);
     }
 
     my (%hits, $hits);

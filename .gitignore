@@ -1,3 +1,5 @@
 filtered/**
 data/**
 germline/*
+!data/NA12878.NA12891.NA12892.vcf
+!data/Droso_R7.lumpy.vcf
