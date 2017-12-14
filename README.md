@@ -1,7 +1,6 @@
 # svParser
 
 Parse VCF output from structural variant callers LUMPY and DELLY (also supports input from novoBreak).
-
 Run without options or with `--help` or `-h` to print usage statement
 
 ```
@@ -51,19 +50,17 @@ arguments:
 
 ## Summarise variants
 
-A good place to start is to Print a summary of variants called in VCF file to see the number of DELS/DUPS/INV/TRA called
+A good place to start is with a summary of variants called in VCF file:
 
 #### Read vcf file from lumpy (or delly/novobreak) and see summary of variants called:
-`perl script/svParse.pl -v data/lumpy/HUM-7.tagged.SC.lumpy.gt_all.vcf`
+`perl script/svParse.pl -v data/NA12878.NA12891.NA12892.vcf`
 
 #### It's reccomended to explicity tag files on the caller that has produced them using the `--type` flag:
-`perl script/svParse.pl -v data/lumpy/HUM-7.tagged.SC.lumpy.gt_all.vcf -t l`
+`perl script/svParse.pl -v data/NA12878.NA12891.NA12892.vcf -t l`
 
 ## Filtering variants
-
-* The real power of svParser comes from its ability to easily filter variant calls on anumber of different criteria, and quickly assess how this affects your callset
-* It is highly recommended to play around with differnt combinations of filters that suit your needs
-* Filter flags can be used wiith any of the other options aid in fine tuning
+The real power of svParser comes from its ability to easily filter variant calls on anumber of different criteria, and quickly assess how this affects your callset.
+It is highly recommended to play around with differnt combinations of filters that suit your needs. Filter flags can be used with any of the other options aid in fine tuning
 
 #### Filters available:
 * `su`     - number of tumour reads supporting var. Expects integer e.g. `-f su=5`
@@ -73,8 +70,9 @@ A good place to start is to Print a summary of variants called in VCF file to se
 * `chr`    - filter out chromosomes not in `chroms.txt` (if not provided, defaults to chromosomes 2L 2R 3L 3R 4 X Y). Expects binary e.g. `-f chr=1`
 * `g=1`    - only keep germline events & remove events that are common to multiple samples in a PON. Writes to './germline' if used with `--print`. Expects binary e.g. `-f g=1`
 * `a`      - apply default combination of filters. Equivalent to (e.g.):
-```{perl}
-perl script/svParse.pl \
+
+ ```
+ perl script/svParse.pl \
  -v data/lumpy/HUM-7.tagged.SC.lumpy.gt_all.vcf \
  -f su=4 \     # min 4 reads supporting event in tumour
  -f dp=10 \    # min read depth of 10 in both tumour/normal
@@ -86,36 +84,35 @@ perl script/svParse.pl \
 * In addition, users can provide a bed file containing regions to exclude by using `-e [path/to/exclude.bed]`
 
 # Filter-check-filter strategy to hone filters
-
-* Filters can be used in combination with other features of svParser to experiment with filters that remove obvious false positives while retaining true positives. E.g:
+Filters can be used in combination with other features of svParser to experiment with filters that remove obvious false positives while retaining true positives. E.g:
 
 #### See summary of variants that have >= 4 reads supporting call in tumour (`-f su=4`)
-`perl script/svParse.pl -v data/lumpy/HUM-7.tagged.SC.lumpy.gt_all.vcf -t l -f su=4`
+`perl script/svParse.pl -v data/NA12878.NA12891.NA12892.vcf -t l -f su=4`
 
 #### See summary of variants that have >= 4 reads supporting call in tumour and have both breakpoints on chromosomes contained in `chroms.txt`
-`perl script/svParse.pl -v data/lumpy/HUM-7.tagged.SC.lumpy.gt_all.vcf -t l -f su=4 -f chr=1`
+`perl script/svParse.pl -v data/NA12878.NA12891.NA12892.vcf -t l -f su=4 -f chr=1`
 
 
 ## Inspect specific variant call
 
 #### Investigate a specific variant (by ID) using the `--id` flag:
-`perl script/svParse.pl -v data/lumpy/HUM-7.tagged.SC.lumpy.gt_all.vcf -t l -i 4706`
+`perl script/svParse.pl -v data/NA12878.NA12891.NA12892.vcf -t l -i 1`
 
 ## Browse variants (-d)
 
 Browse variants using the `--dump` flag. This cycles through each line of the VCF file, printing an easy-to-read breakdown for each variant.
 Press any key to move to the next variant, or `q` to quit
 
-`perl script/svParse.pl -v data/lumpy/HUM-7.tagged.SC.lumpy.gt_all.vcf -d`
+`perl script/svParse.pl -v data/Droso_R7.lumpy.vcf -d`
 
 #### Browse all variants with su>=5 on X chromosome (`-c X -f su=5`):
-`perl script/svParse.pl -v data/lumpy/HUM-7.tagged.SC.lumpy.gt_all.vcf -t l -f su=5 -d -c X`
+`perl script/svParse.pl -v data/Droso_R7.lumpy.vcf -t l -f su=5 -d -c X`
 
 #### Browse all variants within a specific window on X chromosome (`-c X:3000000-3500000`):
-`perl script/svParse.pl -v data/lumpy/HUM-7.tagged.SC.lumpy.gt_all.vcf -t l -d -c X:3000000-3500000`
+`perl script/svParse.pl -v data/Droso_R7.lumpy.vcf -t l -d -c X:3000000-3500000`
 
 #### Browse all variants that passed read depth filter (`-f dp=20`) filter within a specific window on X chromosome:
-`perl script/svParse.pl -v data/lumpy/HUM-7.tagged.SC.lumpy.gt_all.vcf -t l -f dp=20 -d -c X:3000000-3500000`
+`perl script/svParse.pl -v data/Droso_R7.lumpy.vcf -t l -f dp=20 -d -c X:3000000-3500000`
 
 
 ## Print variants
@@ -123,7 +120,7 @@ Press any key to move to the next variant, or `q` to quit
 Write a new VCF file (`filtered/input.filtered.vcf`) and a summary txt file containing useful info (`filtered/summary/input.filtered.summary.txt`).
 
 #### Print (`-p`) all variants that passed all defualt filters (`-f a`):
-`perl script/svParse.pl -v data/lumpy/HUM-7.tagged.SC.lumpy.gt_all.vcf -f a -p`
+`perl script/svParse.pl -v data/Droso_R7.lumpy.vcf -f a -p`
 
 
 # Combining calls from multiple sources
@@ -132,7 +129,7 @@ Another useful feature of svParser is its ability to combine calls made by multi
 
 ### Run on all samples
 
-#### Generate `filtered/input.filtered.vcf` and `filtered/summary/input.filtered.summary.txt` files for calls made by delly, lumpy and novoBreak:
+#### Generate filtered vcf and summary file for calls made by delly, lumpy and novoBreak:
 
 ```
 for file in data/lumpy/*.vcf
