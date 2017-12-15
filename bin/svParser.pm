@@ -426,7 +426,7 @@ sub lumpy {
       if ($info_block !~ /IMPRECISE;/){
 
         # We want to be strict, so include all controls used for genotyping (and sum read support)
-        @normals = @normals[1..$#normals] if $genotype = 'somatic_normal';
+        @normals = @normals[1..$#normals] if $genotype eq 'somatic_normal';
 
         for my $normal (@normals){
           $sample_info{$id}{$normal}{'PE'} eq '.' ? $sample_info{$id}{$normal}{'PE'} = '0' : $all_c_PE += $sample_info{$id}{$normal}{'PE'};
