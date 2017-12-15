@@ -382,7 +382,7 @@ sub lumpy {
     $tumour = $tum2norm;
   }
 
-  my ($t_PE, $t_SR, $all_c_PE, $all_c_SR, $c_PE, $c_SR) = (0,0,0,0,0,0);
+  my ($t_PE, $t_SR, $all_c_PE, $all_c_SR, $c_PE, $c_SR, $c_HQ, $all_c_HQ) = (0,0,0,0,0,0);
 
   # Get allele balance
   my $ab = $sample_info{$id}{$tumour}{'AB'};
@@ -406,6 +406,7 @@ sub lumpy {
   # Get read support for direct control only
   $c_PE =  $sample_info{$id}{$control}{'PE'};
   $c_SR =  $sample_info{$id}{$control}{'SR'};
+  $c_HQ = $sample_info{$id}{$control}{'QA'};
 
   my $direct_control_read_support = ( $c_PE + $c_SR );
   $pc_direct_control_read_support = $direct_control_read_support + 0.001;
@@ -419,31 +420,47 @@ sub lumpy {
     }
   }
 
-  # not working ... ??
     if (@samples > 1){ # In case there are no control samples...
 
       # for precise variants:
-      if ($info_block !~ /IMPRECISE;/){
+      if ($info_block !~ /IMPRECISE;/) {
 
         # We want to be strict, so include all controls used for genotyping (and sum read support)
         @normals = @normals[1..$#normals] if $genotype eq 'somatic_normal';
 
         for my $normal (@normals){
-          $sample_info{$id}{$normal}{'PE'} eq '.' ? $sample_info{$id}{$normal}{'PE'} = '0' : $all_c_PE += $sample_info{$id}{$normal}{'PE'};
-          $sample_info{$id}{$normal}{'SR'} eq '.' ? $sample_info{$id}{$normal}{'SR'} = '0' : $all_c_SR += $sample_info{$id}{$normal}{'SR'};
+          # $sample_info{$id}{$normal}{'PE'} eq '.' ? $sample_info{$id}{$normal}{'PE'} = '0' : $all_c_PE += $sample_info{$id}{$normal}{'PE'};
+          # $sample_info{$id}{$normal}{'SR'} eq '.' ? $sample_info{$id}{$normal}{'SR'} = '0' : $all_c_SR += $sample_info{$id}{$normal}{'SR'};
+          $sample_info{$id}{$normal}{'QA'} eq '.' ? $sample_info{$id}{$normal}{'QA'} = '0' : $all_c_HQ += $sample_info{$id}{$normal}{'QA'};
         }
 
-        my $all_control_read_support = ( $all_c_PE + $all_c_SR );
+        # Could just iterate over PON[1..#$PON] and save this step
+
+        if ($genotype eq 'somatic_normal'){
+          my $all_control_read_support = $c_HQ + $all_c_HQ;
+        }
+        else {
+          my $all_control_read_support = $all_c_HQ;
+        }
 
         # Filter if there are more than 1 control reads
         if ( $all_control_read_support > 1 ){
-          push @filter_reasons, "Precise var with read support in >= 1 normal samples. Total SU=" . $all_control_read_support  if $filter_flags{'t'};
-          push @filter_reasons, "Precise var with read support in >= 1 normal samples. Total SU=" . $all_control_read_support  if $filter_flags{'n'};
+          if ( $genotype eq 'somatic_normal' ){
+            $genotype = 'germline_recurrent'
+          }
+          if ( $genotype eq 'somatic_tumour' ){
+            $genotype = 'germline_recurrent'
+          }
         }
+
+        if ($filter_flags{'t'} or $filter_flags{'n'}){
+          push @filter_reasons, "Precise var with high quality read support in at least 1 normal samples. Total HQ reads=" . $all_control_read_support;
+        }
+
       }
 
       # for imprecise variants:
-      if ($info_block =~ /IMPRECISE;/){
+      elsif ($info_block =~ /IMPRECISE;/) {
         # Filter if # tumour reads supporting var is less than 5 * control reads
         # Or if there are more than 2 control reads
         if ( $pc_tumour_read_support/$pc_direct_control_read_support < 5 ){
