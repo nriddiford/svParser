@@ -435,12 +435,12 @@ sub lumpy {
         }
 
         # Could just iterate over PON[1..#$PON] and save this step
-
+        my $all_control_read_support;
         if ($genotype eq 'somatic_normal'){
-          my $all_control_read_support = $c_HQ + $all_c_HQ;
+          $all_control_read_support = $c_HQ + $all_c_HQ;
         }
         else {
-          my $all_control_read_support = $all_c_HQ;
+          $all_control_read_support = $all_c_HQ;
         }
 
         # Filter if there are more than 1 control reads
