@@ -338,9 +338,9 @@ sub parse {
       $filter_list = region_exclude_filter($chr, $start, $chr2, $stop, $exclude_regions, $filter_list);
     }
 
-    if (@$filter_list == 0 ){
-      print "ID: $id\nGT: $genotype\n";
-    }
+    # if (@$filter_list == 0 ){
+    #   print "ID: $id\nGT: $genotype\n";
+    # }
 
 
     $SVs{$id} = [ @fields[0..10], $SV_type, $SV_length, $stop, $chr2, $t_SR, $t_PE, $ab, $filter_list, $genotype, \@samples ];
