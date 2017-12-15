@@ -420,14 +420,14 @@ sub lumpy {
   }
 
   # not working ... ??
-  if ( $genotype eq 'somatic_tumour' ){
-
     if (@samples > 1){ # In case there are no control samples...
 
       # for precise variants:
       if ($info_block !~ /IMPRECISE;/){
 
         # We want to be strict, so include all controls used for genotyping (and sum read support)
+        @normals = @normals[1..$#normals] if $genotype = 'somatic_normal';
+
         for my $normal (@normals){
           $sample_info{$id}{$normal}{'PE'} eq '.' ? $sample_info{$id}{$normal}{'PE'} = '0' : $all_c_PE += $sample_info{$id}{$normal}{'PE'};
           $sample_info{$id}{$normal}{'SR'} eq '.' ? $sample_info{$id}{$normal}{'SR'} = '0' : $all_c_SR += $sample_info{$id}{$normal}{'SR'};
@@ -437,7 +437,8 @@ sub lumpy {
 
         # Filter if there are more than 1 control reads
         if ( $all_control_read_support > 1 ){
-          push @filter_reasons, "Precise var with read support in >= 1 normal samples. Total SU=" . $all_control_read_support;
+          push @filter_reasons, "Precise var with read support in >= 1 normal samples. Total SU=" . $all_control_read_support  if $filter_flags{'t'};
+          push @filter_reasons, "Precise var with read support in >= 1 normal samples. Total SU=" . $all_control_read_support  if $filter_flags{'n'};
         }
       }
 
@@ -446,21 +447,17 @@ sub lumpy {
         # Filter if # tumour reads supporting var is less than 5 * control reads
         # Or if there are more than 2 control reads
         if ( $pc_tumour_read_support/$pc_direct_control_read_support < 5 ){
-          push @filter_reasons, 'imprecise var with less than 5 * more tum reads than control=' . $direct_control_read_support;
+          push @filter_reasons, 'Imprecise var with less than 5 * more tumour reads than normal=' . $direct_control_read_support if $filter_flags{'t'};
+          push @filter_reasons, 'Imprecise var with less than 5 * more normal reads than tumour=' . $direct_control_read_support if $filter_flags{'n'};
+
         }
         if ( $direct_control_read_support > 1 ){
-          push @filter_reasons, 'imprecise var with control read support=' . $direct_control_read_support;
+          push @filter_reasons, 'Imprecise var with control read support=' . $direct_control_read_support if $filter_flags{'t'};
+          push @filter_reasons, 'Imprecise var with tumour read support=' . $direct_control_read_support if $filter_flags{'n'};
         }
 
       }
     }
-
-  }
-
-  # # if running in germline mode, require
-  # if ($filter_flags{'g'}){
-  #
-  # }
 
   ######################
   # Read depth filters #
