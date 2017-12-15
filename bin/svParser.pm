@@ -155,6 +155,13 @@ sub parse {
       # Filter OUT somatic events #
       #############################
 
+      if ( $sample_info{$id}{$control_name}{'QA'} != 0){
+        $norm = 1;
+      }
+      elsif ( $sample_info{$id}{$tumour_name}{'QA'} != 0){
+        $tum = 1;
+      }
+
       # Filter if ANY of the panel of normals (but not direct control) are NOT 'GT = 0/0' (hom ref)
       for my $normal (@normals[1..$#normals]){
         if ( $sample_info{$id}{$normal}{'GT'} eq '1/1' or $sample_info{$id}{$normal}{'GT'} eq '0/1' ){
@@ -210,12 +217,12 @@ sub parse {
       #   }
       if ( $norm and $sample_info{$id}{$tumour_name}{'QA'} != 0 ){
         push @filter_reasons, "Tumour  '$tumour_name' has quality support for alternative genotype=" . $sample_info{$id}{$tumour_name}{'QA'} if $filter_flags{'n'};
-        $norm = 0;
+        # $norm = 0;
       }
 
       if ( $tum and $sample_info{$id}{$control_name}{'QA'} != 0 ){
         push @filter_reasons, "Normal  '$control_name' has quality support for alternative genotype=" . $sample_info{$id}{$control_name}{'QA'} if $filter_flags{'t'};
-        $tum = 0;
+        # $tum = 0;
       }
       # for my $normal (@normals[1..$#normals]){
       #   # if ( $sample_info{$id}{$normal}{'GT'} and $sample_info{$id}{$normal}{'GT'} eq '1/1' or $sample_info{$id}{$normal}{'GT'} eq '0/1' ){
