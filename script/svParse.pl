@@ -140,7 +140,7 @@ if ( scalar keys %filters > 0 ){
     $filter = 1;
 
   }
-  elsif ( $filters{'su'} or $filters{'dp'} or $filters{'rdr'} or $filters{'sq'} or $filters{'chr'} or $filters{'g'} or $filters{'e'} or $filters{'n'} ) {
+  elsif ( $filters{'su'} or $filters{'dp'} or $filters{'rdr'} or $filters{'sq'} or $filters{'chr'} or $filters{'g'} or $filters{'e'} or $filters{'n'} or $filters{'t'} ) {
     say "Running in filter mode, using custom filters:";
     say " o Read support >= $filters{'su'}" if $filters{'su'};
     say " o Read depth (in both tumor and normal) > $filters{'dp'}" if $filters{'dp'};
@@ -148,6 +148,7 @@ if ( scalar keys %filters > 0 ){
     say " o SQ quality > $filters{'sq'}" if $filters{'sq'};
     say " o Chromosomes: " . join(' ', @keys) if $filters{'chr'};
     say " o Running in germline mode" if $filters{'g'};
+    say " o Running in somatic TUMOUR mode" if $filters{'t'};
     say " o Running in somatic NORMAL mode" if $filters{'n'};
     say " o Excluding calls overlapping: $exclude" if $filters{'e'};
     $filter = 1;
