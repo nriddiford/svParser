@@ -323,6 +323,15 @@ sub parse {
       $filter_list = chrom_filter( $chr, $chr2, $filter_list, $chrom_keys );
     }
 
+
+    # Don't include DELS < 1kb with split read support == 0
+    if ( $SV_type eq "DEL" or $SV_type eq "INV" and ( $SV_length < 1000 and $t_SR == 0 ) ){
+      push @{$filter_list}, "$SV_type < 1kb with no split read support=$SV_length";
+    }
+    if ( $SV_type eq "BND" and $chr eq $chr2 and ( $SV_length < 1000 and $t_SR == 0 ) ){
+      push @{$filter_list}, "$SV_type < 1kb with no split read support=$SV_length";
+    }
+
     if ( $filter_flags{'e'} and @$filter_list == 0 ){
       ###################
       # Region exclude ##
@@ -448,13 +457,13 @@ sub lumpy {
           if ( $genotype eq 'somatic_normal' ){
             $genotype = 'germline_recurrent'
           }
-          if ( $genotype eq 'somatic_tumour' ){
+          elsif ( $genotype eq 'somatic_tumour' ){
             $genotype = 'germline_recurrent'
           }
         }
 
         if ($filter_flags{'t'} or $filter_flags{'n'}){
-          push @filter_reasons, "Precise var with high quality read support in at least 1 normal samples. Total HQ reads=" . $all_control_read_support;
+          push @filter_reasons, "Precise call with high quality read support in at least 1 other sample. Total HQ reads=" . $all_control_read_support;
         }
 
       }
@@ -464,13 +473,19 @@ sub lumpy {
         # Filter if # tumour reads supporting var is less than 5 * control reads
         # Or if there are more than 2 control reads
         if ( $pc_tumour_read_support/$pc_direct_control_read_support < 5 ){
-          push @filter_reasons, 'Imprecise var with less than 5 * more tumour reads than normal=' . $direct_control_read_support if $filter_flags{'t'};
-          push @filter_reasons, 'Imprecise var with less than 5 * more normal reads than tumour=' . $direct_control_read_support if $filter_flags{'n'};
+          push @filter_reasons, 'Imprecise call with less than 5 * more tumour reads than normal=' . $direct_control_read_support if $filter_flags{'t'};
+          push @filter_reasons, 'Imprecise call with less than 5 * more normal reads than tumour=' . $direct_control_read_support if $filter_flags{'n'};
 
         }
         if ( $direct_control_read_support > 1 ){
-          push @filter_reasons, 'Imprecise var with control read support=' . $direct_control_read_support if $filter_flags{'t'};
-          push @filter_reasons, 'Imprecise var with tumour read support=' . $direct_control_read_support if $filter_flags{'n'};
+          if ( $genotype eq 'somatic_normal' ){
+            $genotype = 'germline_private'
+          }
+          elsif ( $genotype eq 'somatic_tumour' ){
+            $genotype = 'germline_private'
+          }
+          push @filter_reasons, 'Imprecise call with control read support=' . $direct_control_read_support if $filter_flags{'t'};
+          push @filter_reasons, 'Imprecise call with tumour read support=' . $direct_control_read_support if $filter_flags{'n'};
         }
 
       }
@@ -1115,12 +1130,6 @@ sub write_summary {
       my ($length_in_kb) = sprintf("%.1f", abs($SV_length)/1000);
 
       $ab = sprintf("%.2f", $ab) unless $type eq 'novobreak' or $ab eq '.';
-
-      # Don't include DELS < 1kb with split read support == 0
-      if ( ( $sv_type eq "DEL" and $length_in_kb < 1 ) and $SR == 0 ){
-        say "Ommiting SV '$_' from '$name\.filtered.summary.txt' as $sv_type with length: $length_in_kb and split read support of $SR";
-        next;
-      }
 
       my ($consensus, $mh_length, $ct, $rdr, $rde );
 
