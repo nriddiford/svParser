@@ -264,7 +264,7 @@ sub parse {
       $genotype = 'germline_recurrent';
     }
     elsif ( $norm and not ($tum or $PON) ){
-      $genotype = 'soamtic_normal';
+      $genotype = 'somatic_normal';
     }
     elsif ( $PON and not ($tum or $norm) ){
       $genotype = 'PON_var';
@@ -295,7 +295,7 @@ sub parse {
     my ($SV_length, $chr2, $stop, $t_SR, $t_PE, $ab, $filter_list);
 
     if ($type eq 'lumpy'){
-      ( $SV_length, $chr2, $stop, $t_SR, $t_PE, $ab, $filter_list ) = lumpy( $genotype, $id, $chr, $info_block, $SV_type, $alt, $start, \%sample_info, $tumour_name, $control_name, \@samples, \@normals, \@filter_reasons, \%filter_flags );
+      ( $SV_length, $chr2, $stop, $t_SR, $t_PE, $ab, $genotype, $filter_list ) = lumpy( $genotype, $id, $chr, $info_block, $SV_type, $alt, $start, \%sample_info, $tumour_name, $control_name, \@samples, \@normals, \@filter_reasons, \%filter_flags );
     }
 
     elsif ($type eq 'delly'){
@@ -331,9 +331,9 @@ sub parse {
       $filter_list = region_exclude_filter($chr, $start, $chr2, $stop, $exclude_regions, $filter_list);
     }
 
-    # if ( $genotype eq 'NA' ){
-    #   print("ID: $id\nTUM: $tum\nNORM:$norm\nPON: $PON\n");
-    # }
+    if ( $genotype eq 'NA' ){
+      print("ID: $id\nTUM: $tum\nNORM:$norm\nPON: $PON\n");
+    }
 
     $SV_length = abs($SV_length);
     $SVs{$id} = [ @fields[0..10], $SV_type, $SV_length, $stop, $chr2, $t_SR, $t_PE, $ab, $filter_list, $genotype, \@samples ];
@@ -362,6 +362,18 @@ sub lumpy {
   my %sample_info = %{ $sample_info };
 
   my ($SV_length) = $info_block =~ /SVLEN=(.*?);/;
+
+
+  # Genotype is defualt NA if 0/0 and no quality read support. Set this to somatic_normal/tumour even though these should be filtered out below
+
+  if ($genotype eq 'NA'){
+    if ( $sample_info{$id}{$tumour}{'SU'} >= 1 and $sample_info{$id}{$tumour}{'QA'} == 0) {
+      $genotype = 'somatic_tumour';
+    }
+    elsif ( $sample_info{$id}{$control}{'SU'} >= 1 and $sample_info{$id}{$control}{'QA'} == 0) {
+      $genotype = 'somatic_normal';
+    }
+  }
 
   if ( $genotype ne 'somatic_tumour' or ($filter_flags{'g'} or $filter_flags{'n'}) ){
     # switch tumour normal
@@ -509,7 +521,7 @@ sub lumpy {
 
   }
 
-  return ($SV_length, $chr2, $stop, $t_SR, $t_PE, $ab, \@filter_reasons);
+  return ($SV_length, $chr2, $stop, $t_SR, $t_PE, $ab, $genotype, \@filter_reasons);
 }
 
 
