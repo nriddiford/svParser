@@ -327,10 +327,10 @@ sub parse {
     # Don't include DELS < 1kb with split read support == 0
     $SV_length = abs($SV_length);
 
-    if ( $SV_type eq "DEL" or $SV_type eq "INV" and ( $SV_length < 1000 and $t_SR == 0 ) ){
+    if ( ($SV_type eq "DEL" or $SV_type eq "INV") and ( $SV_length < 1000 and $t_SR == 0 ) ){
       push @{$filter_list}, "$SV_type < 1kb with no split read support=$SV_length";
     }
-    if ( $SV_type eq "BND" and $chr eq $chr2 and ( $SV_length < 1000 and $t_SR == 0 ) ){
+    if ( ($SV_type eq "BND" and $chr eq $chr2) and ( $SV_length < 1000 and $t_SR == 0 ) ){
       push @{$filter_list}, "$SV_type < 1kb with no split read support=$SV_length";
     }
 
