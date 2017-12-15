@@ -335,16 +335,13 @@ sub parse {
     }
 
     if ( $filter_flags{'e'} and @$filter_list == 0 ){
-      ###################
-      # Region exclude ##
-      ###################
-
       $filter_list = region_exclude_filter($chr, $start, $chr2, $stop, $exclude_regions, $filter_list);
     }
 
-    if ( $genotype eq 'NA' ){
-      print("ID: $id\nTUM: $tum\nNORM:$norm\nPON: $PON\n");
+    if (@$filter_list == 0 ){
+      print "ID: $id\nGT: $genotype\n";
     }
+
 
     $SVs{$id} = [ @fields[0..10], $SV_type, $SV_length, $stop, $chr2, $t_SR, $t_PE, $ab, $filter_list, $genotype, \@samples ];
 
@@ -421,8 +418,10 @@ sub lumpy {
   $c_SR =  $sample_info{$id}{$control}{'SR'};
   $c_HQ = $sample_info{$id}{$control}{'QA'};
 
-  my $direct_control_read_support = ( $c_PE + $c_SR );
+  # my $direct_control_read_support = ( $c_PE + $c_SR );
+  my $direct_control_read_support = $c_HQ;
   $pc_direct_control_read_support = $direct_control_read_support + 0.001;
+
 
   if (exists $filter_flags{'su'}){
     my $filtered_on_reads = read_support_filter($tumour_read_support, $filter_flags{'su'}, \@filter_reasons);
@@ -459,9 +458,11 @@ sub lumpy {
         # Filter if there are more than 1 control reads
         if ( $all_control_read_support > 1 ){
           if ( $genotype eq 'somatic_normal' ){
+            # say "SOM_NORM to Gem_Rec: " . $id;
             $genotype = 'germline_recurrent'
           }
           elsif ( $genotype eq 'somatic_tumour' ){
+            # say "SOM_TUM to Gem_Rec: " . $id;
             $genotype = 'germline_recurrent'
           }
         }
@@ -519,13 +520,12 @@ sub lumpy {
       push @filter_reasons, "$tumour\_depth<" . $filter_flags{'dp'} . '=' . $t_DP;
     }
 
+  # Subtract control reads from tumour reads
+  # If this number of SU is less than 10% of tumour read_depth then filter
+    if ( exists $filter_flags{'rdr'} and ( $tumour_read_support - $pc_direct_control_read_support ) / ( $t_DP + 0.01 ) < $filter_flags{'rdr'} ){ # Maybe this is too harsh...
+      push @filter_reasons, 'tumour_reads/tumour_depth<' . ($filter_flags{'rdr'}*100) . "%" . '=' . $tumour_read_support . "/" . $t_DP if $filter_flags{'t'};
+      push @filter_reasons, 'normal_reads/normal_depth<' . ($filter_flags{'rdr'}*100) . "%" . '=' . $tumour_read_support . "/" . $t_DP if $filter_flags{'n'};
 
-    # Subtract control reads from tumour reads
-    # If this number of SU is less than 10% of tumour read_depth then filter
-    if (not $filter_flags{'g'}){
-      if ( exists $filter_flags{'rdr'} and ( $tumour_read_support - $pc_direct_control_read_support ) / ( $t_DP + 0.01 ) < $filter_flags{'rdr'} ){ # Maybe this is too harsh...
-        push @filter_reasons, 'tumour_reads/tumour_depth<' . ($filter_flags{'rdr'}*100) . "%" . '=' . $tumour_read_support . "/" . $t_DP;
-      }
     }
 
   }
