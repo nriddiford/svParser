@@ -391,7 +391,7 @@ sub lumpy {
     $tumour = $tum2norm;
   }
 
-  my ($t_PE, $t_SR, $all_c_PE, $all_c_SR, $c_PE, $c_SR, $c_HQ, $all_c_HQ) = (0,0,0,0,0,0);
+  my ($t_PE, $t_SR, $all_c_PE, $all_c_SR, $c_PE, $c_SR, $t_HQ, $c_HQ, $all_c_HQ) = (0,0,0,0,0,0);
 
   # Get allele balance
   my $ab = $sample_info{$id}{$tumour}{'AB'};
@@ -403,8 +403,11 @@ sub lumpy {
   # Get read support for tumour
   $t_PE = $sample_info{$id}{$tumour}{'PE'};
   $t_SR = $sample_info{$id}{$tumour}{'SR'};
+  $t_HQ = $sample_info{$id}{$tumour}{'QA'};
 
-  my $tumour_read_support = ( $t_PE + $t_SR );
+  # my $tumour_read_support = ( $t_PE + $t_SR );
+  # Probably better just to look at high qual reads
+  my $tumour_read_support = $t_HQ;
 
   # Create temp pseudo counts to avoid illegal division by 0
   my $pc_tumour_read_support = $tumour_read_support + 0.001;
