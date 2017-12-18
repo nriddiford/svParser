@@ -345,7 +345,7 @@ sub parse {
       $filter_list = region_exclude_filter($chr, $start, $chr2, $stop, $exclude_regions, $filter_list);
     }
 
-    if ($id eq '2114_1' ){
+    if ($id eq '1544' ){
       print "ID: $id\nGT: $genotype\n";
       print "Reasons to filter = " . scalar @$filter_list . "\n";
     }
@@ -1217,10 +1217,12 @@ sub region_exclude_filter {
     if ( $bp1 >= ($start - $slop) and $bp1 <= ($stop + $slop) ) {
       next unless $chromosome eq $chr1;
       push @filter_reasons, 'bp1_in_unmappable_region=' . "$chromosome:$bp1\_in:" . $start . '-' . $stop;
+      last;
     }
     if ( $bp2 >= ($start - $slop) and $bp2 <= ($stop + $slop) ) {
       next unless $chromosome eq $chr2;
       push @filter_reasons, 'bp2_in_unmappable_region=' . "$chromosome:$bp2\_in:" . $start . '-' . $stop;
+      last;
     }
   }
   return (\@filter_reasons);
