@@ -192,15 +192,15 @@ sub parse {
       if ( ( $sample_info{$id}{$tumour_name}{'GT'} eq '0/1' or $sample_info{$id}{$tumour_name}{'GT'} eq '1/1' ) and $sample_info{$id}{$control_name}{'GT'} eq '0/0' ){
           push @filter_reasons, "Event exclusive to tumour '$tumour_name'=" . $sample_info{$id}{$tumour_name}{'GT'} if $filter_flags{'g'};
           push @filter_reasons, "Event exclusive to tumour '$tumour_name'=" . $sample_info{$id}{$tumour_name}{'GT'} if $filter_flags{'n'};
-          $tum = 1;
-          $norm = 0;
+          # $tum = 1;
+          # $norm = 0;
         }
 
       if ( $sample_info{$id}{$tumour_name}{'GT'} eq '0/0' and $sample_info{$id}{$control_name}{'GT'} ne '0/0' ){
           push @filter_reasons, "Event exclusive to normal '$control_name'=" . $sample_info{$id}{$control_name}{'GT'} if $filter_flags{'g'};
           push @filter_reasons, "Event exclusive to normal '$control_name'=" . $sample_info{$id}{$control_name}{'GT'} if $filter_flags{'t'};
-          $tum = 0;
-          $norm = 1;
+          # $tum = 0;
+          # $norm = 1;
         }
 
     # To filter for events that are somatic NORMAL
@@ -328,6 +328,8 @@ sub parse {
     # Don't include DELS < 1kb with split read support == 0
     $SV_length = abs($SV_length);
 
+    #### Not correct SR for id 399
+
     if ( ($SV_type eq "DEL" or $SV_type eq "INV") and ( $SV_length < 1000 and $t_SR == 0 ) ){
       push @{$filter_list}, "$SV_type < 1kb with no split read support=$SV_length";
     }
@@ -339,10 +341,12 @@ sub parse {
       $filter_list = region_exclude_filter($chr, $start, $chr2, $stop, $exclude_regions, $filter_list);
     }
 
-    if ($id eq '2114_1' ){
-      print "ID: $id\nGT: $genotype\n";
-      print "Reasons to filter = " . scalar @$filter_list . "\n";
-    }
+    # if ($id eq '1501' ){
+    #   print "ID: $id\nGT: $genotype\n";
+    #   print "split reads: $t_SR\n";
+    #   print "paired reads: $t_PE\n";
+    #   print "Reasons to filter = " . scalar @$filter_list . "\n";
+    # }
 
 
     $SVs{$id} = [ @fields[0..10], $SV_type, $SV_length, $stop, $chr2, $t_SR, $t_PE, $ab, $filter_list, $genotype, \@samples ];
@@ -1131,7 +1135,6 @@ sub write_summary {
         ($bp_id) = $bp_id =~ /(.+)?_/;
       }
 
-      say "Found var 2114_1" if $_ eq '2114_1';
       # flatten connected bps into 1 id for summary
       next if $connected_bps{$bp_id}++;
 
