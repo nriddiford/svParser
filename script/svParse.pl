@@ -143,7 +143,7 @@ if ( scalar keys %filters > 0 ){
   elsif ( $filters{'su'} or $filters{'dp'} or $filters{'rdr'} or $filters{'sq'} or $filters{'chr'} or $filters{'g'} or $filters{'e'} or $filters{'n'} or $filters{'t'} ) {
     say "Running in filter mode, using custom filters:";
     say " o Read support >= $filters{'su'}" if $filters{'su'};
-    say " o Read depth (in both tumor and normal) > $filters{'dp'}" if $filters{'dp'};
+    say " o Read depth (in both tumour and normal) > $filters{'dp'}" if $filters{'dp'};
     say " o Read support / depth > $filters{'rdr'}" if $filters{'rdr'};
     say " o SQ quality > $filters{'sq'}" if $filters{'sq'};
     say " o Chromosomes: " . join(' ', @keys) if $filters{'chr'};
