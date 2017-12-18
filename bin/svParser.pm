@@ -339,9 +339,10 @@ sub parse {
       $filter_list = region_exclude_filter($chr, $start, $chr2, $stop, $exclude_regions, $filter_list);
     }
 
-    # if (@$filter_list == 0 ){
-    #   print "ID: $id\nGT: $genotype\n";
-    # }
+    if ($id eq '2114_1' ){
+      print "ID: $id\nGT: $genotype\n";
+      print "Reasons to filter = " . scalar @$filter_list . "\n";
+    }
 
 
     $SVs{$id} = [ @fields[0..10], $SV_type, $SV_length, $stop, $chr2, $t_SR, $t_PE, $ab, $filter_list, $genotype, \@samples ];
@@ -425,10 +426,10 @@ sub lumpy {
 
 
   if (exists $filter_flags{'su'}){
-    my $filtered_on_reads = read_support_filter($tumour_read_support, $filter_flags{'su'}, \@filter_reasons);
+    my $filtered_on_reads = read_support_filter($tumour_read_support, $filter_flags{'su'}, $tumour, \@filter_reasons);
     @filter_reasons = @{ $filtered_on_reads };
     if ($genotype eq 'germline_private' or $genotype eq 'germline_recurrent' ){ # also require same read suppport for tumour
-      $filtered_on_reads = read_support_filter($pc_direct_control_read_support, $filter_flags{'su'}, \@filter_reasons);
+      $filtered_on_reads = read_support_filter($pc_direct_control_read_support, $filter_flags{'su'}, $control, \@filter_reasons);
       @filter_reasons = @{ $filtered_on_reads };
     }
   }
@@ -1129,6 +1130,8 @@ sub write_summary {
       if ($bp_id =~ /_/){
         ($bp_id) = $bp_id =~ /(.+)?_/;
       }
+
+      say "Found var 2114_1" if $_ eq '2114_1';
       # flatten connected bps into 1 id for summary
       next if $connected_bps{$bp_id}++;
 
@@ -1220,12 +1223,12 @@ sub region_exclude_filter {
 
 
 sub read_support_filter {
-  my ($tumour_read_support, $read_support_flag, $filter_reasons ) = @_;
+  my ($tumour_read_support, $read_support_flag, $sample, $filter_reasons ) = @_;
   my @filter_reasons = @{ $filter_reasons };
 
   # Filter if tum reads below specified threshold [default=4]
   if ( $tumour_read_support < $read_support_flag ){
-    push @filter_reasons, 'tumour_reads<' . $read_support_flag . '=' . $tumour_read_support;
+    push @filter_reasons, "Read support in '$sample'<" . $read_support_flag . '=' . $tumour_read_support;
   }
   return(\@filter_reasons);
 }
