@@ -155,11 +155,17 @@ sub parse {
       # Filter OUT somatic events #
       #############################
 
-      if ( $sample_info{$id}{$control_name}{'QA'} != 0){
+      if ( $sample_info{$id}{$tumour_name}{'QA'} > 0){
+        $tum = 1;
+      }
+      if ( $sample_info{$id}{$control_name}{'QA'} > 0){
         $norm = 1;
       }
-      elsif ( $sample_info{$id}{$tumour_name}{'QA'} != 0){
-        $tum = 1;
+
+      for my $normal (@normals[1..$#normals]){
+        if ( $sample_info{$id}{$normal}{'QA'} > 0){
+          $PON = 1;
+        }
       }
 
       # Filter if ANY of the panel of normals (but not direct control) are NOT 'GT = 0/0' (hom ref)
@@ -168,7 +174,7 @@ sub parse {
           push @filter_reasons, "PON member '$normal' not homozygous for reference genotype=" . $sample_info{$id}{$normal}{'GT'} if $filter_flags{'g'};
           push @filter_reasons, "PON member '$normal' not homozygous for reference genotype=" . $sample_info{$id}{$normal}{'GT'} if $filter_flags{'n'};
           push @filter_reasons, "PON member '$normal' not homozygous for reference genotype=" . $sample_info{$id}{$normal}{'GT'} if $filter_flags{'t'};
-          $PON = 1;
+          # $PON = 1;
         }
 
         # Filter if more than 2 quality reads support var in any normal in PON
@@ -177,13 +183,13 @@ sub parse {
           push @filter_reasons, "PON member '$normal' has quality support for alternative genotype=" . $sample_info{$id}{$normal}{'QA'} if $filter_flags{'g'};
           push @filter_reasons, "PON member '$normal' has quality support for alternative genotype=" . $sample_info{$id}{$normal}{'QA'} if $filter_flags{'n'};
           push @filter_reasons, "PON member '$normal' has quality support for alternative genotype=" . $sample_info{$id}{$normal}{'QA'} if $filter_flags{'t'};
-          $PON = 1;
+          # $PON = 1;
         }
 
         if ( $sample_info{$id}{$control_name}{'QA'} != 0 and $sample_info{$id}{$normal}{'QA'} == 0 and $sample_info{$id}{$tumour_name}{'QA'} == 0 ){
           push @filter_reasons, "Event exclusive to normal '$control_name'=" . $sample_info{$id}{$control_name}{'GT'} if $filter_flags{'g'};
           push @filter_reasons, "Event exclusive to normal '$control_name'=" . $sample_info{$id}{$control_name}{'GT'} if $filter_flags{'t'};
-          $norm = 1;
+          # $norm = 1;
         }
 
       }
@@ -244,7 +250,7 @@ sub parse {
         if ( $sample_info{$id}{$tumour_name}{'QA'} != 0 and $sample_info{$id}{$normal}{'QA'} == 0 ) {
           push @filter_reasons, "Tumour  '$tumour_name' has quality support for alternative genotype=" . $sample_info{$id}{$tumour_name}{'QA'} if $filter_flags{'n'};
           push @filter_reasons, "Tumour  '$tumour_name' has quality support for alternative genotype=" . $sample_info{$id}{$tumour_name}{'QA'} if $filter_flags{'g'};
-          $tum = 1;
+          # $tum = 1;
         }
       }
         # if ( $sample_info{$id}{$normal}{'QA'} >= 2){
@@ -328,8 +334,6 @@ sub parse {
     # Don't include DELS < 1kb with split read support == 0
     $SV_length = abs($SV_length);
 
-    #### Not correct SR for id 399
-
     if ( ($SV_type eq "DEL" or $SV_type eq "INV") and ( $SV_length < 1000 and $t_SR == 0 ) ){
       push @{$filter_list}, "$SV_type < 1kb with no split read support=$SV_length";
     }
@@ -341,12 +345,10 @@ sub parse {
       $filter_list = region_exclude_filter($chr, $start, $chr2, $stop, $exclude_regions, $filter_list);
     }
 
-    # if ($id eq '1501' ){
-    #   print "ID: $id\nGT: $genotype\n";
-    #   print "split reads: $t_SR\n";
-    #   print "paired reads: $t_PE\n";
-    #   print "Reasons to filter = " . scalar @$filter_list . "\n";
-    # }
+    if ($id eq '2114_1' ){
+      print "ID: $id\nGT: $genotype\n";
+      print "Reasons to filter = " . scalar @$filter_list . "\n";
+    }
 
 
     $SVs{$id} = [ @fields[0..10], $SV_type, $SV_length, $stop, $chr2, $t_SR, $t_PE, $ab, $filter_list, $genotype, \@samples ];
