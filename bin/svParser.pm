@@ -335,10 +335,20 @@ sub parse {
     $SV_length = abs($SV_length);
 
     if ( ($SV_type eq "DEL" or $SV_type eq "INV") and ( $SV_length < 1000 and $t_SR == 0 ) ){
-      push @{$filter_list}, "$SV_type < 1kb with no split read support=$SV_length";
+      if ( $filter_flags{'su'} ){
+        push @{$filter_list}, "$SV_type < 1kb with no split read support and PE support < 2*$filter_flags{'su'}=$SV_length" if $t_PE <= $filter_flags{'su'} * 2;
+      }
+      else{
+        push @{$filter_list}, "$SV_type < 1kb with no split read support=$SV_length";
+      }
     }
     if ( ($SV_type eq "BND" and $chr eq $chr2) and ( $SV_length < 1000 and $t_SR == 0 ) ){
-      push @{$filter_list}, "$SV_type < 1kb with no split read support=$SV_length";
+      if ( $filter_flags{'su'} ){
+        push @{$filter_list}, "$SV_type < 1kb with no split read support and PE support < 2*$filter_flags{'su'}=$SV_length" if $t_PE <= $filter_flags{'su'} * 2;
+      }
+      else{
+        push @{$filter_list}, "$SV_type < 1kb with no split read support=$SV_length";
+      }
     }
 
     if ( $filter_flags{'e'} and @$filter_list == 0 ){
