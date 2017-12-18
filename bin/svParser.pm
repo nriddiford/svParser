@@ -345,10 +345,10 @@ sub parse {
       $filter_list = region_exclude_filter($chr, $start, $chr2, $stop, $exclude_regions, $filter_list);
     }
 
-    if ($id eq '1544' ){
-      print "ID: $id\nGT: $genotype\n";
-      print "Reasons to filter = " . scalar @$filter_list . "\n";
-    }
+    # if ($id eq '1544' ){
+    #   print "ID: $id\nGT: $genotype\n";
+    #   print "Reasons to filter = " . scalar @$filter_list . "\n";
+    # }
 
 
     $SVs{$id} = [ @fields[0..10], $SV_type, $SV_length, $stop, $chr2, $t_SR, $t_PE, $ab, $filter_list, $genotype, \@samples ];
@@ -1205,7 +1205,7 @@ sub write_summary {
 sub region_exclude_filter {
   my ( $chr1, $bp1, $chr2, $bp2, $exclude_regions, $filter_reasons ) = @_;
 
-  my $slop = 500;
+  my $slop = 250;
 
   my @filter_reasons = @{ $filter_reasons };
 
