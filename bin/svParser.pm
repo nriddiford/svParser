@@ -170,9 +170,6 @@ sub parse {
           push @filter_reasons, "PON member '$normal' not homozygous for reference genotype=" . $sample_info{$id}{$normal}{'GT'} if $filter_flags{'t'};
           $PON = 1;
         }
-        else{
-          $PON = 0;
-        }
 
         # Filter if more than 2 quality reads support var in any normal in PON
         # Should probably use this for somatic too... (maybe even in place of SQ?)
@@ -181,9 +178,6 @@ sub parse {
           push @filter_reasons, "PON member '$normal' has quality support for alternative genotype=" . $sample_info{$id}{$normal}{'QA'} if $filter_flags{'n'};
           push @filter_reasons, "PON member '$normal' has quality support for alternative genotype=" . $sample_info{$id}{$normal}{'QA'} if $filter_flags{'t'};
           $PON = 1;
-        }
-        else{
-          $PON = 0
         }
 
         if ( $sample_info{$id}{$control_name}{'QA'} != 0 and $sample_info{$id}{$normal}{'QA'} == 0 and $sample_info{$id}{$tumour_name}{'QA'} == 0 ){
@@ -245,7 +239,7 @@ sub parse {
       for my $normal (@normals){
         if ( $sample_info{$id}{$normal}{'GT'} eq '1/1' or $sample_info{$id}{$normal}{'GT'} eq '0/1' ){
           push @filter_reasons, "$normal\_not_homo_ref=" . $sample_info{$id}{$normal}{'GT'} if $filter_flags{'t'};
-          $PON = 1;
+          # $tum = 0;
         }
         if ( $sample_info{$id}{$tumour_name}{'QA'} != 0 and $sample_info{$id}{$normal}{'QA'} == 0 ) {
           push @filter_reasons, "Tumour  '$tumour_name' has quality support for alternative genotype=" . $sample_info{$id}{$tumour_name}{'QA'} if $filter_flags{'n'};
