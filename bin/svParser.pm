@@ -242,12 +242,12 @@ sub lumpy {
   my ($SV_length) = $info_block =~ /SVLEN=(.*?);/;
 
   my $genotype;
-  
+
   my %filter_flags   = %{ $filter_flags };
 
   ( $genotype, $filters ) = genotype( $id, $tumour, $control, $normals, $filters, $sample_info );
 
-  if (exists $filter_flags{'s'}){
+  if ( $filter_flags{'s'} ){
     $filters = somatic_filter( $id, $tumour, $control, $normals, $filters, $sample_info );
   }
 
@@ -267,7 +267,7 @@ sub lumpy {
     }
   }
 
-  if ( $genotype ne 'somatic_tumour' or ($filter_flags{'g'} or $filter_flags{'n'}) ){
+  if ( $genotype ne 'somatic_tumour' ){
     # switch tumour normal
     my $tum2norm = $control;
     $control = $tumour;
@@ -317,6 +317,7 @@ sub lumpy {
     }
   }
 
+    ### This might be useless - isn't this happening in somatic_filter() ?
     if (@samples > 1){ # In case there are no control samples...
 
       # for precise variants:
@@ -348,19 +349,20 @@ sub lumpy {
           }
         }
 
-        if ($filter_flags{'s'}){
+        if ( $filter_flags{'s'} ){
           push @filter_reasons, "Precise call with high quality read support in at least 1 other sample. Total HQ reads=" . $all_control_read_support;
         }
 
       }
+
+      ###
 
       # for imprecise variants:
       elsif ($info_block =~ /IMPRECISE;/) {
         # Filter if # tumour reads supporting var is less than 5 * control reads
         # Or if there are more than 2 control reads
         if ( $pc_tumour_read_support/$pc_direct_control_read_support < 5 ){
-          push @filter_reasons, 'Imprecise call with less than 5 * more tumour reads than normal=' . $direct_control_read_support if $filter_flags{'t'};
-          push @filter_reasons, 'Imprecise call with less than 5 * more normal reads than tumour=' . $direct_control_read_support if $filter_flags{'n'};
+          push @filter_reasons, 'Imprecise call with less than 5 * more tumour reads than normal=' . $direct_control_read_support if $filter_flags{'s'};
 
         }
         if ( $direct_control_read_support > 1 ){
@@ -370,8 +372,7 @@ sub lumpy {
           elsif ( $genotype eq 'somatic_tumour' ){
             $genotype = 'germline_private'
           }
-          push @filter_reasons, 'Imprecise call with control read support=' . $direct_control_read_support if $filter_flags{'t'};
-          push @filter_reasons, 'Imprecise call with tumour read support=' . $direct_control_read_support if $filter_flags{'n'};
+          push @filter_reasons, 'Imprecise call with control read support=' . $direct_control_read_support if $filter_flags{'s'};
         }
 
       }
@@ -392,13 +393,13 @@ sub lumpy {
       $c_DP = 0 if $c_DP eq '.';
       # Flag if either control or tumour has depth < 10 at site
 
-      if ( exists $filter_flags{'dp'} and $c_DP <= $filter_flags{'dp'} ){
-        push @filter_reasons, "$control\_depth<" . $filter_flags{'dp'} . '=' . $c_DP;
+      if ( $filter_flags{'dp'} and $c_DP <= $filter_flags{'dp'} ){
+        push @filter_reasons, "$control has depth < " . $filter_flags{'dp'} . '=' . $c_DP;
       }
     }
 
     if ( exists $filter_flags{'dp'} and $t_DP <= $filter_flags{'dp'} ){
-      push @filter_reasons, "$tumour\_depth<" . $filter_flags{'dp'} . '=' . $t_DP;
+      push @filter_reasons, "$tumour has depth < " . $filter_flags{'dp'} . '=' . $t_DP;
     }
 
   # Subtract control reads from tumour reads
@@ -415,7 +416,7 @@ sub lumpy {
   # Quality filter #
   ##################
 
-  if ( exists $sample_info{$id}{$tumour}{'SQ'} and exists $filter_flags{'sq'} ){
+  if ( $sample_info{$id}{$tumour}{'SQ'} and exists $filter_flags{'sq'} ){
     $sample_info{$id}{$tumour}{'SQ'} = 0 if $sample_info{$id}{$tumour}{'SQ'} eq '.';
 
     if ( $sample_info{$id}{$tumour}{'SQ'} <= $filter_flags{'sq'} ){
