@@ -244,16 +244,34 @@ sub lumpy {
   my $genotype;
 
   my %filter_flags   = %{ $filter_flags };
+  my @normals        = @{ $normals };
+  my %sample_info    = %{ $sample_info };
 
-  ( $genotype, $filters ) = genotype( $id, $tumour, $control, $normals, $filters, $sample_info );
+  my $t_hq_alt_reads = $sample_info{$id}{$tumour}{'QA'};
+  my $n_hq_alt_reads = $sample_info{$id}{$control}{'QA'};
+  my $c_alt_reads = $sample_info{$id}{$control}{'SU'};
+
+
+  my %PON_alt_reads;
+
+  for my $normal (@normals[1..$#normals]){
+    $PON_alt_reads{$normal} = $sample_info{$id}{$normal}{'QA'};
+  }
+
+
+  ( $genotype, $filters ) = genotype( $id, $t_hq_alt_reads, $c_alt_reads, $n_hq_alt_reads, \%PON_alt_reads, $filters );
+
+  my %PON_info;
+
+  foreach my $normal (@normals){
+    $PON_info{$normal} = [ $sample_info{$id}{$normal}{'QA'}, $sample_info{$id}{$normal}{'GT'} ];
+  }
 
   if ( $filter_flags{'s'} ){
-    $filters = somatic_filter( $id, $tumour, $control, $normals, $filters, $sample_info );
+    $filters = somatic_filter( $id, $tumour, $control, $normals, $filters, \%PON_info );
   }
 
   my @samples        = @{ $samples };
-  my @normals        = @{ $normals };
-  my %sample_info    = %{ $sample_info };
   my @filter_reasons = @{ $filters };
 
   # Genotype is defualt NA if 0/0 and no quality read support. Set this to somatic_normal/tumour even though these should be filtered out below
@@ -1114,13 +1132,13 @@ sub read_support_filter {
   return(\@filter_reasons);
 }
 
+
 sub somatic_filter {
 
-  my ($id, $tumour_name, $control_name, $PON, $filter_reasons, $sample_info) = @_;
+  my ($id, $tumour_name, $control_name, $PON, $filter_reasons, $PON_info) = @_;
 
-  my @normals = @{ $PON };
+  my %PON_info = % { $PON_info };
   my @filter_reasons = @{ $filter_reasons };
-  my %sample_info = %{ $sample_info };
 
   # # Filter if ANY of the panel of normals (but not direct control) are NOT 'GT = 0/0' (hom ref)
   # for my $normal (@normals[1..$#normals]){
@@ -1140,14 +1158,14 @@ sub somatic_filter {
   #     push @filter_reasons, "Event exclusive to normal '$control_name'=" . $sample_info{$id}{$control_name}{'GT'};
   #   }
 
-  for my $normal (@normals) {
+  for my $normal (keys %PON_info) {
 
-    if ( $sample_info{$id}{$normal}{'GT'} eq '1/1' or $sample_info{$id}{$normal}{'GT'} eq '0/1' ){
-      push @filter_reasons, "PON member '$normal' not homozygous for reference genotype=" . $sample_info{$id}{$normal}{'GT'};
+    if ( $PON_info{$normal}[1] eq '1/1' or $PON_info{$normal}[1] eq '0/1' ){
+      push @filter_reasons, "PON member '$normal' not homozygous for reference genotype=" . $PON_info{$normal}[1];
     }
     # Filter if any quality reads support var in any normal in PON
-    if ( $sample_info{$id}{$normal}{'QA'} and $sample_info{$id}{$normal}{'QA'} != 0){
-      push @filter_reasons, "PON member '$normal' has quality support for alternative genotype=" . $sample_info{$id}{$normal}{'QA'};
+    if ( $PON_info{$normal}[0] != 0){
+      push @filter_reasons, "PON member '$normal' has quality support for alternative genotype=" . $PON_info{$normal}[0];
     }
 
   }
@@ -1155,10 +1173,9 @@ sub somatic_filter {
   return(\@filter_reasons);
 }
 
-sub genotype {
-  my ($id, $tumour_name, $control_name, $PON, $filter_reasons, $sample_info) = @_;
 
-  my %sample_info = %{ $sample_info };
+sub genotype {
+  my ( $id, $t_hq_alt_reads, $c_alt_reads, $n_hq_alt_reads, $PON, $filter_reasons ) = @_;
 
   my $genotype = 'NA';
   my $germline_recurrent = 0;
@@ -1166,20 +1183,21 @@ sub genotype {
   my $norm = 0;
 
   my @filter_reasons = @{ $filter_reasons };
-  my @PON = @{ $PON };
 
-  if ( $sample_info{$id}{$tumour_name}{'QA'} > 0){
+  if ( $t_hq_alt_reads > 0){
     $tum = 1;
   }
-  if ( $sample_info{$id}{$control_name}{'QA'} > 0){
+  if ( $n_hq_alt_reads > 0){
     $norm = 1;
   }
-  if ( $sample_info{$id}{$control_name}{'SU'} == 0){
+  if ( $c_alt_reads == 0){
     $norm = 0;
   }
 
-  for my $normal (@PON[1..$#PON]){
-    if ( $sample_info{$id}{$normal}{'QA'} > 0){
+  my %PON_alt_reads = %{ $PON };
+
+  for my $normal ( keys %PON_alt_reads ){
+    if ( $PON_alt_reads{$normal} > 0){
       $germline_recurrent = 1;
     }
   }
