@@ -140,8 +140,6 @@ sub parse {
     my @normals = @samples[1..$#samples];
     my @filter_reasons;
 
-
-
     my %information;
 
     foreach(@info_parts){
@@ -168,7 +166,7 @@ sub parse {
     }
 
     elsif ($type eq 'delly'){
-      ( $SV_length, $chr2, $stop, $t_SR, $t_PE, $ab, $filter_list ) = delly( $id, $info_block, $start, $SV_type, \@filter_reasons, \%filter_flags, $tumour_name, \%sample_info );
+      ( $SV_length, $chr2, $stop, $t_SR, $t_PE, $ab, $genotype, $filter_list ) = delly( $id, $info_block, $start, $SV_type, \@filter_reasons, \%filter_flags, $tumour_name, \%sample_info );
     }
 
     elsif ($type eq 'novobreak'){
@@ -196,21 +194,13 @@ sub parse {
     # Don't include DELS < 1kb with split read support == 0
     $SV_length = abs($SV_length);
 
-    if ( ($SV_type eq "DEL" or $SV_type eq "INV") and ( $SV_length < 1000 and $t_SR == 0 ) ){
-      if ( $filter_flags{'su'} ){
-        push @{$filter_list}, "$SV_type < 1kb with no split read support and PE support < 2*$filter_flags{'su'}=" . $t_PE if $t_PE <= $filter_flags{'su'} * 2;
-      }
-      else{
-        push @{$filter_list}, "$SV_type < 1kb with no split read support=$SV_length";
-      }
-    }
-    if ( ($SV_type eq "BND" and $chr eq $chr2) and ( $SV_length < 1000 and $t_SR == 0 ) ){
-      if ( $filter_flags{'su'} ){
-        push @{$filter_list}, "$SV_type < 1kb with no split read support and PE support < 2*$filter_flags{'su'}=" . $t_PE if $t_PE <= $filter_flags{'su'} * 2;
-      }
-      else{
-        push @{$filter_list}, "$SV_type < 1kb with no split read support=$SV_length";
-      }
+    if ( $filter_flags{'su'} ){
+      if ( ($SV_type eq "DEL" or $SV_type eq "INV") and ( $SV_length < 1000 and $t_SR == 0 ) ){
+          push @{$filter_list}, "$SV_type < 1kb with no split read support and PE support < 2*$filter_flags{'su'}=" . $t_PE if $t_PE <= $filter_flags{'su'} * 2;
+        }
+      if ( ($SV_type eq "BND" and $chr eq $chr2) and ( $SV_length < 1000 and $t_SR == 0 ) ){
+          push @{$filter_list}, "$SV_type < 1kb with no split read support and PE support < 2*$filter_flags{'su'}=" . $t_PE if $t_PE <= $filter_flags{'su'} * 2;
+        }
     }
 
     if ( $filter_flags{'e'} and @$filter_list == 0 ){
@@ -600,25 +590,20 @@ sub delly {
 
   my $tumour_read_support = ( $t_PE + $t_SR );
 
+  # if ( $filter_flags{'s'} ){
+  #   $filters = somatic_filter( $id, $tumour, $control, $normals, $filters, \%PON_info );
+  # }
+
   if (exists $filter_flags{'su'}){
     my $filtered_on_reads = read_support_filter($tumour_read_support, $filter_flags{'su'}, \@filter_reasons);
     @filter_reasons = @{$filtered_on_reads};
   }
 
-  # if ($start > $stop){
-  #   my $old_start = $start;
-  #   my $old_stop = $stop;
-  #   $start = $old_stop;
-  #   $stop = $old_start;
-  # }
+  my ($chr2) = $info_block =~ /CHR2=(.*?);/;
 
-  # my ($chr2) = 0;
+  my $genotype = 'somatic_tumour';
 
-  # if ($SV_type eq 'TRA'){
-    my ($chr2) = $info_block =~ /CHR2=(.*?);/;
-  # }
-
-  return ($SV_length, $chr2, $stop, $t_SR, $t_PE, $ab, \@filter_reasons );
+  return ($SV_length, $chr2, $stop, $t_SR, $t_PE, $ab, $genotype, \@filter_reasons );
 }
 
 
@@ -1022,7 +1007,7 @@ sub write_summary {
       }  keys %{ $SVs } ){
     my ( $chr, $start, $id, $ref, $alt, $quality_score, $filt, $info_block, $format_block, $tumour_info_block, $normal_info_block, $sv_type, $SV_length, $stop, $chr2, $SR, $PE, $ab, $filters, $genotype, $samples ) = @{ $SVs->{$_} };
 
-    if (scalar @{$filters} == 0){
+    if ( @$filters == 0){
 
       my $bp_id = $_;
       if ($bp_id =~ /_/){
