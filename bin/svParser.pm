@@ -190,7 +190,6 @@ sub parse {
       $filter_list = chrom_filter( $chr, $chr2, $filter_list, $chrom_keys );
     }
 
-
     # Don't include DELS < 1kb with split read support == 0
     $SV_length = abs($SV_length);
 
@@ -207,15 +206,8 @@ sub parse {
       $filter_list = region_exclude_filter($chr, $start, $chr2, $stop, $exclude_regions, $filter_list);
     }
 
-    # if ($id eq '1544' ){
-    #   print "ID: $id\nGT: $genotype\n";
-    #   print "Reasons to filter = " . scalar @$filter_list . "\n";
-    # }
-
-
     $SVs{$id} = [ @fields[0..10], $SV_type, $SV_length, $stop, $chr2, $t_SR, $t_PE, $ab, $filter_list, $genotype, \@samples ];
-
-    $info{$id} = [ [@format], [%format_long], [%info_long], [@tumour_parts], [@normal_parts], [%information], [%sample_info] ];
+    $info{$id} = [ \@format, \%format_long, \%info_long, \@tumour_parts, \@normal_parts, \%information, \%sample_info ];
 
     if (@$filter_list == 0){
       $filtered_SVs{$.} = $_;
