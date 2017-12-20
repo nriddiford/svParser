@@ -166,13 +166,13 @@ sub parse {
     }
 
     elsif ($type eq 'delly'){
-      ( $SV_length, $chr2, $stop, $t_SR, $t_PE, $ab, $genotype, $filter_list ) = delly( $id, $info_block, $start, $SV_type, \@filter_reasons, \%filter_flags, $tumour_name, \%sample_info );
+      ( $SV_length, $chr2, $stop, $t_SR, $t_PE, $ab, $genotype, $filter_list ) = delly( $id, $info_block, $start, $SV_type, $tumour_name, $control_name, \@normals, \@filter_reasons, \%filter_flags, \%sample_info );
     }
 
     elsif ($type eq 'novobreak'){
       @samples = qw/tumour normal/;
       my ( $sample_info_novo, $format_novo, $format_long_novo );
-      ( $SV_length, $chr2, $stop, $t_PE, $t_SR, $filter_list, $sample_info_novo, $format_novo, $format_long_novo ) = novobreak( $id, $info_block, $start, $SV_type, \@filter_reasons, \@sample_info, \%filter_flags );
+      ( $SV_length, $chr2, $stop, $t_PE, $t_SR, $genotype, $filter_list, $sample_info_novo, $format_novo, $format_long_novo ) = novobreak( $id, $info_block, $start, $SV_type, $tumour_name, $control_name, \@filter_reasons, \@sample_info, \%filter_flags );
       %sample_info = %{ $sample_info_novo };
       $ab = "-";
       @format = @{ $format_novo };
@@ -254,7 +254,6 @@ sub lumpy {
   }
 
   my @samples        = @{ $samples };
-  my @filter_reasons = @{ $filters };
 
   # Genotype is defualt NA if 0/0 and no quality read support. Set this to somatic_normal/tumour even though these should be filtered out below
 
@@ -308,14 +307,14 @@ sub lumpy {
   $pc_direct_control_read_support = $direct_control_read_support + 0.001;
 
 
-  if (exists $filter_flags{'su'}){
-    my $filtered_on_reads = read_support_filter($tumour_read_support, $filter_flags{'su'}, $tumour, \@filter_reasons);
-    @filter_reasons = @{ $filtered_on_reads };
+  if ( $filter_flags{'su'} ){
+    $filters = read_support_filter($tumour_read_support, $filter_flags{'su'}, $tumour, $filters);
     if ($genotype eq 'germline_private' or $genotype eq 'germline_recurrent' ){ # also require same read suppport for tumour
-      $filtered_on_reads = read_support_filter($pc_direct_control_read_support, $filter_flags{'su'}, $control, \@filter_reasons);
-      @filter_reasons = @{ $filtered_on_reads };
+      $filters = read_support_filter($pc_direct_control_read_support, $filter_flags{'su'}, $control, $filters);
     }
   }
+
+  my @filter_reasons = @{ $filters };
 
     ### This might be useless - isn't this happening in somatic_filter() ?
     if (@samples > 1){ # In case there are no control samples...
@@ -382,7 +381,7 @@ sub lumpy {
   # Read depth filters #
   ######################
 
-  if ( exists $sample_info{$id}{$tumour}{'DP'} ){
+  if ( $filter_flags{'dp'} and $sample_info{$id}{$tumour}{'DP'} ){
 
     my $t_DP =  $sample_info{$id}{$tumour}{'DP'};
 
@@ -392,15 +391,16 @@ sub lumpy {
 
       $c_DP = 0 if $c_DP eq '.';
       # Flag if either control or tumour has depth < 10 at site
+      $filters = read_depth_filter($tumour, $control, $t_DP, $c_DP, $filter_flags{'dp'}, \@filter_reasons);
 
-      if ( $filter_flags{'dp'} and $c_DP <= $filter_flags{'dp'} ){
-        push @filter_reasons, "$control has depth < " . $filter_flags{'dp'} . '=' . $c_DP;
-      }
+      # if ( $filter_flags{'dp'} and $c_DP <= $filter_flags{'dp'} ){
+      #   push @filter_reasons, "$control has depth < " . $filter_flags{'dp'} . '=' . $c_DP;
+      # }
     }
-
-    if ( exists $filter_flags{'dp'} and $t_DP <= $filter_flags{'dp'} ){
-      push @filter_reasons, "$tumour has depth < " . $filter_flags{'dp'} . '=' . $t_DP;
-    }
+    #
+    # if ( $filter_flags{'dp'} and $t_DP <= $filter_flags{'dp'} ){
+    #   push @filter_reasons, "$tumour has depth < " . $filter_flags{'dp'} . '=' . $t_DP;
+    # }
 
   # Subtract control reads from tumour reads
   # If this number of SU is less than 10% of tumour read_depth then filter
@@ -441,9 +441,7 @@ sub lumpy {
 
 
 sub novobreak {
-  my ( $id, $info_block, $start, $SV_type, $filters, $info, $filter_flags) = @_;
-
-  my @filter_reasons = @{ $filters };
+  my ( $id, $info_block, $start, $SV_type, $tumour_name, $control_name, $filters, $info, $filter_flags) = @_;
 
   my %filter_flags = %{ $filter_flags };
 
@@ -460,24 +458,23 @@ sub novobreak {
   my $t_SR = $bp1_SR + $bp2_SR;
   my $t_PE = $bp1_PE + $bp2_PE;
 
-  $t_SR = $t_SR/2;
-  $t_PE = $t_PE/2;
+  # $t_SR = $t_SR/2;
+  # $t_PE = $t_PE/2;
 
   $t_SR = int($t_SR + 0.5);
   $t_PE = int($t_PE + 0.5);
 
   # my $t_PE = 0; # Don't believe PE read support!
 
-  my $tumour_read_support = ( $t_PE + $t_SR );
+  my $tumour_read_support = ( $t_SR );
 
   ########################
   # Read support filters #
   ########################
 
 
-  if (exists $filter_flags{'su'}){
-    my $filtered_on_reads = read_support_filter($tumour_read_support, $filter_flags{'su'}, \@filter_reasons);
-    @filter_reasons = @{$filtered_on_reads};
+  if ( $filter_flags{'su'} ){
+    $filters = read_support_filter($tumour_read_support, $filter_flags{'su'}, 'tumour', $filters);
   }
 
   my $n_bp1_SR = $info[14]; # high qual split reads bp1
@@ -485,12 +482,13 @@ sub novobreak {
   my $n_bp2_SR = $info[24]; # high qual split reads bp2
   my $n_bp2_PE = $info[29]; # PE reads bp2
 
-  my $all_control_read_support = ( $n_bp1_SR + $n_bp1_PE + $n_bp2_SR + $n_bp2_PE )/2;
+  say "$n_bp1_SR, $n_bp1_PE, $n_bp2_SR, $n_bp2_PE";
 
-  # Filter if there are more than 1 control reads
-  if ( $all_control_read_support > 1 ){
-    push @filter_reasons, "precise var with read support in a normal sample=" . $all_control_read_support;
-  }
+  my $all_control_read_support = ( $n_bp1_SR + $n_bp2_SR );
+
+  my $genotype;
+  my %PON_alt_reads;
+  ( $genotype, $filters ) = genotype( $id, $tumour_read_support, $all_control_read_support, $all_control_read_support, \%PON_alt_reads, $filters );
 
   ######################
   # Read depth filters #
@@ -502,12 +500,8 @@ sub novobreak {
   my $c_DP = ($c_DP_1 + $c_DP_2)/2;
   my $t_DP = ($t_DP_1 + $t_DP_2)/2;
 
-  if ( exists $filter_flags{'dp'} and $c_DP <= $filter_flags{'dp'} ){
-    push @filter_reasons, 'control_depth<' . $filter_flags{'dp'} . '=' . $c_DP;
-  }
-
-  if ( exists $filter_flags{'dp'} and $t_DP <= $filter_flags{'dp'} ){
-    push @filter_reasons, 'tumour_depth<' . $filter_flags{'dp'} . '=' . $t_DP;
+  if ( $filter_flags{'dp'}){
+    $filters = read_depth_filter('tumour', 'normal', $t_DP, $c_DP, $filter_flags{'dp'}, $filters);
   }
 
   my @tumour_parts = @info[6..10, 16..20, 26, 28];
@@ -536,40 +530,57 @@ sub novobreak {
   $sample_info{$id}{'normal'}{$format[$_]} = $normal_parts[$_] for 0..$#format;
 
   my ($stop) = $info_block =~ /;END=(.*?);/;
-
   my ($SV_length) = ($stop - $start);
-
   my ($chr2) = $info_block =~ /CHR2=(.*?);/;
 
-  # if ($start > $stop){
-  #   my $old_start = $start;
-  #   my $old_stop = $stop;
-  #   $start = $old_stop;
-  #   $stop = $old_start;
-  # }
-
-  return ($SV_length, $chr2, $stop, $t_PE, $t_SR, \@filter_reasons, \%sample_info, \@format, \%format_long );
+  return ($SV_length, $chr2, $stop, $t_PE, $t_SR, $genotype, $filters, \%sample_info, \@format, \%format_long );
 }
 
 
 sub delly {
-  my ($id, $info_block, $start, $SV_type, $filters, $filter_flags, $tumour_name, $sample_ref) = @_;
+  my ($id, $info_block, $start, $SV_type, $tumour_name, $control_name, $normals, $filters, $filter_flags, $sample_ref) = @_;
 
-  my @filter_reasons = @{ $filters };
+  my %filter_flags   = %{ $filter_flags };
+  my %sample_info    = % { $sample_ref };
+  my @normals        = @{ $normals };
 
-  my %filter_flags = %{ $filter_flags };
-
-  my %sample_info = % { $sample_ref };
-
+  # TUM alt PE
   my $dv = $sample_info{$id}{$tumour_name}{'DV'};
+  # TUM alt SR
+  my $rv = $sample_info{$id}{$tumour_name}{'RV'};
+  # TUM ref PE
   my $dr = $sample_info{$id}{$tumour_name}{'DR'};
+  # TUM ref SR
+  my $rr = $sample_info{$id}{$tumour_name}{'RR'};
 
-  my $ab = $dv/($dv+$dr);
+  # NORM alt PE
+  my $n_dv = $sample_info{$id}{$control_name}{'DV'};
+  # NORM alt SR
+  my $n_rv = $sample_info{$id}{$control_name}{'RV'};
+  # NORM ref PE
+  my $n_dr = $sample_info{$id}{$control_name}{'DR'};
+  # NORM ref SR
+  my $n_rr = $sample_info{$id}{$control_name}{'RR'};
+
+  my $tum_alt = $dv + $rv;
+  my $tum_ref = $dr + $rr;
+  my $norm_alt = $n_dv + $n_rv;
+  my $norm_ref = $n_dr + $n_rr;
+
+  my %PON_alt_reads;
+
+  for my $normal (@normals[1..$#normals]){
+    $PON_alt_reads{$normal} = ($sample_info{$id}{$normal}{'DV'} + $sample_info{$id}{$normal}{'RV'});
+  }
+
+  my $genotype;
+  ( $genotype, $filters ) = genotype( $id, $tum_alt, $norm_alt, $norm_alt, \%PON_alt_reads, $filters );
+
+  my $ab = $tum_alt/($tum_alt+$tum_ref);
 
   my ($stop) = $info_block =~ /;END=(.*?);/;
-
+  my ($chr2) = $info_block =~ /CHR2=(.*?);/;
   my ($SV_length) = ($stop - $start);
-
   my ($t_SR, $t_PE) = (0,0);
 
     if ($info_block =~ /;SR=(\d+);/){
@@ -582,20 +593,28 @@ sub delly {
 
   my $tumour_read_support = ( $t_PE + $t_SR );
 
-  # if ( $filter_flags{'s'} ){
-  #   $filters = somatic_filter( $id, $tumour, $control, $normals, $filters, \%PON_info );
-  # }
+  my %PON_info;
 
-  if (exists $filter_flags{'su'}){
-    my $filtered_on_reads = read_support_filter($tumour_read_support, $filter_flags{'su'}, \@filter_reasons);
-    @filter_reasons = @{$filtered_on_reads};
+  foreach my $normal (@normals){
+    $PON_info{$normal} = [ ($sample_info{$id}{$normal}{'DV'} + $sample_info{$id}{$normal}{'RV'}) , $sample_info{$id}{$normal}{'GT'} ];
   }
 
-  my ($chr2) = $info_block =~ /CHR2=(.*?);/;
+  if ( $filter_flags{'s'} ){
+    $filters = somatic_filter( $id, $tumour_name, $control_name, $normals, $filters, \%PON_info );
+  }
 
-  my $genotype = 'somatic_tumour';
+  if ( $filter_flags{'su'} ){
+    $filters = read_support_filter($tumour_read_support, $filter_flags{'su'}, $tumour_name, $filters);
+  }
 
-  return ($SV_length, $chr2, $stop, $t_SR, $t_PE, $ab, $genotype, \@filter_reasons );
+  my $tum_depth = $tum_alt + $tum_ref;
+  my $norm_depth = $norm_alt + $norm_ref;
+
+  if ( $filter_flags{'dp'}){
+    $filters = read_depth_filter($tumour_name, $control_name, $tum_depth, $norm_depth, $filter_flags{'dp'}, $filters);
+  }
+
+  return ($SV_length, $chr2, $stop, $t_SR, $t_PE, $ab, $genotype, $filters );
 }
 
 
@@ -761,12 +780,15 @@ sub get_variant {
 
   printf "%-10s %-s\n",        "ID:",     $id_lookup;
   printf "%-10s %-s\n",       "TYPE:",   $sv_type;
-  $chr2 ? printf "%-10s %-s\n",    "CHROM1:",   $chr : printf "%-10s %-s\n",  "CHROM:",  $chr;
+  printf "%-10s %-s\n",       "GENOTYPE:",   $genotype;
+  $chr2 ?
+  printf "%-10s %-s\n",       "CHROM1:",   $chr :
+  printf "%-10s %-s\n",       "CHROM:",  $chr;
   printf "%-10s %-s\n",       "CHROM2:",   $chr2 if $chr2;
   printf "%-10s %-s\n",       "START:",   $start;
   printf "%-10s %-s\n",       "STOP:",    $stop;
   ($chr2 and ($chr2 ne $chr) ) ? printf "%-10s %-s\n",   "IGV:",     "$chr:$start" : printf "%-10s %-s\n", "IGV:", "$chr:$start-$stop";
-  printf "%-10s %-s\n",       "LENGTH:",   $SV_length;
+  printf "%-10s %-s\n",       "LENGTH:",   $SV_length unless $chr2 ne $chr2;
   printf "%-10s %-s\n",       "PE:",      $PE;
   printf "%-10s %-s\n",       "SR:",    $SR;
   printf "%-10s %-s\n",       "QUAL:",     $quality_score;
@@ -817,7 +839,7 @@ sub dump_variants {
 
       ($query_start, $query_stop) = split(/-/, $query_region);
       $query_start =~ s/,//g;
-      $query_stop =~ s/,//g;
+      $query_stop  =~ s/,//g;
 
       say "Limiting search to SVs within region '$chromosome:$query_start-$query_stop'";
 
@@ -884,12 +906,15 @@ sub dump_variants {
       if ($type ne 'snp'){
         printf "%-10s %-s\n",        "ID:",         $id;
         printf "%-10s %-s\n",        "TYPE:",       $sv_type;
-        $chr2 ? printf "%-10s %-s\n",    "CHROM1:", $chr : printf "%-10s %-s\n",  "CHROM:",  $chr;
+        printf "%-10s %-s\n",       "GENOTYPE:",   $genotype;
+        $chr2 ?
+        printf "%-10s %-s\n",       "CHROM1:",   $chr :
+        printf "%-10s %-s\n",       "CHROM:",  $chr;
         printf "%-10s %-s\n",       "CHROM2:",      $chr2 if $chr2;
         printf "%-10s %-s\n",       "START:",       $start;
         printf "%-10s %-s\n",       "STOP:",        $stop;
         ($chr2 and ($chr2 ne $chr) ) ? printf "%-10s %-s\n",   "IGV:",     "$chr:$start" : printf "%-10s %-s\n", "IGV:", "$chr:$start-$stop";
-        printf "%-10s %-s\n",       "LENGTH:",      $SV_length;
+        printf "%-10s %-s\n",       "LENGTH:",   $SV_length unless $chr2 ne $chr2;
         printf "%-10s %-s\n",       "PE:",          $PE;
         printf "%-10s %-s\n",       "SR:",          $SR;
         printf "%-10s %-s\n",       "QUAL:",        $quality_score;
@@ -1032,14 +1057,6 @@ sub write_summary {
         $rdr = '-';
       }
 
-      # # Read depth evidence (lumpy)
-      # if ($info_block =~ /BD=(\d+)/){
-      #   $rde = $1;
-      # }
-      # else {
-      #   $rde = '-';
-      # }
-
       # Microhology length (delly)
       if ($info_block =~ /HOMLEN=(\d+);/){
         $mh_length = $1;
@@ -1085,12 +1102,12 @@ sub region_exclude_filter {
 
     if ( $bp1 >= ($start - $slop) and $bp1 <= ($stop + $slop) ) {
       next unless $chromosome eq $chr1;
-      push @filter_reasons, 'bp1_in_unmappable_region=' . "$chromosome:$bp1\_in:" . $start . '-' . $stop;
+      push @filter_reasons, 'bp1 in excluded region=' . "$chromosome:$bp1 in:" . $start . '-' . $stop;
       last;
     }
     if ( $bp2 >= ($start - $slop) and $bp2 <= ($stop + $slop) ) {
       next unless $chromosome eq $chr2;
-      push @filter_reasons, 'bp2_in_unmappable_region=' . "$chromosome:$bp2\_in:" . $start . '-' . $stop;
+      push @filter_reasons, 'bp2 in excluded region=' . "$chromosome:$bp2 in:" . $start . '-' . $stop;
       last;
     }
   }
@@ -1107,6 +1124,23 @@ sub read_support_filter {
     push @filter_reasons, "Read support in '$sample'<" . $read_support_flag . '=' . $tumour_read_support;
   }
   return(\@filter_reasons);
+}
+
+
+sub read_depth_filter {
+  my ($tumour_name, $control_name, $tum_depth, $norm_depth, $depth_threshold, $filter_reasons) = @_;
+
+  my @filter_reasons = @{ $filter_reasons };
+
+  if ( $norm_depth < $depth_threshold ){
+    push @filter_reasons, "$control_name has depth < " . $depth_threshold . '=' . $norm_depth;
+  }
+
+  if ( $tum_depth < $depth_threshold ){
+    push @filter_reasons, "$tumour_name has depth < " . $depth_threshold . '=' . $tum_depth;
+  }
+
+return(\@filter_reasons);
 }
 
 
