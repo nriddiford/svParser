@@ -153,7 +153,7 @@ done
 
 ### Cleaning results
 
-The recommended next step from here is to inspect calls that remain. Any obvious false positives can be removed by entering `F` in the `T/F` field for each `_annotated.txt` file.
+The recommended next step from here is to inspect calls that remain. Any obvious false positives can be marked as false positives by entering `F` in the `T/F` field for each `_annotated.txt` file.
 
 These can then be removed by using:
 

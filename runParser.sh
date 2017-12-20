@@ -23,6 +23,9 @@ clean=0
 stats=0
 nstats=0
 germline=0
+
+## Change germline to somatic
+
 while getopts 'fmacsnhg' flag; do
   case "${flag}" in
     f)  filter=1 ;;
@@ -44,7 +47,10 @@ fi
 
 # Change to the 'script' dir in svParser
 #script_bin=/Users/Nick/iCloud/Desktop/script_test/SV_Parser/script # home
-script_bin=/Users/Nick_curie/Desktop/script_test/svParser/script # work
+#script_bin=/Users/Nick_curie/Desktop/script_test/svParser/script # work
+
+script_bin=/Users/Nick_curie/Desktop/svParser/script # work
+
 
 # Change to the bed file to filter svs called in unmappable regions
 exclude_file=/Users/Nick_curie/Documents/Curie/Data/Genomes/Dmel_v6.12/Mappability/dmel6_unmappable.bed
@@ -82,27 +88,35 @@ then
     for lumpy_file in data/lumpy/*.vcf
     do
       echo "perl $script_bin/svParse.pl -v $lumpy_file -f a -t l -p"
-      perl $script_bin/svParse.pl -v $lumpy_file -f a -t l -p
+      perl $script_bin/svParse.pl -v $lumpy_file -t l -f chr=1 -f su=4 -f dp=10 -f rdr=0.1 -f sq=10 -e $exclude_file -p
     done
 
     for delly_file in data/delly/*.vcf
     do
       echo "perl $script_bin/svParse.pl -v $delly_file -f a -t d -p"
-      perl $script_bin/svParse.pl -v $delly_file -f a -t d -p
+      perl $script_bin/svParse.pl -v $delly_file -t d -f chr=1 -f su=4 -f dp=10 -f rdr=0.1 -f sq=10 -e $exclude_file -p
     done
 
     for novo_file in data/novobreak/*.vcf
     do
       echo "perl $script_bin/svParse.pl -v $novo_file -f a -t n -p"
-      perl $script_bin/svParse.pl -v $novo_file -f a -t n -p
+      perl $script_bin/svParse.pl -v $novo_file -t n -f chr=1 -f su=4 -f dp=10 -f rdr=0.1 -f sq=10 -e $exclude_file -p
     done
 
     meer_files+=( $(ls -1 data/meerkat/*.variants | cut -d '.' -f 1 | sort -u ) )
     for ((i=0;i<${#meer_files[@]};++i))
     do
-      echo "perl $script_bin/parseMeerkat.pl ${meer_files[i]}.*.variants ${meer_files[i]}.*_af ${meer_files[i]}.*.fusions"
-      perl $script_bin/parseMeerkat.pl ${meer_files[i]}.*.variants ${meer_files[i]}.*_af ${meer_files[i]}.*.fusions
+      echo "perl $script_bin/parseMeerkat.pl ${meer_files[i]}.*.variants ${meer_files[i]}.*_af ${meer_files[i]}.*.fusions 4"
+      perl $script_bin/parseMeerkat.pl ${meer_files[i]}.*.variants ${meer_files[i]}.*_af ${meer_files[i]}.*.fusions 4
     done
+
+    # Maybe add this after clustering, as this gets in the way of proper clustering:
+
+    # callr st  end event
+    # lumpy 10  200 1
+    # novo  10  201 1
+    # cnv   10  250 2
+    # meer  10  200 3
 
     for cnv_file in data/cnv/*.txt
     do
@@ -183,23 +197,34 @@ then
 
   if [ -f all_samples_false_calls.txt ]
   then
-    for annofile in *_annotated_SVs.txt
-    do
-      echo "Updating 'all_samples_false_calls.txt' with false positive calls from annotated files"
-      echo "Updating 'all_samples_whitelist.txt' with whitelisted calls from annotated files"
-      python $script_bin/clean.py -f $annofile
-    done
-    rm *cleaned_SVs.txt
+    if [ -f *_annotated_SVs.txt ]
+    then
+      for annofile in *_annotated_SVs.txt
+      do
+        echo "Updating 'all_samples_false_calls.txt' with false positive calls from annotated files"
+        echo "Updating 'all_samples_whitelist.txt' with whitelisted calls from annotated files"
+        python $script_bin/clean.py -f $annofile
+      done
+      rm *cleaned_SVs.txt
+    fi
   fi
 
   for clustered_file in *clustered_SVs.txt
   do
     echo "Annotating $clustered_file"
     # Should check both files individually
-    if [ -f all_samples_false_calls.txt ]
+    if [ -f all_samples_false_calls.txt ] &&  [ -f all_samples_whitelist.txt ]
     then
       echo "perl $script_bin/sv2gene.pl -f $features -i $clustered_file -b all_samples_false_calls.txt -w all_samples_whitelist.txt"
       perl $script_bin/sv2gene.pl -f $features -i $clustered_file -b all_samples_false_calls.txt -w all_samples_whitelist.txt
+    elif [ -f all_samples_false_calls.txt ]
+    then
+      echo "perl $script_bin/sv2gene.pl -f $features -i $clustered_file -b all_samples_false_calls.txt"
+      perl $script_bin/sv2gene.pl -f $features -i $clustered_file -b all_samples_false_calls.txt
+    elif [ -f all_samples_whitelist.txt ]
+    then
+      echo "perl $script_bin/sv2gene.pl -f $features -i $clustered_file -w all_samples_whitelist.txt"
+      perl $script_bin/sv2gene.pl -f $features -i $clustered_file -w all_samples_whitelist.txt
     else
       echo "perl $script_bin/sv2gene.pl -f $features -i $clustered_file"
       perl $script_bin/sv2gene.pl -f $features -i $clustered_file

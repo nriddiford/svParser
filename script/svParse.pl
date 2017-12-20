@@ -3,11 +3,8 @@
 use strict;
 use warnings;
 
-use 5.18.2;
-
 use FindBin qw/ $Bin /;
 use FindBin qw/ $Script /;
-
 use File::Spec;
 use lib File::Spec->catdir($FindBin::Bin, '..', 'bin/');
 
@@ -15,12 +12,11 @@ use svParser;
 
 use feature qw/ say /;
 use Data::Dumper;
-use Getopt::Long qw/ GetOptions /;
-
 use File::Basename;
 use File::Path qw/ make_path / ;
-
 use File::Slurp;
+
+use Getopt::Long qw/ GetOptions /;
 
 my $vcf_file;
 my $help;
@@ -129,6 +125,7 @@ if ( scalar keys %filters > 0 ){
     say " o Read support / depth > 0.1";
     say " o SQ quality > 10";
     say " o Chromosomes: " . join(' ', @keys);
+    say " o Excldung calls in regions: $exclude";
 
     %filters = ("su"  =>  4,
                 "dp"  =>  10,
@@ -140,14 +137,15 @@ if ( scalar keys %filters > 0 ){
     $filter = 1;
 
   }
-  elsif ( $filters{'su'} or $filters{'dp'} or $filters{'rdr'} or $filters{'sq'} or $filters{'chr'} or $filters{'g'} or $filters{'e'} or $filters{'n'} ) {
+  elsif ( $filters{'su'} or $filters{'dp'} or $filters{'rdr'} or $filters{'sq'} or $filters{'chr'} or $filters{'g'} or $filters{'e'} or $filters{'n'} or $filters{'s'} ) {
     say "Running in filter mode, using custom filters:";
     say " o Read support >= $filters{'su'}" if $filters{'su'};
-    say " o Read depth (in both tumor and normal) > $filters{'dp'}" if $filters{'dp'};
+    say " o Read depth (in both tumour and normal) > $filters{'dp'}" if $filters{'dp'};
     say " o Read support / depth > $filters{'rdr'}" if $filters{'rdr'};
     say " o SQ quality > $filters{'sq'}" if $filters{'sq'};
     say " o Chromosomes: " . join(' ', @keys) if $filters{'chr'};
     say " o Running in germline mode" if $filters{'g'};
+    say " o Running in somatic TUMOUR mode" if $filters{'s'};
     say " o Running in somatic NORMAL mode" if $filters{'n'};
     say " o Excluding calls overlapping: $exclude" if $filters{'e'};
     $filter = 1;

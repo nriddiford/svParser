@@ -140,79 +140,6 @@ sub parse {
     my @normals = @samples[1..$#samples];
     my @filter_reasons;
 
-    ###################
-    # Genotype filter #
-    ###################
-
-    if ( $filter_flags{'g'} ){
-
-      #############################
-      # Filter OUT somatic events #
-      #############################
-
-      # Filter if ANY of the panel of normals (but not direct control) are NOT 'GT = 0/0' (hom ref)
-      for my $normal (@normals[1..$#normals]){
-        if ( $sample_info{$id}{$normal}{'GT'} and $sample_info{$id}{$normal}{'GT'} eq '1/1' or $sample_info{$id}{$normal}{'GT'} eq '0/1' ){
-          push @filter_reasons, "PON member '$normal' not homozygous for reference genotype=" . $sample_info{$id}{$normal}{'GT'};
-        }
-
-        # Filter if more than 2 quality reads support var in any normal in PON
-        # Should probably use this for somatic too... (maybe even in place of SQ?)
-        if ( $sample_info{$id}{$normal}{'QA'} and $sample_info{$id}{$normal}{'QA'} != 0){
-          push @filter_reasons, "PON member '$normal' has quality support for alternative genotype=" . $sample_info{$id}{$normal}{'QA'};
-        }
-
-      }
-
-      # If tumour is het/hom alt (0/1, 1/1), but direct control is hom ref(0/0), filter as somatic
-      if ( ( $sample_info{$id}{$tumour_name}{'GT'} eq '0/1' or $sample_info{$id}{$tumour_name}{'GT'} eq '1/1' ) and $sample_info{$id}{$control_name}{'GT'} eq '0/0' ){
-          push @filter_reasons, "$tumour_name somatic tumour event=" . $sample_info{$id}{$tumour_name}{'GT'};
-        }
-      elsif ( $sample_info{$id}{$tumour_name}{'GT'} eq '0/0' and $sample_info{$id}{$control_name}{'GT'} ne '0/0' ){
-          push @filter_reasons, "$control_name\_exclusive_normal_event=" . $sample_info{$id}{$control_name}{'GT'};
-        }
-
-    }
-
-    # To filter for events that are somatic NORMAL
-    elsif ( $filter_flags{'n'} ){
-      if ( $sample_info{$id}{$tumour_name}{'GT'} eq '1/1' or $sample_info{$id}{$tumour_name}{'GT'} eq '0/1' ){
-          push @filter_reasons, "Event exclusive to tumour '$tumour_name'=" . $sample_info{$id}{$control_name}{'GT'};
-        }
-      elsif ( $sample_info{$id}{$tumour_name}{'QA'} and $sample_info{$id}{$tumour_name}{'QA'} != 0){
-        push @filter_reasons, "Tumour  '$tumour_name' has quality support for alternative genotype=" . $sample_info{$id}{$tumour_name}{'QA'};
-      }
-      for my $normal (@normals[1..$#normals]){
-        if ( $sample_info{$id}{$normal}{'GT'} and $sample_info{$id}{$normal}{'GT'} eq '1/1' or $sample_info{$id}{$normal}{'GT'} eq '0/1' ){
-          push @filter_reasons, "PON member '$normal' not homozygous for reference genotype=" . $sample_info{$id}{$normal}{'GT'};
-        }
-
-        # Filter if more than 2 quality reads support var in any normal in PON
-        # Should probably use this for somatic too... (maybe even in place of SQ?)
-        if ( $sample_info{$id}{$normal}{'QA'} and $sample_info{$id}{$normal}{'QA'} != 0){
-          push @filter_reasons, "PON member '$normal' has quality support for alternative genotype=" . $sample_info{$id}{$normal}{'QA'};
-        }
-      }
-
-
-    }
-
-    else {
-      # To filter for events that are somatic TUMOUR
-
-      for my $normal (@normals){
-        if ( $sample_info{$id}{$normal}{'GT'} eq '1/1' or $sample_info{$id}{$normal}{'GT'} eq '0/1' ){
-          push @filter_reasons, "$normal\_not_homo_ref=" . $sample_info{$id}{$normal}{'GT'};
-        }
-        # if ( $sample_info{$id}{$normal}{'QA'} >= 2){
-        #   push @filter_reasons, "$normal\_has_quality_alt_support=" . $sample_info{$id}{$normal}{'QA'};
-        # }
-      }
-    }
-
-
-    ###################
-
     my %information;
 
     foreach(@info_parts){
@@ -232,20 +159,20 @@ sub parse {
 
     my ($SV_type) = $info_block =~ /SVTYPE=(.*?);/;
 
-    my ($SV_length, $chr2, $stop, $t_SR, $t_PE, $ab, $filter_list);
+    my ($SV_length, $chr2, $stop, $t_SR, $t_PE, $ab, $genotype, $filter_list);
 
     if ($type eq 'lumpy'){
-      ( $SV_length, $chr2, $stop, $t_SR, $t_PE, $ab, $filter_list ) = lumpy( $id, $chr, $info_block, $SV_type, $alt, $start, \%sample_info, $tumour_name, $control_name, \@samples, \@normals, \@filter_reasons, \%filter_flags );
+      ( $SV_length, $chr2, $stop, $t_SR, $t_PE, $ab, $genotype, $filter_list ) = lumpy( $id, $chr, $info_block, $SV_type, $alt, $start, \%sample_info, $tumour_name, $control_name, \@samples, \@normals, \@filter_reasons, \%filter_flags );
     }
 
     elsif ($type eq 'delly'){
-      ( $SV_length, $chr2, $stop, $t_SR, $t_PE, $ab, $filter_list ) = delly( $id, $info_block, $start, $SV_type, \@filter_reasons, \%filter_flags, $tumour_name, \%sample_info );
+      ( $SV_length, $chr2, $stop, $t_SR, $t_PE, $ab, $genotype, $filter_list ) = delly( $id, $info_block, $start, $SV_type, $tumour_name, $control_name, \@normals, \@filter_reasons, \%filter_flags, \%sample_info );
     }
 
     elsif ($type eq 'novobreak'){
       @samples = qw/tumour normal/;
       my ( $sample_info_novo, $format_novo, $format_long_novo );
-      ( $SV_length, $chr2, $stop, $t_PE, $t_SR, $filter_list, $sample_info_novo, $format_novo, $format_long_novo ) = novobreak( $id, $info_block, $start, $SV_type, \@filter_reasons, \@sample_info, \%filter_flags );
+      ( $SV_length, $chr2, $stop, $t_PE, $t_SR, $genotype, $filter_list, $sample_info_novo, $format_novo, $format_long_novo ) = novobreak( $id, $info_block, $start, $SV_type, $tumour_name, $control_name, \@filter_reasons, \@sample_info, \%filter_flags );
       %sample_info = %{ $sample_info_novo };
       $ab = "-";
       @format = @{ $format_novo };
@@ -263,17 +190,23 @@ sub parse {
       $filter_list = chrom_filter( $chr, $chr2, $filter_list, $chrom_keys );
     }
 
-    if ( $filter_flags{'e'} and @$filter_list == 0 ){
-      ###################
-      # Region exclude ##
-      ###################
+    # Don't include DELS < 1kb with split read support == 0
+    $SV_length = abs($SV_length);
 
+    if ( $filter_flags{'su'} ){
+      if ( ($SV_type eq "DEL" or $SV_type eq "INV") and ( $SV_length < 1000 and $t_SR == 0 ) ){
+          push @{$filter_list}, "$SV_type < 1kb with no split read support and PE support < 2*$filter_flags{'su'}=" . $t_PE if $t_PE <= $filter_flags{'su'} * 2;
+        }
+      if ( ($SV_type eq "BND" and $chr eq $chr2) and ( $SV_length < 1000 and $t_SR == 0 ) ){
+          push @{$filter_list}, "$SV_type < 1kb with no split read support and PE support < 2*$filter_flags{'su'}=" . $t_PE if $t_PE <= $filter_flags{'su'} * 2;
+        }
+    }
+
+    if ( $filter_flags{'e'} and @$filter_list == 0 ){
       $filter_list = region_exclude_filter($chr, $start, $chr2, $stop, $exclude_regions, $filter_list);
     }
 
-    $SV_length = abs($SV_length);
-    $SVs{$id} = [ @fields[0..10], $SV_type, $SV_length, $stop, $chr2, $t_SR, $t_PE, $ab, $filter_list, \@samples ];
-
+    $SVs{$id} = [ @fields[0..10], $SV_type, $SV_length, $stop, $chr2, $t_SR, $t_PE, $ab, $filter_list, $genotype, \@samples ];
     $info{$id} = [ [@format], [%format_long], [%info_long], [@tumour_parts], [@normal_parts], [%information], [%sample_info] ];
 
     if (@$filter_list == 0){
@@ -284,10 +217,231 @@ sub parse {
   return (\%SVs, \%info, \%filtered_SVs);
 }
 
-sub novobreak {
-  my ( $id, $info_block, $start, $SV_type, $filters, $info, $filter_flags) = @_;
+
+sub lumpy {
+  my ( $id, $chr, $info_block, $SV_type, $alt, $start, $sample_info, $tumour, $control, $samples, $normals, $filters, $filter_flags ) = @_;
+
+  my ($SV_length) = $info_block =~ /SVLEN=(.*?);/;
+
+  my $genotype;
+
+  my %filter_flags   = %{ $filter_flags };
+  my @normals        = @{ $normals };
+  my %sample_info    = %{ $sample_info };
+
+  my $t_hq_alt_reads = $sample_info{$id}{$tumour}{'QA'};
+  my $n_hq_alt_reads = $sample_info{$id}{$control}{'QA'};
+  my $c_alt_reads = $sample_info{$id}{$control}{'SU'};
+
+
+  my %PON_alt_reads;
+
+  for my $normal (@normals[1..$#normals]){
+    $PON_alt_reads{$normal} = $sample_info{$id}{$normal}{'QA'};
+  }
+
+
+  ( $genotype, $filters ) = genotype( $id, $t_hq_alt_reads, $c_alt_reads, $n_hq_alt_reads, \%PON_alt_reads, $filters );
+
+  my %PON_info;
+
+  foreach my $normal (@normals){
+    $PON_info{$normal} = [ $sample_info{$id}{$normal}{'QA'}, $sample_info{$id}{$normal}{'GT'} ];
+  }
+
+  if ( $filter_flags{'s'} ){
+    $filters = somatic_filter( $id, $tumour, $control, $normals, $filters, \%PON_info );
+  }
+
+  my @samples        = @{ $samples };
+
+  # Genotype is defualt NA if 0/0 and no quality read support. Set this to somatic_normal/tumour even though these should be filtered out below
+
+  if ($genotype eq 'NA'){
+    if ( $sample_info{$id}{$tumour}{'SU'} >= 1 and $sample_info{$id}{$tumour}{'QA'} == 0) {
+      $genotype = 'somatic_tumour';
+    }
+    elsif ( $sample_info{$id}{$control}{'SU'} >= 1 and $sample_info{$id}{$control}{'QA'} == 0) {
+      $genotype = 'somatic_normal';
+    }
+  }
+
+  if ( $genotype ne 'somatic_tumour' ){
+    # switch tumour normal
+    my $tum2norm = $control;
+    $control = $tumour;
+    $tumour = $tum2norm;
+  }
+
+  my ($t_PE, $t_SR, $all_c_PE, $all_c_SR, $c_PE, $c_SR, $t_HQ, $c_HQ, $all_c_HQ) = (0,0,0,0,0,0);
+
+  # Get allele balance
+  my $ab = $sample_info{$id}{$tumour}{'AB'};
+
+  ########################
+  # Read support filters #
+  ########################
+
+  # Get read support for tumour
+  $t_PE = $sample_info{$id}{$tumour}{'PE'};
+  $t_SR = $sample_info{$id}{$tumour}{'SR'};
+  $t_HQ = $sample_info{$id}{$tumour}{'QA'};
+
+  # my $tumour_read_support = ( $t_PE + $t_SR );
+  # Probably better just to look at high qual reads
+  my $tumour_read_support = $t_HQ;
+
+  # Create temp pseudo counts to avoid illegal division by 0
+  my $pc_tumour_read_support = $tumour_read_support + 0.001;
+
+  my $pc_direct_control_read_support = 0;
+
+
+  # Get read support for direct control only
+  $c_PE =  $sample_info{$id}{$control}{'PE'};
+  $c_SR =  $sample_info{$id}{$control}{'SR'};
+  $c_HQ = $sample_info{$id}{$control}{'QA'};
+
+  # my $direct_control_read_support = ( $c_PE + $c_SR );
+  my $direct_control_read_support = $c_HQ;
+  $pc_direct_control_read_support = $direct_control_read_support + 0.001;
+
+
+  if ( $filter_flags{'su'} ){
+    $filters = read_support_filter($tumour_read_support, $filter_flags{'su'}, $tumour, $filters);
+    if ($genotype eq 'germline_private' or $genotype eq 'germline_recurrent' ){ # also require same read suppport for tumour
+      $filters = read_support_filter($pc_direct_control_read_support, $filter_flags{'su'}, $control, $filters);
+    }
+  }
 
   my @filter_reasons = @{ $filters };
+
+    ### This might be useless - isn't this happening in somatic_filter() ?
+    if (@samples > 1){ # In case there are no control samples...
+
+      # for precise variants:
+      if ($info_block !~ /IMPRECISE;/) {
+
+        # We want to be strict, so include all controls used for genotyping (and sum read support)
+        @normals = @normals[1..$#normals] if $genotype eq 'somatic_normal';
+
+        for my $normal (@normals){
+          $sample_info{$id}{$normal}{'QA'} eq '.' ? $sample_info{$id}{$normal}{'QA'} = '0' : $all_c_HQ += $sample_info{$id}{$normal}{'QA'};
+        }
+
+        # Could just iterate over PON[1..#$PON] and save this step
+        my $all_control_read_support;
+        if ($genotype eq 'somatic_normal'){
+          $all_control_read_support = $c_HQ + $all_c_HQ;
+        }
+        else {
+          $all_control_read_support = $all_c_HQ;
+        }
+
+        # Filter if there are more than 1 control reads
+        if ( $all_control_read_support > 1 ){
+          if ( $genotype eq 'somatic_normal' ){
+            $genotype = 'germline_recurrent'
+          }
+          elsif ( $genotype eq 'somatic_tumour' ){
+            $genotype = 'germline_recurrent'
+          }
+        }
+
+        if ( $filter_flags{'s'} ){
+          push @filter_reasons, "Precise call with high quality read support in at least 1 other sample. Total HQ reads=" . $all_control_read_support;
+        }
+
+      }
+
+      ###
+
+      # for imprecise variants:
+      elsif ($info_block =~ /IMPRECISE;/) {
+        # Filter if # tumour reads supporting var is less than 5 * control reads
+        # Or if there are more than 2 control reads
+        if ( $pc_tumour_read_support/$pc_direct_control_read_support < 5 ){
+          push @filter_reasons, 'Imprecise call with less than 5 * more tumour reads than normal=' . $direct_control_read_support if $filter_flags{'s'};
+
+        }
+        if ( $direct_control_read_support > 1 ){
+          if ( $genotype eq 'somatic_normal' ){
+            $genotype = 'germline_private'
+          }
+          elsif ( $genotype eq 'somatic_tumour' ){
+            $genotype = 'germline_private'
+          }
+          push @filter_reasons, 'Imprecise call with control read support=' . $direct_control_read_support if $filter_flags{'s'};
+        }
+
+      }
+    }
+
+  ######################
+  # Read depth filters #
+  ######################
+
+  if ( $filter_flags{'dp'} and $sample_info{$id}{$tumour}{'DP'} ){
+
+    my $t_DP =  $sample_info{$id}{$tumour}{'DP'};
+
+    if (@samples > 1){ # In case there are no control samples...
+
+      my $c_DP =  $sample_info{$id}{$control}{'DP'};
+
+      $c_DP = 0 if $c_DP eq '.';
+      # Flag if either control or tumour has depth < 10 at site
+      $filters = read_depth_filter($tumour, $control, $t_DP, $c_DP, $filter_flags{'dp'}, \@filter_reasons);
+
+      # if ( $filter_flags{'dp'} and $c_DP <= $filter_flags{'dp'} ){
+      #   push @filter_reasons, "$control has depth < " . $filter_flags{'dp'} . '=' . $c_DP;
+      # }
+    }
+    #
+    # if ( $filter_flags{'dp'} and $t_DP <= $filter_flags{'dp'} ){
+    #   push @filter_reasons, "$tumour has depth < " . $filter_flags{'dp'} . '=' . $t_DP;
+    # }
+
+  # Subtract control reads from tumour reads
+  # If this number of SU is less than 10% of tumour read_depth then filter
+    if ( exists $filter_flags{'rdr'} and ( $tumour_read_support - $pc_direct_control_read_support ) / ( $t_DP + 0.01 ) < $filter_flags{'rdr'} ){ # Maybe this is too harsh...
+      push @filter_reasons, 'tumour_reads/tumour_depth<' . ($filter_flags{'rdr'}*100) . "%" . '=' . $tumour_read_support . "/" . $t_DP if $filter_flags{'t'};
+      push @filter_reasons, 'normal_reads/normal_depth<' . ($filter_flags{'rdr'}*100) . "%" . '=' . $tumour_read_support . "/" . $t_DP if $filter_flags{'n'};
+
+    }
+
+  }
+
+  ##################
+  # Quality filter #
+  ##################
+
+  if ( $sample_info{$id}{$tumour}{'SQ'} and exists $filter_flags{'sq'} ){
+    $sample_info{$id}{$tumour}{'SQ'} = 0 if $sample_info{$id}{$tumour}{'SQ'} eq '.';
+
+    if ( $sample_info{$id}{$tumour}{'SQ'} <= $filter_flags{'sq'} ){
+      push @filter_reasons, "SQ<" . $filter_flags{'sq'} . '=' . $sample_info{$id}{$tumour}{'SQ'};
+    }
+  }
+
+  my ($chr2, $stop) = (0,0);
+
+  if ($SV_type eq 'BND'){
+    $chr2 = $alt =~ s/[\[\]N]//g;
+    ($chr2, $stop) = $alt =~ /(.+)\:(\d+)/;
+    $SV_length = $stop - $start;
+  }
+  else {
+      ($stop) = $info_block =~ /;END=(.*?);/;
+
+  }
+
+  return ($SV_length, $chr2, $stop, $t_SR, $t_PE, $ab, $genotype, \@filter_reasons);
+}
+
+
+sub novobreak {
+  my ( $id, $info_block, $start, $SV_type, $tumour_name, $control_name, $filters, $info, $filter_flags) = @_;
 
   my %filter_flags = %{ $filter_flags };
 
@@ -304,24 +458,23 @@ sub novobreak {
   my $t_SR = $bp1_SR + $bp2_SR;
   my $t_PE = $bp1_PE + $bp2_PE;
 
-  $t_SR = $t_SR/2;
-  $t_PE = $t_PE/2;
+  # $t_SR = $t_SR/2;
+  # $t_PE = $t_PE/2;
 
   $t_SR = int($t_SR + 0.5);
   $t_PE = int($t_PE + 0.5);
 
   # my $t_PE = 0; # Don't believe PE read support!
 
-  my $tumour_read_support = ( $t_PE + $t_SR );
+  my $tumour_read_support = ( $t_SR );
 
   ########################
   # Read support filters #
   ########################
 
 
-  if (exists $filter_flags{'su'}){
-    my $filtered_on_reads = read_support_filter($tumour_read_support, $filter_flags{'su'}, \@filter_reasons);
-    @filter_reasons = @{$filtered_on_reads};
+  if ( $filter_flags{'su'} ){
+    $filters = read_support_filter($tumour_read_support, $filter_flags{'su'}, 'tumour', $filters);
   }
 
   my $n_bp1_SR = $info[14]; # high qual split reads bp1
@@ -329,12 +482,13 @@ sub novobreak {
   my $n_bp2_SR = $info[24]; # high qual split reads bp2
   my $n_bp2_PE = $info[29]; # PE reads bp2
 
-  my $all_control_read_support = ( $n_bp1_SR + $n_bp1_PE + $n_bp2_SR + $n_bp2_PE )/2;
+  say "$n_bp1_SR, $n_bp1_PE, $n_bp2_SR, $n_bp2_PE";
 
-  # Filter if there are more than 1 control reads
-  if ( $all_control_read_support > 1 ){
-    push @filter_reasons, "precise var with read support in a normal sample=" . $all_control_read_support;
-  }
+  my $all_control_read_support = ( $n_bp1_SR + $n_bp2_SR );
+
+  my $genotype;
+  my %PON_alt_reads;
+  ( $genotype, $filters ) = genotype( $id, $tumour_read_support, $all_control_read_support, $all_control_read_support, \%PON_alt_reads, $filters );
 
   ######################
   # Read depth filters #
@@ -346,12 +500,8 @@ sub novobreak {
   my $c_DP = ($c_DP_1 + $c_DP_2)/2;
   my $t_DP = ($t_DP_1 + $t_DP_2)/2;
 
-  if ( exists $filter_flags{'dp'} and $c_DP <= $filter_flags{'dp'} ){
-    push @filter_reasons, 'control_depth<' . $filter_flags{'dp'} . '=' . $c_DP;
-  }
-
-  if ( exists $filter_flags{'dp'} and $t_DP <= $filter_flags{'dp'} ){
-    push @filter_reasons, 'tumour_depth<' . $filter_flags{'dp'} . '=' . $t_DP;
+  if ( $filter_flags{'dp'}){
+    $filters = read_depth_filter('tumour', 'normal', $t_DP, $c_DP, $filter_flags{'dp'}, $filters);
   }
 
   my @tumour_parts = @info[6..10, 16..20, 26, 28];
@@ -380,199 +530,57 @@ sub novobreak {
   $sample_info{$id}{'normal'}{$format[$_]} = $normal_parts[$_] for 0..$#format;
 
   my ($stop) = $info_block =~ /;END=(.*?);/;
-
   my ($SV_length) = ($stop - $start);
-
   my ($chr2) = $info_block =~ /CHR2=(.*?);/;
 
-  # if ($start > $stop){
-  #   my $old_start = $start;
-  #   my $old_stop = $stop;
-  #   $start = $old_stop;
-  #   $stop = $old_start;
-  # }
-
-  return ($SV_length, $chr2, $stop, $t_PE, $t_SR, \@filter_reasons, \%sample_info, \@format, \%format_long );
-}
-
-
-sub lumpy {
-  my ( $id, $chr, $info_block, $SV_type, $alt, $start, $sample_info, $tumour, $control, $samples, $normals, $filters, $filter_flags ) = @_;
-
-  my @filter_reasons = @{ $filters };
-  my @normals = @{ $normals };
-
-  my %filter_flags = %{ $filter_flags };
-
-  my @samples = @{ $samples };
-
-  my %sample_info = %{ $sample_info };
-
-  my ($SV_length) = $info_block =~ /SVLEN=(.*?);/;
-
-  # switch tumour normal
-  if ( $filter_flags{'g'} or $filter_flags{'n'} ){
-    my $tum2norm = $control;
-    $control = $tumour;
-    $tumour = $tum2norm;
-  }
-
-  my ($t_PE, $t_SR, $all_c_PE, $all_c_SR, $c_PE, $c_SR) = (0,0,0,0,0,0);
-
-  # Get allele balance
-  my $ab = $sample_info{$id}{$tumour}{'AB'};
-
-  ########################
-  # Read support filters #
-  ########################
-
-  # Get read support for tumour
-  $t_PE = $sample_info{$id}{$tumour}{'PE'};
-  $t_SR = $sample_info{$id}{$tumour}{'SR'};
-
-  my $tumour_read_support = ( $t_PE + $t_SR );
-
-  # Create temp pseudo counts to avoid illegal division by 0
-  my $pc_tumour_read_support = $tumour_read_support + 0.001;
-
-  my $pc_direct_control_read_support = 0;
-
-  if (exists $filter_flags{'su'}){
-    my $filtered_on_reads = read_support_filter($tumour_read_support, $filter_flags{'su'}, \@filter_reasons);
-    @filter_reasons = @{ $filtered_on_reads };
-  }
-
-  if (not $filter_flags{'g'}){
-
-    if (@samples > 1){ # In case there are no control samples...
-
-      # for precise variants:
-      if ($info_block !~ /IMPRECISE;/){
-
-        # We want to be strict, so include all controls used for genotyping (and sum read support)
-        for my $normal (@normals){
-          $sample_info{$id}{$normal}{'PE'} eq '.' ? $sample_info{$id}{$normal}{'PE'} = '0' : $all_c_PE += $sample_info{$id}{$normal}{'PE'};
-          $sample_info{$id}{$normal}{'SR'} eq '.' ? $sample_info{$id}{$normal}{'SR'} = '0' : $all_c_SR += $sample_info{$id}{$normal}{'SR'};
-        }
-
-        my $all_control_read_support = ( $all_c_PE + $all_c_SR );
-
-        # Filter if there are more than 1 control reads
-        if ( $all_control_read_support > 1 ){
-          push @filter_reasons, "precise var with read support in a normal sample=" . $all_control_read_support;
-        }
-      }
-
-      # for imprecise variants:
-      if ($info_block =~ /IMPRECISE;/){
-
-        # Get read support for direct control only
-        $c_PE =  $sample_info{$id}{$control}{'PE'};
-        $c_SR =  $sample_info{$id}{$control}{'SR'};
-
-        my $direct_control_read_support = ( $c_PE + $c_SR );
-        $pc_direct_control_read_support = $direct_control_read_support + 0.001;
-
-        # Filter if # tumour reads supporting var is less than 5 * control reads
-        # Or if there are more than 2 control reads
-        if ( $pc_tumour_read_support/$pc_direct_control_read_support < 5 ){
-          push @filter_reasons, 'imprecise var with less than 5 * more tum reads than control=' . $direct_control_read_support;
-        }
-        if ( $direct_control_read_support > 1 ){
-          push @filter_reasons, 'imprecise var with control read support=' . $direct_control_read_support;
-        }
-
-      }
-    }
-
-  }
-
-  # # if running in germline mode, require
-  # if ($filter_flags{'g'}){
-  #
-  # }
-
-  ######################
-  # Read depth filters #
-  ######################
-
-  if ( exists $sample_info{$id}{$tumour}{'DP'} ){
-
-    my $t_DP =  $sample_info{$id}{$tumour}{'DP'};
-
-    if (@samples > 1){ # In case there are no control samples...
-
-      my $c_DP =  $sample_info{$id}{$control}{'DP'};
-
-      $c_DP = 0 if $c_DP eq '.';
-      # Flag if either control or tumour has depth < 10 at site
-
-      if ( exists $filter_flags{'dp'} and $c_DP <= $filter_flags{'dp'} ){
-        push @filter_reasons, 'control_depth<' . $filter_flags{'dp'} . '=' . $c_DP;
-      }
-    }
-
-    if ( exists $filter_flags{'dp'} and $t_DP <= $filter_flags{'dp'} ){
-      push @filter_reasons, 'tumour_depth<' . $filter_flags{'dp'} . '=' . $t_DP;
-    }
-
-
-    # Subtract control reads from tumour reads
-    # If this number of SU is less than 10% of tumour read_depth then filter
-    if (not $filter_flags{'g'}){
-      if ( exists $filter_flags{'rdr'} and ( $tumour_read_support - $pc_direct_control_read_support ) / ( $t_DP + 0.01 ) < $filter_flags{'rdr'} ){ # Maybe this is too harsh...
-        push @filter_reasons, 'tumour_reads/tumour_depth<' . ($filter_flags{'rdr'}*100) . "%" . '=' . $tumour_read_support . "/" . $t_DP;
-      }
-    }
-
-  }
-
-  ##################
-  # Quality filter #
-  ##################
-
-  if ( exists $sample_info{$id}{$tumour}{'SQ'} and exists $filter_flags{'sq'} ){
-    $sample_info{$id}{$tumour}{'SQ'} = 0 if $sample_info{$id}{$tumour}{'SQ'} eq '.';
-
-    if ( $sample_info{$id}{$tumour}{'SQ'} <= $filter_flags{'sq'} ){
-      push @filter_reasons, "SQ<" . $filter_flags{'sq'} . '=' . $sample_info{$id}{$tumour}{'SQ'};
-    }
-  }
-
-  my ($chr2, $stop) = 0,0;
-
-  if ($SV_type eq 'BND'){
-    $chr2 = $alt =~ s/[\[\]N]//g;
-    ($chr2, $stop) = $alt =~ /(.+)\:(\d+)/;
-    $SV_length = $stop - $start;
-  }
-  else {
-      ($stop) = $info_block =~ /;END=(.*?);/;
-
-  }
-
-  return ($SV_length, $chr2, $stop, $t_SR, $t_PE, $ab, \@filter_reasons);
+  return ($SV_length, $chr2, $stop, $t_PE, $t_SR, $genotype, $filters, \%sample_info, \@format, \%format_long );
 }
 
 
 sub delly {
-  my ($id, $info_block, $start, $SV_type, $filters, $filter_flags, $tumour_name, $sample_ref) = @_;
+  my ($id, $info_block, $start, $SV_type, $tumour_name, $control_name, $normals, $filters, $filter_flags, $sample_ref) = @_;
 
-  my @filter_reasons = @{ $filters };
+  my %filter_flags   = %{ $filter_flags };
+  my %sample_info    = % { $sample_ref };
+  my @normals        = @{ $normals };
 
-  my %filter_flags = %{ $filter_flags };
-
-  my %sample_info = % { $sample_ref };
-
+  # TUM alt PE
   my $dv = $sample_info{$id}{$tumour_name}{'DV'};
+  # TUM alt SR
+  my $rv = $sample_info{$id}{$tumour_name}{'RV'};
+  # TUM ref PE
   my $dr = $sample_info{$id}{$tumour_name}{'DR'};
+  # TUM ref SR
+  my $rr = $sample_info{$id}{$tumour_name}{'RR'};
 
-  my $ab = $dv/($dv+$dr);
+  # NORM alt PE
+  my $n_dv = $sample_info{$id}{$control_name}{'DV'};
+  # NORM alt SR
+  my $n_rv = $sample_info{$id}{$control_name}{'RV'};
+  # NORM ref PE
+  my $n_dr = $sample_info{$id}{$control_name}{'DR'};
+  # NORM ref SR
+  my $n_rr = $sample_info{$id}{$control_name}{'RR'};
+
+  my $tum_alt = $dv + $rv;
+  my $tum_ref = $dr + $rr;
+  my $norm_alt = $n_dv + $n_rv;
+  my $norm_ref = $n_dr + $n_rr;
+
+  my %PON_alt_reads;
+
+  for my $normal (@normals[1..$#normals]){
+    $PON_alt_reads{$normal} = ($sample_info{$id}{$normal}{'DV'} + $sample_info{$id}{$normal}{'RV'});
+  }
+
+  my $genotype;
+  ( $genotype, $filters ) = genotype( $id, $tum_alt, $norm_alt, $norm_alt, \%PON_alt_reads, $filters );
+
+  my $ab = $tum_alt/($tum_alt+$tum_ref);
 
   my ($stop) = $info_block =~ /;END=(.*?);/;
-
+  my ($chr2) = $info_block =~ /CHR2=(.*?);/;
   my ($SV_length) = ($stop - $start);
-
   my ($t_SR, $t_PE) = (0,0);
 
     if ($info_block =~ /;SR=(\d+);/){
@@ -585,25 +593,28 @@ sub delly {
 
   my $tumour_read_support = ( $t_PE + $t_SR );
 
-  if (exists $filter_flags{'su'}){
-    my $filtered_on_reads = read_support_filter($tumour_read_support, $filter_flags{'su'}, \@filter_reasons);
-    @filter_reasons = @{$filtered_on_reads};
+  my %PON_info;
+
+  foreach my $normal (@normals){
+    $PON_info{$normal} = [ ($sample_info{$id}{$normal}{'DV'} + $sample_info{$id}{$normal}{'RV'}) , $sample_info{$id}{$normal}{'GT'} ];
   }
 
-  # if ($start > $stop){
-  #   my $old_start = $start;
-  #   my $old_stop = $stop;
-  #   $start = $old_stop;
-  #   $stop = $old_start;
-  # }
+  if ( $filter_flags{'s'} ){
+    $filters = somatic_filter( $id, $tumour_name, $control_name, $normals, $filters, \%PON_info );
+  }
 
-  # my ($chr2) = 0;
+  if ( $filter_flags{'su'} ){
+    $filters = read_support_filter($tumour_read_support, $filter_flags{'su'}, $tumour_name, $filters);
+  }
 
-  # if ($SV_type eq 'TRA'){
-    my ($chr2) = $info_block =~ /CHR2=(.*?);/;
-  # }
+  my $tum_depth = $tum_alt + $tum_ref;
+  my $norm_depth = $norm_alt + $norm_ref;
 
-  return ($SV_length, $chr2, $stop, $t_SR, $t_PE, $ab, \@filter_reasons );
+  if ( $filter_flags{'dp'}){
+    $filters = read_depth_filter($tumour_name, $control_name, $tum_depth, $norm_depth, $filter_flags{'dp'}, $filters);
+  }
+
+  return ($SV_length, $chr2, $stop, $t_SR, $t_PE, $ab, $genotype, $filters );
 }
 
 
@@ -649,7 +660,7 @@ sub summarise_variants {
 
   for (keys %{ $SVs } ){
 
-    my ( $chr, $start, $id, $ref, $alt, $quality_score, $filt, $info_block, $format_block, $tumour_info_block, $normal_info_block, $sv_type, $SV_length, $stop, $chr2, $SR, $PE, $ab, $filters, $samples ) = @{ $SVs->{$_} };
+    my ( $chr, $start, $id, $ref, $alt, $quality_score, $filt, $info_block, $format_block, $tumour_info_block, $normal_info_block, $sv_type, $SV_length, $stop, $chr2, $SR, $PE, $ab, $filters, $genotype, $samples ) = @{ $SVs->{$_} };
 
     if ( $chromosome ){
       next if $chr ne $chromosome;
@@ -752,7 +763,7 @@ sub get_variant {
   my (%information)  = @{ $info->{$id_lookup}->[5]};
   my (%sample_info)  = @{ $info->{$id_lookup}->[6]};
 
-  my ($chr, $start, $id, $ref, $alt, $quality_score, $filt, $info_block, $format_block, $tumour_info_block, $normal_info_block, $sv_type, $SV_length, $stop, $chr2, $SR, $PE, $ab, $filters, $samples ) = @{ $SVs->{$id_lookup} };
+  my ($chr, $start, $id, $ref, $alt, $quality_score, $filt, $info_block, $format_block, $tumour_info_block, $normal_info_block, $sv_type, $SV_length, $stop, $chr2, $SR, $PE, $ab, $filters, $genotype, $samples ) = @{ $SVs->{$id_lookup} };
 
   my @filter_reasons = @{ $filters };
 
@@ -769,12 +780,15 @@ sub get_variant {
 
   printf "%-10s %-s\n",        "ID:",     $id_lookup;
   printf "%-10s %-s\n",       "TYPE:",   $sv_type;
-  $chr2 ? printf "%-10s %-s\n",    "CHROM1:",   $chr : printf "%-10s %-s\n",  "CHROM:",  $chr;
+  printf "%-10s %-s\n",       "GENOTYPE:",   $genotype;
+  $chr2 ?
+  printf "%-10s %-s\n",       "CHROM1:",   $chr :
+  printf "%-10s %-s\n",       "CHROM:",  $chr;
   printf "%-10s %-s\n",       "CHROM2:",   $chr2 if $chr2;
   printf "%-10s %-s\n",       "START:",   $start;
   printf "%-10s %-s\n",       "STOP:",    $stop;
   ($chr2 and ($chr2 ne $chr) ) ? printf "%-10s %-s\n",   "IGV:",     "$chr:$start" : printf "%-10s %-s\n", "IGV:", "$chr:$start-$stop";
-  printf "%-10s %-s\n",       "LENGTH:",   $SV_length;
+  printf "%-10s %-s\n",       "LENGTH:",   $SV_length unless $chr2 ne $chr2;
   printf "%-10s %-s\n",       "PE:",      $PE;
   printf "%-10s %-s\n",       "SR:",    $SR;
   printf "%-10s %-s\n",       "QUAL:",     $quality_score;
@@ -825,7 +839,7 @@ sub dump_variants {
 
       ($query_start, $query_stop) = split(/-/, $query_region);
       $query_start =~ s/,//g;
-      $query_stop =~ s/,//g;
+      $query_stop  =~ s/,//g;
 
       say "Limiting search to SVs within region '$chromosome:$query_start-$query_stop'";
 
@@ -844,7 +858,7 @@ sub dump_variants {
         @{ $SVs->{$a}}[1] <=> @{ $SVs->{$b}}[1]
       }  keys %{ $SVs } ){
 
-    my ( $chr, $start, $id, $ref, $alt, $quality_score, $filt, $info_block, $format_block, $tumour_info_block, $normal_info_block, $sv_type, $SV_length, $stop, $chr2, $SR, $PE, $ab, $filters, $samples ) = @{ $SVs->{$_} };
+    my ( $chr, $start, $id, $ref, $alt, $quality_score, $filt, $info_block, $format_block, $tumour_info_block, $normal_info_block, $sv_type, $SV_length, $stop, $chr2, $SR, $PE, $ab, $filters, $genotype, $samples ) = @{ $SVs->{$_} };
 
     $id = $_;
 
@@ -892,12 +906,15 @@ sub dump_variants {
       if ($type ne 'snp'){
         printf "%-10s %-s\n",        "ID:",         $id;
         printf "%-10s %-s\n",        "TYPE:",       $sv_type;
-        $chr2 ? printf "%-10s %-s\n",    "CHROM1:", $chr : printf "%-10s %-s\n",  "CHROM:",  $chr;
+        printf "%-10s %-s\n",       "GENOTYPE:",   $genotype;
+        $chr2 ?
+        printf "%-10s %-s\n",       "CHROM1:",   $chr :
+        printf "%-10s %-s\n",       "CHROM:",  $chr;
         printf "%-10s %-s\n",       "CHROM2:",      $chr2 if $chr2;
         printf "%-10s %-s\n",       "START:",       $start;
         printf "%-10s %-s\n",       "STOP:",        $stop;
         ($chr2 and ($chr2 ne $chr) ) ? printf "%-10s %-s\n",   "IGV:",     "$chr:$start" : printf "%-10s %-s\n", "IGV:", "$chr:$start-$stop";
-        printf "%-10s %-s\n",       "LENGTH:",      $SV_length;
+        printf "%-10s %-s\n",       "LENGTH:",   $SV_length unless $chr2 ne $chr2;
         printf "%-10s %-s\n",       "PE:",          $PE;
         printf "%-10s %-s\n",       "SR:",          $SR;
         printf "%-10s %-s\n",       "QUAL:",        $quality_score;
@@ -1000,31 +1017,26 @@ sub write_summary {
 
   my %connected_bps;
 
-  print $info_file join("\t", "source", "type", "chromosome1", "bp1", "chromosome2", "bp2", "split reads", "pe reads", "id", "length(Kb)", "position", "consensus|type", "microhomology", "configuration", "allele_frequency", "mechanism|log2(cnv)") . "\n";
+  print $info_file join("\t", "source", "type", "chromosome1", "bp1", "chromosome2", "bp2", "split_reads", "disc_reads", 'genotype', "id", "length(Kb)", "position", "consensus|type", "microhomology", "configuration", "allele_frequency", "mechanism|log2(cnv)") . "\n";
 
   for ( sort { @{ $SVs->{$a}}[0] cmp @{ $SVs->{$b}}[0] or
         @{ $SVs->{$a}}[1] <=> @{ $SVs->{$b}}[1]
       }  keys %{ $SVs } ){
-    my ( $chr, $start, $id, $ref, $alt, $quality_score, $filt, $info_block, $format_block, $tumour_info_block, $normal_info_block, $sv_type, $SV_length, $stop, $chr2, $SR, $PE, $ab, $filters, $samples ) = @{ $SVs->{$_} };
+    my ( $chr, $start, $id, $ref, $alt, $quality_score, $filt, $info_block, $format_block, $tumour_info_block, $normal_info_block, $sv_type, $SV_length, $stop, $chr2, $SR, $PE, $ab, $filters, $genotype, $samples ) = @{ $SVs->{$_} };
 
-    if (scalar @{$filters} == 0){
+    if ( @$filters == 0){
 
       my $bp_id = $_;
       if ($bp_id =~ /_/){
         ($bp_id) = $bp_id =~ /(.+)?_/;
       }
+
       # flatten connected bps into 1 id for summary
       next if $connected_bps{$bp_id}++;
 
       my ($length_in_kb) = sprintf("%.1f", abs($SV_length)/1000);
 
       $ab = sprintf("%.2f", $ab) unless $type eq 'novobreak' or $ab eq '.';
-
-      # Don't include DELS < 1kb with split read support == 0
-      if ( ( $sv_type eq "DEL" and $length_in_kb < 1 ) and $SR == 0 ){
-        say "Ommiting SV '$_' from '$name\.filtered.summary.txt' as $sv_type with length: $length_in_kb and split read support of $SR";
-        next;
-      }
 
       my ($consensus, $mh_length, $ct, $rdr, $rde );
 
@@ -1044,14 +1056,6 @@ sub write_summary {
       else{
         $rdr = '-';
       }
-
-      # # Read depth evidence (lumpy)
-      # if ($info_block =~ /BD=(\d+)/){
-      #   $rde = $1;
-      # }
-      # else {
-      #   $rde = '-';
-      # }
 
       # Microhology length (delly)
       if ($info_block =~ /HOMLEN=(\d+);/){
@@ -1073,10 +1077,10 @@ sub write_summary {
       }
 
       if ( $chr2 and ($chr2 ne $chr) ){
-        print $info_file join("\t", $type, $sv_type, $chr, $start, $chr2, $stop, $SR, $PE, $_, $length_in_kb, "$chr:$start $chr2:$stop", $consensus, $mh_length, $ct, $ab, $rdr ) . "\n";
+        print $info_file join("\t", $type, $sv_type, $chr, $start, $chr2, $stop, $SR, $PE, $genotype, $_, $length_in_kb, "$chr:$start $chr2:$stop", $consensus, $mh_length, $ct, $ab, $rdr ) . "\n";
       }
       else {
-        print $info_file join("\t", $type, $sv_type, $chr, $start, $chr, $stop, $SR, $PE, $_, $length_in_kb, "$chr:$start-$stop", $consensus, $mh_length, $ct, $ab, $rdr) . "\n";
+        print $info_file join("\t", $type, $sv_type, $chr, $start, $chr, $stop, $SR, $PE, $genotype, $_, $length_in_kb, "$chr:$start-$stop", $consensus, $mh_length, $ct, $ab, $rdr) . "\n";
       }
 
     }
@@ -1087,7 +1091,7 @@ sub write_summary {
 sub region_exclude_filter {
   my ( $chr1, $bp1, $chr2, $bp2, $exclude_regions, $filter_reasons ) = @_;
 
-  my $slop = 500;
+  my $slop = 250;
 
   my @filter_reasons = @{ $filter_reasons };
 
@@ -1098,11 +1102,13 @@ sub region_exclude_filter {
 
     if ( $bp1 >= ($start - $slop) and $bp1 <= ($stop + $slop) ) {
       next unless $chromosome eq $chr1;
-      push @filter_reasons, 'bp1_in_unmappable_region=' . "$chromosome:$bp1\_in:" . $start . '-' . $stop;
+      push @filter_reasons, 'bp1 in excluded region=' . "$chromosome:$bp1 in:" . $start . '-' . $stop;
+      last;
     }
     if ( $bp2 >= ($start - $slop) and $bp2 <= ($stop + $slop) ) {
       next unless $chromosome eq $chr2;
-      push @filter_reasons, 'bp2_in_unmappable_region=' . "$chromosome:$bp2\_in:" . $start . '-' . $stop;
+      push @filter_reasons, 'bp2 in excluded region=' . "$chromosome:$bp2 in:" . $start . '-' . $stop;
+      last;
     }
   }
   return (\@filter_reasons);
@@ -1110,16 +1116,122 @@ sub region_exclude_filter {
 
 
 sub read_support_filter {
-  my ($tumour_read_support, $read_support_flag, $filter_reasons ) = @_;
+  my ($tumour_read_support, $read_support_flag, $sample, $filter_reasons ) = @_;
   my @filter_reasons = @{ $filter_reasons };
 
   # Filter if tum reads below specified threshold [default=4]
   if ( $tumour_read_support < $read_support_flag ){
-    push @filter_reasons, 'tumour_reads<' . $read_support_flag . '=' . $tumour_read_support;
+    push @filter_reasons, "Read support in '$sample'<" . $read_support_flag . '=' . $tumour_read_support;
   }
   return(\@filter_reasons);
 }
 
+
+sub read_depth_filter {
+  my ($tumour_name, $control_name, $tum_depth, $norm_depth, $depth_threshold, $filter_reasons) = @_;
+
+  my @filter_reasons = @{ $filter_reasons };
+
+  if ( $norm_depth < $depth_threshold ){
+    push @filter_reasons, "$control_name has depth < " . $depth_threshold . '=' . $norm_depth;
+  }
+
+  if ( $tum_depth < $depth_threshold ){
+    push @filter_reasons, "$tumour_name has depth < " . $depth_threshold . '=' . $tum_depth;
+  }
+
+return(\@filter_reasons);
+}
+
+
+sub somatic_filter {
+
+  my ($id, $tumour_name, $control_name, $PON, $filter_reasons, $PON_info) = @_;
+
+  my %PON_info = % { $PON_info };
+  my @filter_reasons = @{ $filter_reasons };
+
+  # # Filter if ANY of the panel of normals (but not direct control) are NOT 'GT = 0/0' (hom ref)
+  # for my $normal (@normals[1..$#normals]){
+  #   if ( $sample_info{$id}{$normal}{'GT'} eq '1/1' or $sample_info{$id}{$normal}{'GT'} eq '0/1' ){
+  #     push @filter_reasons, "PON member '$normal' not homozygous for reference genotype=" . $sample_info{$id}{$normal}{'GT'};
+  #   }
+  #
+  #
+  #
+  #   if ( $sample_info{$id}{$control_name}{'QA'} != 0 and $sample_info{$id}{$normal}{'QA'} == 0 and $sample_info{$id}{$tumour_name}{'QA'} == 0 ){
+  #     push @filter_reasons, "Somatic NORMAL event '$control_name'=" . $sample_info{$id}{$control_name}{'GT'};
+  #   }
+  #
+  # }
+  #
+  # if ( $sample_info{$id}{$tumour_name}{'GT'} eq '0/0' and $sample_info{$id}{$control_name}{'GT'} ne '0/0' ){
+  #     push @filter_reasons, "Event exclusive to normal '$control_name'=" . $sample_info{$id}{$control_name}{'GT'};
+  #   }
+
+  for my $normal (keys %PON_info) {
+
+    if ( $PON_info{$normal}[1] eq '1/1' or $PON_info{$normal}[1] eq '0/1' ){
+      push @filter_reasons, "PON member '$normal' not homozygous for reference genotype=" . $PON_info{$normal}[1];
+    }
+    # Filter if any quality reads support var in any normal in PON
+    if ( $PON_info{$normal}[0] != 0){
+      push @filter_reasons, "PON member '$normal' has quality support for alternative genotype=" . $PON_info{$normal}[0];
+    }
+
+  }
+
+  return(\@filter_reasons);
+}
+
+
+sub genotype {
+  my ( $id, $t_hq_alt_reads, $c_alt_reads, $n_hq_alt_reads, $PON, $filter_reasons ) = @_;
+
+  my $genotype = 'NA';
+  my $germline_recurrent = 0;
+  my $tum = 0;
+  my $norm = 0;
+
+  my @filter_reasons = @{ $filter_reasons };
+
+  if ( $t_hq_alt_reads > 0){
+    $tum = 1;
+  }
+  if ( $n_hq_alt_reads > 0){
+    $norm = 1;
+  }
+  if ( $c_alt_reads == 0){
+    $norm = 0;
+  }
+
+  my %PON_alt_reads = %{ $PON };
+
+  for my $normal ( keys %PON_alt_reads ){
+    if ( $PON_alt_reads{$normal} > 0){
+      $germline_recurrent = 1;
+    }
+  }
+
+  if ( $tum and not ($norm or $germline_recurrent) ){
+    $genotype = 'somatic_tumour';
+  }
+  elsif ( $tum and $norm and not $germline_recurrent ){
+    $genotype = 'germline_private';
+  }
+  elsif ( $tum or $norm and $germline_recurrent ){
+    $genotype = 'germline_recurrent';
+  }
+  elsif ( $norm and not ($tum or $germline_recurrent) ){
+    $genotype = 'somatic_normal';
+  }
+  elsif ( $germline_recurrent and not ($tum or $norm) ){
+    $genotype = 'PON_var';
+    push @filter_reasons, "PON member has quality support for alternative genotype=" . 1;
+  }
+
+  return($genotype, \@filter_reasons);
+}
 
 # Only for Drosophila so far...
 sub chrom_filter {
