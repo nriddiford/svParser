@@ -194,7 +194,7 @@ sub parse {
     $SV_length = abs($SV_length);
 
     if ( $filter_flags{'su'} ){
-      if ( ( $SV_type eq "DEL" or $SV_type eq "INV" ) and ( $SV_length < 1000 and $t_SR == 0 ) ){
+      if ( ($SV_type eq "DEL" or $SV_type eq "INV") and ( $SV_length < 1000 and $t_SR == 0 ) ){
           push @{$filter_list}, "$SV_type < 1kb with no split read support and PE support < 2*$filter_flags{'su'}=" . $t_PE if $t_PE <= $filter_flags{'su'} * 2;
         }
       if ( ($SV_type eq "BND" and $chr eq $chr2) and ( $SV_length < 1000 and $t_SR == 0 ) ){
@@ -207,7 +207,7 @@ sub parse {
     }
 
     $SVs{$id} = [ @fields[0..10], $SV_type, $SV_length, $stop, $chr2, $t_SR, $t_PE, $ab, $filter_list, $genotype, \@samples ];
-    $info{$id} = [ \@format, \%format_long, \%info_long, \@tumour_parts, \@normal_parts, \%information, \%sample_info ];
+    $info{$id} = [ [@format], [%format_long], [%info_long], [@tumour_parts], [@normal_parts], [%information], [%sample_info] ];
 
     if (@$filter_list == 0){
       $filtered_SVs{$.} = $_;

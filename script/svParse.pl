@@ -3,11 +3,8 @@
 use strict;
 use warnings;
 
-use 5.18.2;
-
 use FindBin qw/ $Bin /;
 use FindBin qw/ $Script /;
-
 use File::Spec;
 use lib File::Spec->catdir($FindBin::Bin, '..', 'bin/');
 
@@ -15,12 +12,11 @@ use svParser;
 
 use feature qw/ say /;
 use Data::Dumper;
-use Getopt::Long qw/ GetOptions /;
-
 use File::Basename;
 use File::Path qw/ make_path / ;
-
 use File::Slurp;
+
+use Getopt::Long qw/ GetOptions /;
 
 my $vcf_file;
 my $help;
