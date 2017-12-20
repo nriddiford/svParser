@@ -20,19 +20,11 @@ $chrom_filt{$_} = 1 for (@keys);
 my ($vars_in, $allele_bal, $fusions_in, $read_support_filter) = @ARGV;
 
 my ($var_ref, $clustered_events_ref) = extractVars($vars_in);
-
-# my $allele_bal = shift;
 my $al_ref = extractAlleles($allele_bal);
-
-# my $fusions_in = shift;
 my ($line_ref) = extractFusions($fusions_in, $var_ref, $al_ref, $clustered_events_ref);
 
 my @name_fields = split( /\./, basename($vars_in) );
 my $dir = "$Bin/../filtered/summary/";
-
-# my $read_support_filter = shift;
-
-say $read_support_filter;
 
 open my $out, '>', "$dir" . $name_fields[0] . ".meerkat.filtered.summary.txt";
 print $out join("\t", "source", "type", "chromosome1", "bp1", "chromosome2", "bp2", "split_reads", "disc_reads", 'genotype', "id", "length(Kb)", "position", "consensus|type", "microhomology", "configuration", "allele_frequency", "mechanism|log2(cnv)") . "\n";
