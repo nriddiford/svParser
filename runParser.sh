@@ -23,9 +23,6 @@ clean=0
 stats=0
 nstats=0
 germline=0
-
-## Change germline to somatic
-
 while getopts 'fmacsnhg' flag; do
   case "${flag}" in
     f)  filter=1 ;;
@@ -109,14 +106,6 @@ then
       echo "perl $script_bin/parseMeerkat.pl ${meer_files[i]}.*.variants ${meer_files[i]}.*_af ${meer_files[i]}.*.fusions 4"
       perl $script_bin/parseMeerkat.pl ${meer_files[i]}.*.variants ${meer_files[i]}.*_af ${meer_files[i]}.*.fusions 4
     done
-
-    # Maybe add this after clustering, as this gets in the way of proper clustering:
-
-    # callr st  end event
-    # lumpy 10  200 1
-    # novo  10  201 1
-    # cnv   10  250 2
-    # meer  10  200 3
 
     for cnv_file in data/cnv/*.txt
     do
