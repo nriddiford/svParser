@@ -10,6 +10,10 @@ use lib File::Spec->catdir($FindBin::Bin, '..', 'bin/');
 
 use svParser;
 
+use Exporter;
+our @ISA = 'Exporter';
+our @EXPORT = qw(@a @b);
+
 use feature qw/ say /;
 use Data::Dumper;
 use File::Basename;
@@ -212,7 +216,7 @@ usage: $Script [-h] [-v vcf ] [-p] [-t str] [-i str] [-d] [-f key=val] [-c str]
 
 svParser
 author: Nick Riddiford (nick.riddiford\@curie.fr)
-version: v1.0
+version: $VERSION
 description: Browse vcf output from several SV callers LUMPY, DELLY and novobreak
 
 arguments:

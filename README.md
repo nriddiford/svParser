@@ -16,6 +16,7 @@ A good place to start is with a summary of variants called in VCF file:
 `perl script/svParse.pl -v data/NA12878.NA12891.NA12892.vcf -t l`
 
 ## Filtering variants
+The defualt behaviour 
 The real power of svParser comes from its ability to easily filter variant calls on anumber of different criteria, and quickly assess how this affects your callset.
 It is highly recommended to play around with differnt combinations of filters that suit your needs. Filter flags can be used with any of the other options aid in fine tuning
 
@@ -25,7 +26,7 @@ It is highly recommended to play around with differnt combinations of filters th
 * `rdr`    - supporting reads/tumour depth - a value of 1 would mean all reads support variant. Expects integer/float e.g. `-f rdr=0.2`
 * `sq`     - phred-scaled variant likelihood. Expects integer e.g. `-f sq=10`
 * `chr`    - filter out chromosomes not in `chroms.txt` (if not provided, defaults to chromosomes 2L 2R 3L 3R 4 X Y). Expects binary e.g. `-f chr=1`
-* `g=1`    - only keep germline events & remove events that are common to multiple samples in a PON. Writes to './germline' if used with `--print`. Expects binary e.g. `-f g=1`
+* `s=1`    - only keep somatic events. Expects binary e.g. `-f s=1`
 * `a`      - apply default combination of filters. Equivalent to (e.g.):
 
  ```

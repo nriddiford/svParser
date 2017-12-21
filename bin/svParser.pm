@@ -8,6 +8,12 @@ use autodie;
 use feature qw/ say /;
 use Data::Printer;
 
+use Exporter;
+our @ISA = 'Exporter';
+our @EXPORT = qw( $VERSION );
+our $VERSION = '1.0';
+
+
 sub typer {
   my ($file, $type, $exclude_regions, $chrom_keys, $filters ) = @_;
 
