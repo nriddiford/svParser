@@ -6,7 +6,6 @@ use warnings;
 use autodie;
 
 use feature qw/ say /;
-use Data::Dumper;
 use Data::Printer;
 
 sub typer {
@@ -29,6 +28,7 @@ sub typer {
     $type = 'novobreak';
     parse($file, $type, $exclude_regions, $chrom_keys, $filters);
   }
+
   elsif ($type eq 'snp'){
     say "Forcing parsing of $file";
     $type = 'snp';
@@ -36,7 +36,6 @@ sub typer {
   }
 
   elsif ( $type eq 'guess' ){
-
     if ( `grep "source=LUMPY" $file` ){
       say "Recognised $file as a Lumpy file";
       $type = 'lumpy';
@@ -62,8 +61,9 @@ sub typer {
   }
 }
 
+
 sub parse {
-  my ($file, $type, $exclude_regions, $chrom_keys, $filter_flags ) = @_;
+  my ($file, $type, $exclude_regions, $chrom_keys, $filter_flags) = @_;
   open my $in, '<', $file or die $!;
 
   my @headers;
@@ -158,7 +158,6 @@ sub parse {
     }
 
     my ($SV_type) = $info_block =~ /SVTYPE=(.*?);/;
-
     my ($SV_length, $chr2, $stop, $t_SR, $t_PE, $ab, $genotype, $filter_list);
 
     if ($type eq 'lumpy'){
@@ -183,8 +182,6 @@ sub parse {
       $chr2 = $chr;
       $filter_list = \@filter_reasons;
     }
-
-    # Common filters
 
     if ( $filter_flags{'chr'} ){
       $filter_list = chrom_filter( $chr, $chr2, $filter_list, $chrom_keys );
@@ -242,7 +239,7 @@ sub lumpy {
     $t_hq_alt_reads = $sample_info{$id}{$tumour}{'SR'} + $sample_info{$id}{$tumour}{'PE'};
     $n_hq_alt_reads = $sample_info{$id}{$control}{'SR'} + $sample_info{$id}{$control}{'PE'};
   }
-  my $c_alt_reads    = $sample_info{$id}{$control}{'SU'};
+  my $c_alt_reads = $sample_info{$id}{$control}{'SU'};
 
   my %PON_alt_reads;
 
