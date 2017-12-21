@@ -406,33 +406,22 @@ sub lumpy {
   ######################
 
   if ( $filter_flags{'dp'} and $sample_info{$id}{$tumour}{'DP'} ){
-
     my $t_DP =  $sample_info{$id}{$tumour}{'DP'};
 
     if (@samples > 1){ # In case there are no control samples...
-
       my $c_DP =  $sample_info{$id}{$control}{'DP'};
-
       $c_DP = 0 if $c_DP eq '.';
+
       # Flag if either control or tumour has depth < 10 at site
       $filters = read_depth_filter($tumour, $control, $t_DP, $c_DP, $filter_flags{'dp'}, \@filter_reasons);
-
-      # if ( $filter_flags{'dp'} and $c_DP <= $filter_flags{'dp'} ){
-      #   push @filter_reasons, "$control has depth < " . $filter_flags{'dp'} . '=' . $c_DP;
-      # }
     }
-    #
-    # if ( $filter_flags{'dp'} and $t_DP <= $filter_flags{'dp'} ){
-    #   push @filter_reasons, "$tumour has depth < " . $filter_flags{'dp'} . '=' . $t_DP;
-    # }
     @filter_reasons = @{ $filters };
 
-  # Subtract control reads from tumour reads
-  # If this number of SU is less than 10% of tumour read_depth then filter
+    # Subtract control reads from tumour reads
+    # If this number of SU is less than 10% of tumour read_depth then filter
     if ( exists $filter_flags{'rdr'} and ( $tumour_read_support - $pc_direct_control_read_support ) / ( $t_DP + 0.01 ) < $filter_flags{'rdr'} ){ # Maybe this is too harsh...
       push @filter_reasons, 'tumour_reads/tumour_depth<' . ($filter_flags{'rdr'}*100) . "%" . '=' . $tumour_read_support . "/" . $t_DP if $filter_flags{'t'};
       push @filter_reasons, 'normal_reads/normal_depth<' . ($filter_flags{'rdr'}*100) . "%" . '=' . $tumour_read_support . "/" . $t_DP if $filter_flags{'n'};
-
     }
 
   }
