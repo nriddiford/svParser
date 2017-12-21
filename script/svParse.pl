@@ -10,10 +10,6 @@ use lib File::Spec->catdir($FindBin::Bin, '..', 'bin/');
 
 use svParser;
 
-use Exporter;
-our @ISA = 'Exporter';
-our @EXPORT = qw(@a @b);
-
 use feature qw/ say /;
 use Data::Dumper;
 use File::Basename;
