@@ -194,6 +194,7 @@ then
           echo "Updating 'all_samples_false_calls.txt' with false positive calls from annotated files"
           echo "Updating 'all_samples_whitelist.txt' with whitelisted calls from annotated files"
           python $script_bin/clean.py -f $annofile
+        fi
       done
       rm *cleaned_SVs.txt
     # fi
