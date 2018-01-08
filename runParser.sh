@@ -191,6 +191,7 @@ then
       for annofile in *_annotated_SVs.txt
       do
         if [ -e "$annofile" ]
+        then
           echo "Updating 'all_samples_false_calls.txt' with false positive calls from annotated files"
           echo "Updating 'all_samples_whitelist.txt' with whitelisted calls from annotated files"
           python $script_bin/clean.py -f $annofile
