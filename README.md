@@ -2,10 +2,10 @@
 
 Parse VCF output from structural variant callers LUMPY and DELLY (also supports input from novoBreak).
 
-Run without options or with `--help` or `-h` to print usage statement  
+Run without options or with `--help` or `-h` to print usage statement
 Variants called by LUMPY must also be genotyped by [SVTyper](https://github.com/hall-lab/svtyper)
 
-# Parsing structural variants from VCF files called by LUMPY DELLY and novoBreak
+## Parsing structural variants from VCF files called by LUMPY DELLY and novoBreak
 
 ## Summarise variants
 
@@ -42,7 +42,7 @@ It is highly recommended to play around with differnt combinations of filters th
  -f su=4 \     # min 4 reads supporting event in tumour
  -f dp=10 \    # min read depth of 10 in both tumour/normal
  -f rdr=0.1 \  # min 10% of reads at breakpoint supporting variant
- -f sq=10 \    # min likelihood of 10
+ -f sq=10 \    # min Log10 likelihood of 10
  -f chr=1      # filter out calls on chromosomes not in 'chroms.txt'
  ```
 
