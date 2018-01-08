@@ -205,15 +205,15 @@ sub annotate_SVs {
     my $hit_bp2 = "intergenic";
 
     if ($type eq "DEL" or $type eq "DUP" or $type eq 'TANDUP'){
-      ($hit_bp1, $hit_genes, $hits) = getbps('bp1', $event, $type, $chrom1, $bp1, $hit_bp1, $length, \@hit_genes, \%hits);
+      ($hit_bp1, $hit_genes, $hits) = getbps('bp1', $event, $type, $genotype, $chrom1, $bp1, $hit_bp1, $length, \@hit_genes, \%hits);
       ($hit_genes, $hits)           = getgenes($chrom1, $bp1, $bp2, $hit_genes, $hits);
-      ($hit_bp2, $hit_genes, $hits) = getbps('bp2', $event, $type, $chrom2, $bp2, $hit_bp2, $length, $hit_genes, $hits);
+      ($hit_bp2, $hit_genes, $hits) = getbps('bp2', $event, $type, $genotype, $chrom2, $bp2, $hit_bp2, $length, $hit_genes, $hits);
       @hit_genes = @{ $hit_genes };
       %hits = %{ $hits };
     }
     else {
-      ($hit_bp1, $hit_genes, $hits) = getbps('bp1', $event, $type, $chrom1, $bp1, $hit_bp1, $length, \@hit_genes, \%hits);
-      ($hit_bp2, $hit_genes, $hits) = getbps('bp2', $event, $type, $chrom2, $bp2, $hit_bp2, $length, $hit_genes, $hits);
+      ($hit_bp1, $hit_genes, $hits) = getbps('bp1', $event, $type, $genotype, $chrom1, $bp1, $hit_bp1, $length, \@hit_genes, \%hits);
+      ($hit_bp2, $hit_genes, $hits) = getbps('bp2', $event, $type, $genotype, $chrom2, $bp2, $hit_bp2, $length, $hit_genes, $hits);
       @hit_genes = @{ $hit_genes };
       %hits = %{ $hits };
     }
@@ -300,7 +300,7 @@ sub getgenes {
 }
 
 sub getbps {
-  my ($bp_id, $event, $type, $chrom, $bp, $hit_bp, $length, $hit_genes, $hits) = @_;
+  my ($bp_id, $event, $type, $genotype, $chrom, $bp, $hit_bp, $length, $hit_genes, $hits) = @_;
 
   my @hit_genes = @{ $hit_genes };
   my %hits = %{$hits};
