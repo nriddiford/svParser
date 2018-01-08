@@ -143,7 +143,7 @@ sub annotate_SVs {
       }
     }
 
-    my ($event, $source, $type, $chrom1, $bp1, $chrom2, $bp2, undef, undef, undef, $length) = @cells[0..10];
+    my ($event, $source, $type, $chrom1, $bp1, $chrom2, $bp2, undef, undef, undef, undef, $length) = @cells[0..11];
 
     # Check to see if the SV has already been annotated - print and skip if next
     if ( $cells[18] and $cells[18] ne ' ' and $cells[18] ne '-' and $reannotate ){
@@ -152,7 +152,7 @@ sub annotate_SVs {
 
       next if $events{$sample}{$event}++;
 
-      my (undef, undef, undef, undef, undef, undef, $bp1_locus, $bp2_locus, $affected_genes, undef, undef) = @cells[11..21];
+      my (undef, undef, undef, undef, undef, undef, $bp1_locus, $bp2_locus, $affected_genes, undef, undef) = @cells[12..21];
 
       my @genes;
       if ($affected_genes =~ /\,/){
