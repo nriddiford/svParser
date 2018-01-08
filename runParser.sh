@@ -174,13 +174,9 @@ features=/Users/Nick_curie/Documents/Curie/Data/Genomes/Dmel_v6.12/Features/dmel
 if [[ $annotate -eq 1 ]]
 then
 
-  if [ -f all_genes.txt ]
+  if [ -f all_genes.txt ] && [ -f all_bps.txt ]
   then
     rm all_genes.txt
-  fi
-
-  if [ -f all_bps.txt ]
-  then
     rm all_bps.txt
   fi
 
@@ -188,15 +184,15 @@ then
   then
     # if [ -f *_annotated_SVs.txt ]
     # then
-      for annofile in *_annotated_SVs.txt
-      do
-        if [ -e "$annofile" ]
-        then
-          echo "Updating 'all_samples_false_calls.txt' with false positive calls from annotated files"
-          echo "Updating 'all_samples_whitelist.txt' with whitelisted calls from annotated files"
-          python $script_bin/clean.py -f $annofile
-        fi
-      done
+    for annofile in *_annotated_SVs.txt
+    do
+      if [ -e "$annofile" ]
+      then
+        echo "Updating 'all_samples_false_calls.txt' with false positive calls from annotated files"
+        echo "Updating 'all_samples_whitelist.txt' with whitelisted calls from annotated files"
+        python $script_bin/clean.py -f $annofile
+      fi
+    done
       rm *cleaned_SVs.txt
     # fi
   fi
