@@ -48,7 +48,6 @@ fi
 
 script_bin=/Users/Nick_curie/Desktop/svParser/script # work
 
-
 # Change to the bed file to filter svs called in unmappable regions
 exclude_file=/Users/Nick_curie/Documents/Curie/Data/Genomes/Dmel_v6.12/Mappability/dmel6_unmappable.bed
 
@@ -188,8 +187,8 @@ then
     do
       if [ -e "$annofile" ]
       then
-        echo "Updating 'all_samples_false_calls.txt' with false positive calls from annotated files"
-        echo "Updating 'all_samples_whitelist.txt' with whitelisted calls from annotated files"
+        echo "Updating 'all_samples_false_calls.txt' with false positive calls from $annofile"
+        echo "Updating 'all_samples_whitelist.txt' with whitelisted calls from $annofile"
         python $script_bin/clean.py -f $annofile
       fi
     done
