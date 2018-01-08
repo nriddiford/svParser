@@ -2,7 +2,7 @@
 
 Parse VCF output from structural variant callers LUMPY and DELLY (also supports input from novoBreak).
 
-Run without options or with `--help` or `-h` to print usage statement
+Run without options or with `--help` or `-h` to print usage statement  
 Variants called by LUMPY must also be genotyped by [SVTyper](https://github.com/hall-lab/svtyper)
 
 # Parsing structural variants from VCF files called by LUMPY DELLY and novoBreak
