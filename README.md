@@ -1,9 +1,7 @@
 # svParser
 
 Parse VCF output from structural variant callers LUMPY and DELLY (also supports input from novoBreak).
-
 Run without options or with `--help` or `-h` to print usage statement
-Variants called by LUMPY must also be genotyped by [SVTyper](https://github.com/hall-lab/svtyper)
 
 ## Parsing structural variants from VCF files called by LUMPY DELLY and novoBreak
 
@@ -23,6 +21,8 @@ The defualt behaviour of svParser is to consider all variants present in a VCF f
 * germline_private - variants with high quality read support in both a tumour and normal sample but NOT in a any samples in a PON
 * somatic_normal - variants with high quality read support in normal sample, but not in tumour sample
 * somatic_tumour - variants with high quality read support in tumour sample, but not in normal sample
+
+Variants called by LUMPY must also be genotyped by [SVTyper](https://github.com/hall-lab/svtyper)
 
 The real power of svParser comes from its ability to easily filter variant calls on anumber of different criteria, and quickly assess how this affects your callset.
 It is highly recommended to play around with differnt combinations of filters that suit your needs. Filter flags can be used with any of the other options aid in fine tuning
