@@ -146,7 +146,8 @@ sub annotate_SVs {
     my ($event, $source, $type, $chrom1, $bp1, $chrom2, $bp2, undef, undef, undef, $length) = @cells[0..10];
 
     # Check to see if the SV has already been annotated - print and skip if next
-    if ( $cells[17] and $cells[17] ne ' ' and $cells[17] ne '-' and $reannotate ){
+    #### should be $cells[18] - 5.1.18
+    if ( $cells[18] and $cells[18] ne ' ' and $cells[18] ne '-' and $reannotate ){
 
       print $annotated_svs "$_\n";
 
@@ -190,10 +191,11 @@ sub annotate_SVs {
 
       next;
     }
+
     # if it hasn't been annotated, trim off blank cells and proceed
     elsif ( $reannotate or $whitelist ){
       no warnings;
-      $_ = join("\t", @cells[0..16]);
+      $_ = join("\t", @cells[0..17]);
     }
 
     my (%hits, $hits);

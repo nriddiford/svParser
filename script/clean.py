@@ -29,7 +29,7 @@ def remove_false_positives(false_calls_file, input_file, clean_output):
     i = 1
     filtered_calls = 0
     whitelisted_calls = 0
-    with open(false_calls_file, 'a+') as false_calls, open(true_calls_file, 'a+') as true_calls, open(input_file,'U') as infile, open(clean_output, 'w') as clean_files:
+    with open(false_calls_file, 'a+') as false_calls, open(true_calls_file, 'a+') as true_calls, open(input_file, 'U') as infile, open(clean_output, 'w') as clean_files:
         false_calls.seek(0)
         seen_lines = {false_line.rstrip() for false_line in false_calls}
 
