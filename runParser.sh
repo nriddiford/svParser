@@ -84,19 +84,19 @@ then
   else
     for lumpy_file in data/lumpy/*.vcf
     do
-      echo "perl $script_bin/svParse.pl -v $lumpy_file -f a -t l -p"
+      echo "perl $script_bin/svParse.pl -v $lumpy_file -t l -f chr=1 -f su=4 -f dp=10 -f rdr=0.1 -f sq=10 -e $exclude_file -p"
       perl $script_bin/svParse.pl -v $lumpy_file -t l -f chr=1 -f su=4 -f dp=10 -f rdr=0.1 -f sq=10 -e $exclude_file -p
     done
 
     for delly_file in data/delly/*.vcf
     do
-      echo "perl $script_bin/svParse.pl -v $delly_file -f a -t d -p"
+      echo "perl $script_bin/svParse.pl -v $delly_file -t d -f chr=1 -f su=4 -f dp=10 -f rdr=0.1 -f sq=10 -e $exclude_file -p"
       perl $script_bin/svParse.pl -v $delly_file -t d -f chr=1 -f su=4 -f dp=10 -f rdr=0.1 -f sq=10 -e $exclude_file -p
     done
 
     for novo_file in data/novobreak/*.vcf
     do
-      echo "perl $script_bin/svParse.pl -v $novo_file -f a -t n -p"
+      echo "perl $script_bin/svParse.pl -v $novo_file -t n -f chr=1 -f su=4 -f dp=10 -f rdr=0.1 -f sq=10 -e $exclude_file -p"
       perl $script_bin/svParse.pl -v $novo_file -t n -f chr=1 -f su=4 -f dp=10 -f rdr=0.1 -f sq=10 -e $exclude_file -p
     done
 
