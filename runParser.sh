@@ -186,16 +186,17 @@ then
 
   if [ -f all_samples_false_calls.txt ]
   then
-    if [ -f *_annotated_SVs.txt ]
-    then
+    # if [ -f *_annotated_SVs.txt ]
+    # then
       for annofile in *_annotated_SVs.txt
       do
-        echo "Updating 'all_samples_false_calls.txt' with false positive calls from annotated files"
-        echo "Updating 'all_samples_whitelist.txt' with whitelisted calls from annotated files"
-        python $script_bin/clean.py -f $annofile
+        if [ -e "$annofile" ]
+          echo "Updating 'all_samples_false_calls.txt' with false positive calls from annotated files"
+          echo "Updating 'all_samples_whitelist.txt' with whitelisted calls from annotated files"
+          python $script_bin/clean.py -f $annofile
       done
       rm *cleaned_SVs.txt
-    fi
+    # fi
   fi
 
   for clustered_file in *clustered_SVs.txt
