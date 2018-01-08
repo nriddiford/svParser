@@ -11,7 +11,7 @@ use Data::Printer;
 use Exporter;
 our @ISA = 'Exporter';
 our @EXPORT = qw( $VERSION );
-our $VERSION = '1.0';
+our $VERSION = '1.1';
 
 
 sub typer {
