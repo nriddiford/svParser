@@ -28,7 +28,7 @@ if (@files == 0){
   exit usage();
 }
 
-my $dir = 'merged/';
+my $dir = 'merged';
 # my $dir = "$Bin/../filtered/summary/merged/";
 #
 # eval { make_path($dir) };
