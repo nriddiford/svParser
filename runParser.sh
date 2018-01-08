@@ -174,10 +174,10 @@ features=/Users/Nick_curie/Documents/Curie/Data/Genomes/Dmel_v6.12/Features/dmel
 if [[ $annotate -eq 1 ]]
 then
 
-  if [ -f all_genes.txt ] && [ -f all_bps.txt ]
+  if [ -f "all_genes.txt" ] && [ -f "all_bps.txt" ]
   then
-    rm all_genes.txt
-    rm all_bps.txt
+    rm "all_genes.txt"
+    rm "all_bps.txt"
   fi
 
   if [ -f all_samples_false_calls.txt ]
@@ -201,7 +201,7 @@ then
   do
     echo "Annotating $clustered_file"
     # Should check both files individually
-    if [ -f all_samples_false_calls.txt ] &&  [ -f all_samples_whitelist.txt ]
+    if [ -f all_samples_false_calls.txt ] && [ -f all_samples_whitelist.txt ]
     then
       echo "perl $script_bin/sv2gene.pl -f $features -i $clustered_file -b all_samples_false_calls.txt -w all_samples_whitelist.txt"
       perl $script_bin/sv2gene.pl -f $features -i $clustered_file -b all_samples_false_calls.txt -w all_samples_whitelist.txt
@@ -239,15 +239,16 @@ then
     python $script_bin/clean.py -f $annofile
   done
 
-  if [[ -f 'all_genes_filtered.txt' ]]
+  if [ -f "all_genes_filtered.txt" ] && [ -f "all_bps_filtered.txt" ]
   then
-    rm 'all_genes_filtered.txt'
+    rm "all_genes_filtered.txt"
+    rm "all_bps_filtered.txt"
   fi
 
-  if [[ -f 'all_bps_filtered.txt' ]]
-  then
-    rm 'all_bps_filtered.txt'
-  fi
+  # if [[ -f "all_bps_filtered.txt" ]]
+  # then
+  #   rm "all_bps_filtered.txt"
+  # fi
 
   for clean_file in *cleaned_SVs.txt
   do

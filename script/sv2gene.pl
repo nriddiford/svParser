@@ -143,7 +143,7 @@ sub annotate_SVs {
       }
     }
 
-    my ($event, $source, $type, $chrom1, $bp1, $chrom2, $bp2, undef, undef, undef, undef, $length) = @cells[0..11];
+    my ($event, $source, $type, $chrom1, $bp1, $chrom2, $bp2, undef, undef, $genotype, undef, $length) = @cells[0..11];
 
     # Check to see if the SV has already been annotated - print and skip if next
     if ( $cells[18] and $cells[18] ne ' ' and $cells[18] ne '-' and $reannotate ){
@@ -161,7 +161,7 @@ sub annotate_SVs {
       else{
         push @genes, $affected_genes;
       }
-      print $genes_out join("\t", $event, $sample, $type, $chrom1, $_) . "\n" foreach @genes;
+      print $genes_out join("\t", $event, $sample, $genotype, $type, $chrom1, $_) . "\n" foreach @genes;
 
       $bp1_locus =~ s/"//g;
       $bp2_locus =~ s/"//g;
@@ -185,8 +185,8 @@ sub annotate_SVs {
         $bp2_gene = $bp2_locus;
       }
 
-      print $bp_out join("\t", $event, 'bp1', $sample, $chrom1, $bp1, $bp1_gene, $bp1_feature, $type, $length) . "\n";
-      print $bp_out join("\t", $event, 'bp2', $sample, $chrom2, $bp2, $bp1_gene, $bp2_feature, $type, $length) . "\n";
+      print $bp_out join("\t", $event, 'bp1', $sample, $genotype, $chrom1, $bp1, $bp1_gene, $bp1_feature, $type, $length) . "\n";
+      print $bp_out join("\t", $event, 'bp2', $sample, $genotype, $chrom2, $bp2, $bp1_gene, $bp2_feature, $type, $length) . "\n";
 
       next;
     }
@@ -219,7 +219,7 @@ sub annotate_SVs {
     }
 
     # Does this really append to 'all_genes_filtered'? 12.12.17
-    print $genes_out join("\t", $event, $sample, $type, $chrom1, $_) . "\n" foreach @hit_genes;
+    print $genes_out join("\t", $event, $sample, $genotype, $type, $chrom1, $_) . "\n" foreach @hit_genes;
 
     my $affected_genes = scalar @hit_genes;
     my $joined_genes = join(", ", @hit_genes);
@@ -349,7 +349,7 @@ sub getbps {
 }
   # if ( $reannotate ){
   # Why did all_bps.txt not have the breakpoint id? 12.12.17
-  print $bp_out join("\t", $event, $bp_id, $sample, $chrom, $bp, $bp_gene, $bp_feature, $type, $length) . "\n";
+  print $bp_out join("\t", $event, $bp_id, $sample, $genotype, $chrom, $bp, $bp_gene, $bp_feature, $type, $length) . "\n";
   # }
   # else {
   # print $bp_out join ("\t", $event, $sample, $chrom, $bp, $bp_gene, $bp_feature, $type, $length) . "\n";
