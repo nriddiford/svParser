@@ -22,8 +22,8 @@ sample = base_name.split('_')[0]
 outfile = sample + "_" + "CNVs.txt"
 
 dir = os.path.dirname(__file__)
-# path = os.path.join(dir, '../data/cnv')
-path = os.path.join(dir, '..')
+path = os.path.join(dir, '../data/cnv')
+# path = os.path.join(dir, '..')
 
 output = os.path.join(path, outfile)
 
