@@ -19,7 +19,7 @@ my @name_fields = split( /\_/, basename($cnvs) );
 my $dir = "$Bin/../filtered/summary/";
 
 open my $out, '>', "$dir" . $name_fields[0] . ".cnvseq.filtered.summary.txt";
-print $out join("\t", "source", "type", "chromosome1", "bp1", "chromosome2", "bp2", "split reads", "pe reads", "id", "length(Kb)", "position", "consensus|type", "microhomology", "configuration", "allele_frequency", "mechanism|log2(cnv)") . "\n";
+print $out join("\t", "source", "type", "chromosome1", "bp1", "chromosome2", "bp2", "split_reads", "disc_reads", 'genotype', "id", "length(Kb)", "position", "consensus|type", "microhomology", "configuration", "allele_frequency", "mechanism|log2(cnv)") . "\n";
 
 my @lines = @{$cnv_ref};
 print $out "$_\n" foreach @lines;
@@ -41,6 +41,7 @@ sub extractVars {
                             $stop,                 # bp2
                             '-',                   # split reads
                             '-',                   # paired reads
+                            '-',                   # genotype
                             '-',                   # id
                             $length,               # length
                             "$chrom:$start-$stop", # IGV
