@@ -206,8 +206,8 @@ sub parse {
         }
     }
 
-    if ( $SV_type != 'TRA' and $SV_type != "BND" and $SV_length <= 50 ){
-      push @{$filter_list}, "$SV_type < 50 bp=" . $SV_length; 
+    if ( $SV_type ne 'TRA' and $SV_type ne "BND" and $SV_length <= 50 ){
+      push @{$filter_list}, "$SV_type < 50 bp=" . $SV_length;
     }
 
     # Filter for vars falling in an excluded region +/- slop
