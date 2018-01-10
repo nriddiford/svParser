@@ -152,7 +152,7 @@ sub annotate_SVs {
 
       next if $events{$sample}{$event}++;
 
-      my (undef, undef, undef, undef, undef, undef, $bp1_locus, $bp2_locus, $affected_genes, undef, undef) = @cells[12..21];
+      my (undef, undef, undef, undef, $af, undef, $bp1_locus, $bp2_locus, $affected_genes, undef, undef) = @cells[12..21];
 
       my @genes;
       if ($affected_genes =~ /\,/){
@@ -185,8 +185,8 @@ sub annotate_SVs {
         $bp2_gene = $bp2_locus;
       }
 
-      print $bp_out join("\t", $event, 'bp1', $sample, $genotype, $chrom1, $bp1, $bp1_gene, $bp1_feature, $type, $length) . "\n";
-      print $bp_out join("\t", $event, 'bp2', $sample, $genotype, $chrom2, $bp2, $bp1_gene, $bp2_feature, $type, $length) . "\n";
+      print $bp_out join("\t", $event, 'bp1', $sample, $af, $genotype, $chrom1, $bp1, $bp1_gene, $bp1_feature, $type, $length) . "\n";
+      print $bp_out join("\t", $event, 'bp2', $sample, $af, $genotype, $chrom2, $bp2, $bp1_gene, $bp2_feature, $type, $length) . "\n";
 
       next;
     }
