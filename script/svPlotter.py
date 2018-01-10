@@ -19,9 +19,9 @@ options, args = parser.parse_args()
 if not options.SV_calls:
     parser.error('No input file provided')
 
-variants = options.SV_calls
+variants_file = options.SV_calls
 
-base_name = (os.path.splitext(variants)[0])
+base_name = (os.path.splitext(variants_file)[0])
 out_base = base_name.split('_')[0]
 
 pattern = out_base + '*.cnv'
@@ -56,7 +56,7 @@ def select_cnvfile(sv_size, bp1, bp2):
                 return[name, start, stop, tick]
 
 def print_R_command(SV_calls_file):
-    """Generates command that can be used to plot CNVs with https://github.com/nriddiford/cnvPlotteR"""
+    """Generates R command that can be used to plot CNVs with https://github.com/nriddiford/cnvPlotteR"""
     i=1
     with open(SV_calls_file, 'U') as calls:
         for l in calls:
@@ -64,7 +64,7 @@ def print_R_command(SV_calls_file):
 
             if i == 1 and parts[0] == 'event':
                 continue
-            elif parts[10] != 'somatic_tumour' or parts[10] != 'somatic_normal':
+            elif parts[9] != 'somatic_tumour':
                 continue
 
             event, source, type, chrom1, bp1, chrom2, bp2 = parts[0:7]
@@ -83,4 +83,4 @@ def print_R_command(SV_calls_file):
                 print("SV event: %s, type: %s, size: %s") % (event, type, size)
                 print("regionPlot(cnv_file=\"%s\", from=%s, to=%s, bp1=%s,bp2=%s,chrom=\"%s\", tick=%s, title=\"%sKb %s on %s\")") % (cnv_file, start, end, bp1, bp2, chrom1, tick, size, type, chrom1)
 
-print_R_command(variants)
+print_R_command(variants_file)
