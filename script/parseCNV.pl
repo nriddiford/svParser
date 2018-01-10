@@ -41,7 +41,7 @@ sub extractVars {
                             $stop,                 # bp2
                             '-',                   # split reads
                             '-',                   # paired reads
-                            '-',                   # genotype
+                            'somatic_tumour',      # genotype
                             '-',                   # id
                             $length,               # length
                             "$chrom:$start-$stop", # IGV
