@@ -46,7 +46,7 @@ def remove_false_positives(false_calls_file, input_file, clean_output):
             match = "%s_" % out_base + "_".join(parts[3:7])
 
             try:
-                notes = parts[20]
+                notes = parts[21]
             except IndexError:
                 notes = '-'
 
