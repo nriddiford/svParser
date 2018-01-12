@@ -183,6 +183,8 @@ then
   then
     # if [ -f *_annotated_SVs.txt ]
     # then
+
+    # Should check that white/blacklist files exist first
     for annofile in *_annotated_SVs.txt
     do
       if [ -e "$annofile" ]
