@@ -143,7 +143,7 @@ sub annotate_SVs {
       }
     }
 
-    my ($event, $source, $type, $chrom1, $bp1, $chrom2, $bp2, undef, undef, $genotype, undef, $length) = @cells[0..11];
+    my ($event, $source, $type, $chrom1, $bp1, $chrom2, $bp2, undef, undef, $genotype, undef, $length, undef, undef, undef, undef, $af, undef) = @cells[0..17];
 
     # Check to see if the SV has already been annotated - print and skip if next
     if ( $cells[18] and $cells[18] ne ' ' and $cells[18] ne '-' and $reannotate ){
@@ -152,7 +152,7 @@ sub annotate_SVs {
 
       next if $events{$sample}{$event}++;
 
-      my (undef, undef, undef, undef, $af, undef, $bp1_locus, $bp2_locus, $affected_genes, undef, undef) = @cells[12..21];
+      my ($bp1_locus, $bp2_locus, $affected_genes, undef, undef) = @cells[18..22];
 
       my @genes;
       if ($affected_genes =~ /\,/){
@@ -315,9 +315,9 @@ sub getbps {
 
     my $gene_id = $genes{$chrom}{$gene}[2];
 
-    for my $transcript ( sort keys %{$transcript_length{$chrom}{$gene}}){
+    for my $transcript ( sort keys %{$transcript_length{$chrom}{$gene}} ){
 
-    for my $feature ( sort { $features{$chrom}{$gene}{$transcript}{$b}[2] <=> $features{$chrom}{$gene}{$transcript}{$a}[2] } keys %{$features{$chrom}{$gene}{$transcript}}){
+    for my $feature ( sort { $features{$chrom}{$gene}{$transcript}{$b}[2] <=> $features{$chrom}{$gene}{$transcript}{$a}[2] } keys %{$features{$chrom}{$gene}{$transcript}} ){
 
       # print join(",", $gene, $transcript, $transcript_length{$chrom}{$gene}{$transcript}, $feature, $features{$chrom}{$gene}{$transcript}{$feature}[2]  ) . "\n";
 
@@ -339,7 +339,7 @@ sub getbps {
           $feature = 'exon' if $feature eq 'CDS'; # Adapted from snv2gene
           $bp_gene = $gene;
           $bp_gene_id = $gene_id;
-          $hit_bp = "$gene, $feature";
+          $hit_bp = $gene . ", " . $feature;
         }
 
       }
