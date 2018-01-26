@@ -183,15 +183,15 @@ then
   then
     # if [ -f *_annotated_SVs.txt ]
     # then
-    for annofile in *_annotated_SVs.txt
-    do
-      if [ -e "$annofile" ]
-      then
-        echo "Updating 'all_samples_false_calls.txt' with false positive calls from $annofile"
-        echo "Updating 'all_samples_whitelist.txt' with whitelisted calls from $annofile"
-        python $script_bin/clean.py -f $annofile
-      fi
-    done
+    # for annofile in *_annotated_SVs.txt
+    # do
+    #   if [ -e "$annofile" ]
+    #   then
+    #     echo "Updating 'all_samples_false_calls.txt' with false positive calls from $annofile"
+    #     echo "Updating 'all_samples_whitelist.txt' with whitelisted calls from $annofile"
+    #     python $script_bin/clean.py -f $annofile
+    #   fi
+    # done
       rm *cleaned_SVs.txt
     # fi
   fi
@@ -235,7 +235,7 @@ then
   echo "Removing calls marked as false positives in 'all_samples_false_calls.txt'"
   for annofile in *_annotated_SVs.txt
   do
-    python $script_bin/clean.py -f $annofile
+    perl $script_bin/clean_files.pl $annofile
   done
 
   if [ -f "all_genes_filtered.txt" ] && [ -f "all_bps_filtered.txt" ]
