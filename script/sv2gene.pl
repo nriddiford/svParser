@@ -51,16 +51,14 @@ if ($whitelist){
     chomp;
     my @line = split(/\t/);
     my $lookup = (split, @line)[0];
-    $lookup = $lookup . "_" . $line[2];
+    # shouldn't include caller (?) 12.1.18
+    #$lookup = $lookup . "_" . $line[2];
     my @cols = @line[1..$#line];
     $true_positives{$lookup} = [@cols];
     }
 }
 
-# p(%true_positives);
-
 my (%transcript_length, %genes, %features);
-
 my ($sample, $annotated_svs, $genes_out, $bp_out);
 
 make_gene_hash($features);
@@ -240,7 +238,9 @@ sub annotate_SVs {
     # If blacklist specified, check to see if location is blacklisted (this is done by adding 'F' to T/F col, and running the file through 'clean.py')
     # If location is blacklisted, then carry over the 'F' tag
 
-    my $whitelookup = join("_", $sample, $chrom1, $bp1, $chrom2, $bp2, $source);
+    # my $whitelookup = join("_", $sample, $chrom1, $bp1, $chrom2, $bp2, $source); # this is surely not right? 12.1.18
+    my $whitelookup = join("_", $sample, $chrom1, $bp1, $chrom2, $bp2 ); # this is surely not right? 12.1.18
+
     my $blacklookup = join("_", $sample, $chrom1, $bp1, $chrom2, $bp2);
 
     if ($blacklist){
@@ -250,13 +250,13 @@ sub annotate_SVs {
         $call++;
         next;
       }
-      else {
-        unless($whitelist and exists $true_positives{$whitelookup}){
-          print $annotated_svs join("\t", $_, $hit_bp1, $hit_bp2, $joined_genes2print, " ") . "\n";
-          $call++;
-          next;
-        }
-      }
+      # else {
+      #   unless($whitelist and exists $true_positives{$whitelookup}){
+      #     print $annotated_svs join("\t", $_, $hit_bp1, $hit_bp2, $joined_genes2print, " ") . "\n";
+      #     $call++;
+      #     next;
+      #   }
+      # }
     }
 
     if ($whitelist){
