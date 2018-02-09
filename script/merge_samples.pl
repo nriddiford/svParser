@@ -11,8 +11,12 @@ my @files = @ARGV;
 
 open my $all, '>', 'all_samples.txt';
 
-my $header = join("\t", qw/sample event source type chromosome1 bp1 chromosome2 bp2 split_reads pe_reads id length(Kb) position consensus|type microhomology configuration allele_frequency mechanism|log2(cnv) bp1_locus bp2_locus affected_genes T|F notes/);
-print $all $header . "\n";
+open my $file1, '<', $ARGV[0];
+my $header = <$file1>;
+close $file1;
+
+# my $header = join("\t", qw/sample event source type chromosome1 bp1 chromosome2 bp2 split_reads pe_reads id length(Kb) position consensus|type microhomology configuration allele_frequency mechanism|log2(cnv) bp1_locus bp2_locus affected_genes T|F notes/);
+print $all "sample" . "\t" . $header . "\n";
 
 my %seen;
 my @lines;
