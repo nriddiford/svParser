@@ -49,7 +49,7 @@ fi
 script_bin=/Users/Nick_curie/Desktop/svParser/script # work
 
 # Change to the bed file to filter svs called in unmappable regions
-exclude_file=/Users/Nick_curie/Documents/Curie/Data/Genomes/Dmel_v6.12/Mappability/dmel6_unmappable.bed
+exclude_file=/Users/Nick_curie/Documents/Curie/Data/Genomes/Dmel_v6.12/Mappability/dmel6_unmappable_100.bed
 
 if [[ $germline -eq 1 ]]
 then
@@ -243,11 +243,6 @@ then
     rm "all_genes_filtered.txt"
     rm "all_bps_filtered.txt"
   fi
-
-  # if [[ -f "all_bps_filtered.txt" ]]
-  # then
-  #   rm "all_bps_filtered.txt"
-  # fi
 
   for clean_file in *cleaned_SVs.txt
   do

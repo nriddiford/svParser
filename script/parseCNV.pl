@@ -52,6 +52,6 @@ sub extractVars {
                             $fc);                  # misc (cnv)
 
   }
-  # p(@cnv);
+  p(@cnv);
   return(\@cnv);
 }

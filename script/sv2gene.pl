@@ -37,6 +37,7 @@ if (not $sv_calls and not $features ){
 my (%false_positives, %true_positives);
 
 if ($blacklist){
+  say "Marking calls in $blacklist as false positives";
   open my $blacklist_file, '<', $blacklist;
   while(<$blacklist_file>){
     chomp;
@@ -49,8 +50,8 @@ if ($whitelist){
   open my $whitelist_file, '<', $whitelist;
   while(<$whitelist_file>){
     chomp;
-    my @line = split(/\t/);
-    my $lookup = (split, @line)[0];
+    my @line = split(//);
+    my $lookup = (split(""))[0];
     # shouldn't include caller (?) 12.1.18
     #$lookup = $lookup . "_" . $line[2];
     my @cols = @line[1..$#line];
@@ -141,8 +142,7 @@ sub annotate_SVs {
       }
     }
 
-    my ($event, $source, $type, $chrom1, $bp1, $chrom2, $bp2, undef, undef, $genotype, undef, $length, undef, undef, undef, undef, $af, undef) = @cells[0..17];
-
+    my ($event, $source, $type, $chrom1, $bp1, $chrom2, $bp2, undef, undef, $genotype, undef, $length, undef, undef, undef, undef, $af, $mech) = @cells[0..17];
     # Check to see if the SV has already been annotated - print and skip if next
     if ( $cells[18] and $cells[18] ne ' ' and $cells[18] ne '-' and $reannotate ){
 
@@ -218,15 +218,29 @@ sub annotate_SVs {
 
     # Does this really append to 'all_genes_filtered'? 12.12.17
     print $genes_out join("\t", $event, $sample, $genotype, $type, $chrom1, $_) . "\n" foreach @hit_genes;
+    for my $bptype ('bp1', 'bp2'){
+      my ($bp1_gene, $bp1_feature) = split(", ", $hit_bp1);
+      $bp1_feature = 'intergenic' if not length $bp1_feature;
+      my ($bp2_gene, $bp2_feature) = split(", ", $hit_bp2);
+      $bp2_feature = 'intergenic' if not length $bp2_feature;
+
+      # print join("\t", $bp1_gene, $bp1_feature, $bp2_gene, $bp2_feature) . "\n";
+
+      print $bp_out join("\t", $event, $bptype, $sample, $genotype, $chrom1, $bp1, $bp1_gene, $bp1_feature, $chrom2, $bp2, $bp2_gene, $bp2_feature, $type, $length) . "\n" if $bptype eq 'bp1';
+      print $bp_out join("\t", $event, $bptype, $sample, $genotype, $chrom2, $bp2, $bp2_gene, $bp2_feature, $chrom1, $bp1, $bp1_gene, $bp1_feature, $type, $length) . "\n" if $bptype eq 'bp2';
+    }
+
 
     my $affected_genes = scalar @hit_genes;
     my $joined_genes = join(", ", @hit_genes);
 
-    if ($type eq 'DEL' or $type eq 'DUP' or $type eq 'TANDUP'){
-      say "SV $call: $length kb $type affecting $affected_genes genes: Bp1: $hit_bp1 Bp2: $hit_bp2 ";
-    }
-    else {
-      say "SV $call: $length kb $type with break points in $chrom1\:$bp1 ($hit_bp1) and $chrom2\:$bp2 ($hit_bp2)";
+    if ($genotype eq 'somatic_tumour') {
+      if ($type eq 'DEL' or $type eq 'DUP' or $type eq 'TANDUP'){
+        say "SV $call: $length kb $type affecting $affected_genes genes: Bp1: $hit_bp1 Bp2: $hit_bp2 ";
+      }
+      else {
+        say "SV $call: $length kb $type with break points in $chrom1\:$bp1 ($hit_bp1) and $chrom2\:$bp2 ($hit_bp2)";
+      }
     }
 
     if (scalar(@hit_genes) == 0){
@@ -349,7 +363,7 @@ sub getbps {
 }
   # if ( $reannotate ){
   # Why did all_bps.txt not have the breakpoint id? 12.12.17
-  print $bp_out join("\t", $event, $bp_id, $sample, $genotype, $chrom, $bp, $bp_gene, $bp_feature, $type, $length) . "\n";
+  # print $bp_out join("\t", $event, $bp_id, $sample, $genotype, $chrom, $bp, $bp_gene, $bp_feature, $type, $length) . "\n";
   # }
   # else {
   # print $bp_out join ("\t", $event, $sample, $chrom, $bp, $bp_gene, $bp_feature, $type, $length) . "\n";

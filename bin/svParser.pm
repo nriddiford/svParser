@@ -1120,6 +1120,7 @@ sub region_exclude_filter {
 
   foreach(@bed){
     my ($chromosome, $start, $stop) = split;
+    next if $stop - $start < 200;
 
     if ( $bp1 >= ($start - $slop) and $bp1 <= ($stop + $slop) ) {
       next unless $chromosome eq $chr1;
@@ -1252,7 +1253,7 @@ sub genotype {
   return($genotype, \@filter_reasons);
 }
 
-# Only for Drosophila so far...
+
 sub chrom_filter {
   my ( $chr, $chr2, $filters, $chrom_keys ) = @_;
   my @keys = @{ $chrom_keys };

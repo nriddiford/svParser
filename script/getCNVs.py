@@ -21,35 +21,36 @@ base_name = (os.path.splitext(options.SV_calls)[0])
 sample = base_name.split('_')[0]
 outfile = sample + "_" + "CNVs.txt"
 
-dir = os.path.dirname(__file__)
-path = os.path.join(dir, '../data/cnv')
-# path = os.path.join(dir, '..')
-
+script_dir = os.path.dirname(__file__)
+path = os.path.join(script_dir, '../data/cnv')
 output = os.path.join(path, outfile)
 
-def getCNVs(SV_calls):
+def getCNVs(calls):
     cnvs = []
-    with open(SV_calls, 'U') as sv_calls_file:
+    with open(calls, 'U') as sv_calls_file:
         for l in sv_calls_file:
             parts = l.rstrip().split('\t')
 
+            # print(parts[0], len(parts))
             if "cnv" in parts[1].lower():
-                try:
-                    depth = parts[16]
-                except IndexError:
-                    depth = '-'
-
-                line = [parts[3], parts[4], parts[6], parts[2], parts[10], depth]
-
-                line = '\t'.join(line)
-                cnvs.append(line)
-    return(cnvs)
-
-def printCNVs(cnvs, output):
-    with open(output, 'w') as cnv_out:
-        for l in cnvs:
-            cnv_out.write("%s\n" % l)
-
+                print(parts)
+#             if "cnv" in parts[1].lower():
+#                 try:
+#                     depth = parts[17]
+#                 except IndexError:
+#                     depth = '-'
+#
+#                 line = [parts[3], parts[4], parts[6], parts[2], parts[11], depth]
+#
+#                 line = '\t'.join(line)
+#                 cnvs.append(line)
+#     return(cnvs)
+#
+# def printCNVs(cnvs, output):
+#     with open(output, 'w') as cnv_out:
+#         for l in cnvs:
+#             cnv_out.write("%s\n" % l)
+#
 cnvs = getCNVs(options.SV_calls)
-if cnvs:
-    printCNVs(cnvs, output)
+# if cnvs:
+#     printCNVs(cnvs, output)
