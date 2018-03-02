@@ -223,14 +223,11 @@ fi
 
 if [[ $clean -eq 1 ]]
 then
-  if [[ ! $germline -eq 1 ]]
-  then
     echo "Adding any new CNV calls to data/cnv'"
     for annofile in *_annotated_SVs.txt
     do
       python $script_bin/getCNVs.py -f $annofile
     done
-  fi
 
   echo "Removing calls marked as false positives in 'all_samples_false_calls.txt'"
   for annofile in *_annotated_SVs.txt

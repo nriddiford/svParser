@@ -169,22 +169,17 @@ sub annotate_SVs {
       my $bp1_gene    = 'intergenic';
       my $bp2_gene    = 'intergenic';
 
-      if ($bp1_locus =~ /\,/){
-        ($bp1_gene, $bp1_feature ) = split(", ", $bp1_locus);
-      }
-      else{
-        $bp1_gene = $bp1_locus;
-      }
+      for my $bptype ('bp1', 'bp2'){
+        my ($bp1_gene, $bp1_feature) = split(", ", $bp1_locus);
+        $bp1_feature = 'intergenic' if not length $bp1_feature;
+        my ($bp2_gene, $bp2_feature) = split(", ", $bp2_locus);
+        $bp2_feature = 'intergenic' if not length $bp2_feature;
 
-      if ($bp2_locus =~ /\,/){
-        ($bp2_gene, $bp2_feature ) = split(", ", $bp2_locus);
-      }
-      else{
-        $bp2_gene = $bp2_locus;
-      }
+        # print join("\t", $bp1_gene, $bp1_feature, $bp2_gene, $bp2_feature) . "\n";
 
-      print $bp_out join("\t", $event, 'bp1', $sample, $af, $genotype, $chrom1, $bp1, $bp1_gene, $bp1_feature, $type, $length) . "\n";
-      print $bp_out join("\t", $event, 'bp2', $sample, $af, $genotype, $chrom2, $bp2, $bp1_gene, $bp2_feature, $type, $length) . "\n";
+        print $bp_out join("\t", $event, $bptype, $sample, $genotype, $chrom1, $bp1, $bp1_gene, $bp1_feature, $chrom2, $bp2, $bp2_gene, $bp2_feature, $type, $length) . "\n" if $bptype eq 'bp1';
+        print $bp_out join("\t", $event, $bptype, $sample, $genotype, $chrom2, $bp2, $bp2_gene, $bp2_feature, $chrom1, $bp1, $bp1_gene, $bp1_feature, $type, $length) . "\n" if $bptype eq 'bp2';
+      }
 
       next;
     }
@@ -223,8 +218,6 @@ sub annotate_SVs {
       $bp1_feature = 'intergenic' if not length $bp1_feature;
       my ($bp2_gene, $bp2_feature) = split(", ", $hit_bp2);
       $bp2_feature = 'intergenic' if not length $bp2_feature;
-
-      # print join("\t", $bp1_gene, $bp1_feature, $bp2_gene, $bp2_feature) . "\n";
 
       print $bp_out join("\t", $event, $bptype, $sample, $genotype, $chrom1, $bp1, $bp1_gene, $bp1_feature, $chrom2, $bp2, $bp2_gene, $bp2_feature, $type, $length) . "\n" if $bptype eq 'bp1';
       print $bp_out join("\t", $event, $bptype, $sample, $genotype, $chrom2, $bp2, $bp2_gene, $bp2_feature, $chrom1, $bp1, $bp1_gene, $bp1_feature, $type, $length) . "\n" if $bptype eq 'bp2';

@@ -31,26 +31,23 @@ def getCNVs(calls):
         for l in sv_calls_file:
             parts = l.rstrip().split('\t')
 
-            # print(parts[0], len(parts))
             if "cnv" in parts[1].lower():
-                print(parts)
-#             if "cnv" in parts[1].lower():
-#                 try:
-#                     depth = parts[17]
-#                 except IndexError:
-#                     depth = '-'
-#
-#                 line = [parts[3], parts[4], parts[6], parts[2], parts[11], depth]
-#
-#                 line = '\t'.join(line)
-#                 cnvs.append(line)
-#     return(cnvs)
-#
-# def printCNVs(cnvs, output):
-#     with open(output, 'w') as cnv_out:
-#         for l in cnvs:
-#             cnv_out.write("%s\n" % l)
-#
+                try:
+                    depth = parts[17]
+                except IndexError:
+                    depth = '-'
+
+                line = [parts[3], parts[4], parts[6], parts[2], parts[11], depth]
+
+                line = '\t'.join(line)
+                cnvs.append(line)
+    return(cnvs)
+
+def printCNVs(cnvs, output):
+    with open(output, 'w') as cnv_out:
+        for l in cnvs:
+            cnv_out.write("%s\n" % l)
+
 cnvs = getCNVs(options.SV_calls)
-# if cnvs:
-#     printCNVs(cnvs, output)
+if cnvs:
+    printCNVs(cnvs, output)
