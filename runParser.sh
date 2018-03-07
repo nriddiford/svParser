@@ -11,7 +11,6 @@ options:
   -c    clean-up false positives anad reannotate
   -s    stats
   -n    stats for notch-excluded hits
-  -g    run svParser for germline events
   -h    show this message
 "
 }
@@ -22,8 +21,7 @@ annotate=0
 clean=0
 stats=0
 nstats=0
-germline=0
-while getopts 'fmacsnhg' flag; do
+while getopts 'fmacsnh' flag; do
   case "${flag}" in
     f)  filter=1 ;;
     m)  merge=1 ;;
@@ -31,97 +29,71 @@ while getopts 'fmacsnhg' flag; do
     c)  clean=1 ;;
     s)  stats=1 ;;
     n)  nstats=1 ;;
-    g)  germline=1 ;;
     h)  usage
         exit 0 ;;
   esac
 done
 
-if [[ $# -eq 0 ]] ; then
-    usage
-    exit 0
+if [[ $# -eq 0 ]]
+then
+  usage
+  exit 0
 fi
 
 # Change to the 'script' dir in svParser
 #script_bin=/Users/Nick/iCloud/Desktop/script_test/SV_Parser/script # home
-#script_bin=/Users/Nick_curie/Desktop/script_test/svParser/script # work
-
-script_bin=/Users/Nick_curie/Desktop/svParser/script # work
+script_bin=/Users/Nick_curie/Desktop/script_test/svParser/script # work
+#script_bin=/Users/Nick_curie/Desktop/svParser/script # work
 
 # Change to the bed file to filter svs called in unmappable regions
 exclude_file=/Users/Nick_curie/Documents/Curie/Data/Genomes/Dmel_v6.12/Mappability/dmel6_unmappable_100.bed
 
-if [[ $germline -eq 1 ]]
-then
-  if [ ! -d $script_bin/../germline/summary/merged/ ]
-  then
-      mkdir -p $script_bin/../germline/summary/merged/
-  fi
-else
-  if [ ! -d $script_bin/../filtered/summary/merged/ ]
-  then
-      mkdir -p $script_bin/../filtered/summary/merged/
-  fi
-fi
 
+if [ ! -d $script_bin/../filtered/summary/merged/ ]
+then
+  mkdir -p $script_bin/../filtered/summary/merged/
+fi
 
 if [[ $filter -eq 1 ]]
 then
 
   # need to give differnt params for germline run; only lumpy so far
   # these are the same as somatic, except here we require at least 6 reads supporting var [ is this a good idea? ]
-  if [[ $germline -eq 1 ]]
-  then
 
-    for lumpy_file in data/lumpy/*.vcf
-    do
-      echo "Running in germline mode"
-      echo "perl $script_bin/svParse.pl -v $lumpy_file -t l -f chr=1 -f g=1 -f su=6 -f dp=10 -f rdr=0.1 -f sq=10 -e $exclude_file -p"
-      perl $script_bin/svParse.pl -v $lumpy_file -t l -f chr=1 -f g=1 -f su=6 -f dp=10 -f rdr=0.1 -f sq=10 -e $exclude_file -p
-    done
+  for lumpy_file in data/lumpy/*.vcf
+  do
+    echo "perl $script_bin/svParse.pl -v $lumpy_file -t l -f chr=1 -f su=4 -f dp=10 -f rdr=0.1 -f sq=10 -e $exclude_file -p"
+    perl $script_bin/svParse.pl -v $lumpy_file -t l -f chr=1 -f su=4 -f dp=10 -f rdr=0.1 -f sq=10 -e $exclude_file -p
+  done
 
-  else
-    for lumpy_file in data/lumpy/*.vcf
-    do
-      echo "perl $script_bin/svParse.pl -v $lumpy_file -t l -f chr=1 -f su=4 -f dp=10 -f rdr=0.1 -f sq=10 -e $exclude_file -p"
-      perl $script_bin/svParse.pl -v $lumpy_file -t l -f chr=1 -f su=4 -f dp=10 -f rdr=0.1 -f sq=10 -e $exclude_file -p
-    done
+  for delly_file in data/delly/*.vcf
+  do
+    echo "perl $script_bin/svParse.pl -v $delly_file -t d -f chr=1 -f su=4 -f dp=10 -f rdr=0.1 -f sq=10 -e $exclude_file -p"
+    perl $script_bin/svParse.pl -v $delly_file -t d -f chr=1 -f su=4 -f dp=10 -f rdr=0.1 -f sq=10 -e $exclude_file -p
+  done
 
-    for delly_file in data/delly/*.vcf
-    do
-      echo "perl $script_bin/svParse.pl -v $delly_file -t d -f chr=1 -f su=4 -f dp=10 -f rdr=0.1 -f sq=10 -e $exclude_file -p"
-      perl $script_bin/svParse.pl -v $delly_file -t d -f chr=1 -f su=4 -f dp=10 -f rdr=0.1 -f sq=10 -e $exclude_file -p
-    done
+  for novo_file in data/novobreak/*.vcf
+  do
+    echo "perl $script_bin/svParse.pl -v $novo_file -t n -f chr=1 -f su=4 -f dp=10 -f rdr=0.1 -f sq=10 -e $exclude_file -p"
+    perl $script_bin/svParse.pl -v $novo_file -t n -f chr=1 -f su=4 -f dp=10 -f rdr=0.1 -f sq=10 -e $exclude_file -p
+  done
 
-    for novo_file in data/novobreak/*.vcf
-    do
-      echo "perl $script_bin/svParse.pl -v $novo_file -t n -f chr=1 -f su=4 -f dp=10 -f rdr=0.1 -f sq=10 -e $exclude_file -p"
-      perl $script_bin/svParse.pl -v $novo_file -t n -f chr=1 -f su=4 -f dp=10 -f rdr=0.1 -f sq=10 -e $exclude_file -p
-    done
+  meer_files+=( $(ls -1 data/meerkat/*.variants | cut -d '.' -f 1 | sort -u ) )
+  for ((i=0;i<${#meer_files[@]};++i))
+  do
+    echo "perl $script_bin/parseMeerkat.pl ${meer_files[i]}.*.variants ${meer_files[i]}.*_af ${meer_files[i]}.*.fusions 4"
+    perl $script_bin/parseMeerkat.pl ${meer_files[i]}.*.variants ${meer_files[i]}.*_af ${meer_files[i]}.*.fusions 4
+  done
 
-    meer_files+=( $(ls -1 data/meerkat/*.variants | cut -d '.' -f 1 | sort -u ) )
-    for ((i=0;i<${#meer_files[@]};++i))
-    do
-      echo "perl $script_bin/parseMeerkat.pl ${meer_files[i]}.*.variants ${meer_files[i]}.*_af ${meer_files[i]}.*.fusions 4"
-      perl $script_bin/parseMeerkat.pl ${meer_files[i]}.*.variants ${meer_files[i]}.*_af ${meer_files[i]}.*.fusions 4
-    done
-
-    for cnv_file in data/cnv/*.txt
-    do
-      echo "perl $script_bin/parseCNV.pl $cnv_file"
-      perl $script_bin/parseCNV.pl $cnv_file
-    done
-
-  fi
+  for cnv_file in data/cnv/*.txt
+  do
+    echo "perl $script_bin/parseCNV.pl $cnv_file"
+    perl $script_bin/parseCNV.pl $cnv_file
+  done
 
 fi
 
-if [[ $germline -eq 1 ]]
-then
-  cd germline
-else
-  cd filtered
-fi
+cd filtered
 
 if [[ $merge -eq 1 ]]
 then
@@ -275,19 +247,19 @@ then
 
 fi
 
-# if [[ $stats -eq 1 ]]
-# then
-#
-#   if [ -z all_genes.txt ]
-#   then
-#     echo "'all_genes' not found! Exiting"
-#     exit 1
-#   fi
-#
-#   echo "Calculating breakpoint stats..."
-#   perl $script_bin/bpstats.pl all_bps_filtered.txt
-#
-# fi
+if [[ $stats -eq 1 ]]
+then
+
+  if [ -z all_genes.txt ]
+  then
+    echo "'all_genes' not found! Exiting"
+    exit 1
+  fi
+
+  echo "Calculating breakpoint stats..."
+  perl $script_bin/bpstats.pl all_bps_filtered.txt
+
+fi
 #
 # if [[ $nstats -eq 1 ]]
 # then
