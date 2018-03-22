@@ -679,6 +679,17 @@ sub summarise_variants {
 
   my %filtered_sv;
 
+  my %sv_type_count;
+
+  my @gens = qw/germline_recurrent germline_private somatic_tumour somatic_normal/;
+  my @types = qw/DEL DUP INV BND TRA DUP:TANDEM CNV INS /;
+
+  for my $gen (@gens){
+    for my $ty (@types){
+      $sv_type_count{$gen}{$ty} = 0;
+    }
+  }
+
   for (keys %{ $SVs } ){
 
     my ( $chr, $start, $id, $ref, $alt, $quality_score, $filt, $info_block, $format_block, $tumour_info_block, $normal_info_block, $sv_type, $SV_length, $stop, $chr2, $SR, $PE, $ab, $filters, $genotype, $samples ) = @{ $SVs->{$_} };
@@ -709,16 +720,11 @@ sub summarise_variants {
       next if $filter_switch;
     }
 
+
     $read_support = ( $SR + $PE );
     $support_by_chrom{$id} = [ $read_support, $sv_type, $chr, $SV_length, $start ];
 
-    $dels++ if $sv_type eq 'DEL';
-    $dups++ if $sv_type eq 'DUP';
-    $trans++ if $sv_type eq 'BND' or $sv_type eq 'TRA';
-    $invs++ if $sv_type eq 'INV';
-    $tds++ if $sv_type eq 'DUP:TANDEM';
-    $CNVs++ if $sv_type eq 'CNV';
-    $ins++ if $sv_type eq 'INS';
+    $sv_type_count{$genotype}{$sv_type}++;
 
   }
   print "\n";
@@ -729,13 +735,15 @@ sub summarise_variants {
     print "\n";
   }
 
-  say "$dels deletions";
-  say "$dups duplications";
-  say "$trans translocations";
-  say "$invs inversions";
-  say "$tds tandem duplications" if $tds > 0;
-  say "$CNVs CNV regions" if $CNVs > 0;
-  say "$ins inserted sequences at BP" if $ins > 0;
+  printf "%-10s %-20s %-20s %-20s %-20s\n", "type", @gens;
+  my $space_pad = "%-20s";
+  for my $ty (@types){
+    printf $space_pad, $ty;
+    for my $gen (@gens){
+      printf  $space_pad, "$sv_type_count{$gen}{$ty}" ;
+    }
+    print "\n";
+  }
 
   my $top_count = 0;
   my %connected_bps;
