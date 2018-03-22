@@ -12,10 +12,10 @@ This tool is under constant development. Please feel free to [contact me](mailto
 A good place to start is with a summary of variants called in VCF file:
 
 #### Read vcf file from lumpy (or delly/novobreak) and see summary of variants called:
-`perl script/svParse.pl -v data/NA12878.NA12891.NA12892.vcf`
+`perl script/svParse.pl -v data/Droso_R7.lumpy.vcf`
 
 #### It's reccomended to explicity tag files on the caller that has produced them using the `--type` flag:
-`perl script/svParse.pl -v data/NA12878.NA12891.NA12892.vcf -t l`
+`perl script/svParse.pl -v data/Droso_R7.lumpy.vcf -t l`
 
 ## Filtering variants
 The defualt behaviour of svParser is to consider all variants present in a VCF file, and classify these according to genotype. Genotype will be assigned as follows:
@@ -54,16 +54,16 @@ It is highly recommended to play around with differnt combinations of filters th
 Filters can be used in combination with other features of svParser to experiment with filters that remove obvious false positives while retaining true positives. E.g:
 
 #### See summary of variants that have >= 4 reads supporting call in tumour (`-f su=4`)
-`perl script/svParse.pl -v data/NA12878.NA12891.NA12892.vcf -t l -f su=4`
+`perl script/svParse.pl -v data/Droso_R7.lumpy.vcf -t l -f su=4`
 
 #### See summary of variants that have >= 4 reads supporting call in tumour and have both breakpoints on chromosomes contained in `chroms.txt`
-`perl script/svParse.pl -v data/NA12878.NA12891.NA12892.vcf -t l -f su=4 -f chr=1`
+`perl script/svParse.pl -v data/Droso_R7.lumpy.vcf -t l -f su=4 -f chr=1`
 
 
 ## Inspect specific variant call
 
 #### Investigate a specific variant (by ID) using the `--id` flag:
-`perl script/svParse.pl -v data/NA12878.NA12891.NA12892.vcf -t l -i 1`
+`perl script/svParse.pl -v data/Droso_R7.lumpy.vcf -t l -i 1`
 
 ## Browse variants (-d)
 
