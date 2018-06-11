@@ -26,12 +26,12 @@ out_base = base_name.split('_')[0]
 
 pattern = out_base + '*.cnv'
 
-# big_window='/Users/Nick_curie/Desktop/script_test/cnvPlotteR/data'
-# samll_window='/Users/Nick_curie/Desktop/script_test/cnvPlotteR/data/w500'
+big_window='/Users/Nick_curie/Desktop/script_test/cnvPlotteR/data'
+samll_window='/Users/Nick_curie/Desktop/script_test/cnvPlotteR/data/w500'
 
 # home
-big_window='/Users/Nick/iCloud/Desktop/script_test/cnvPlotteR/data'
-samll_window='/Users/Nick/iCloud/Desktop/script_test/cnvPlotteR/data/w500'
+# big_window='/Users/Nick/iCloud/Desktop/script_test/cnvPlotteR/data'
+# samll_window='/Users/Nick/iCloud/Desktop/script_test/cnvPlotteR/data/w500'
 
 
 def select_cnvfile(sv_size, bp1, bp2):
