@@ -58,11 +58,8 @@ else {
 my @exclude_regions;
 if ($exclude){
   my @exclude = read_file($exclude, chomp=>1);
-
   my %chroms;
-
   @chroms{@keys} = ();
-
   # Should speed things up a bit by removing any chromosomes in exclude (.bed) file that aren't in our list of chroms we want to look at (@keys)
   foreach(@exclude){
     my $chrom = (split)[0];
@@ -70,7 +67,6 @@ if ($exclude){
     push @exclude_regions, $_;
   }
   undef @exclude;
-
   $filters{'e'} = 1;
 }
 
