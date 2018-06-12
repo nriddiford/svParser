@@ -5,6 +5,36 @@ Run without options or with `--help` or `-h` to print usage statement.
 
 This tool is under constant development. Please feel free to [contact me](mailto:nick.riddiford@curie.fr), or [raise an issue](https://github.com/nriddiford/svParser/issues) if you encounter any problems.
 
+## Installation
+```
+git clone https://github.com/nriddiford/svParser.git
+```
+
+Install cpanm for easy installation of requirements:
+
+```
+wget -O- http://cpanmin.us | perl - -l ~/perl5 App::cpanminus local::lib
+```
+
+To avoid issues with root access, I recommended using a local Perl library, which can be setup as follows (following (this)[https://stackoverflow.com/questions/2980297/how-can-i-use-cpan-as-a-non-root-user]):
+
+```
+eval `perl -I ~/perl5/lib/perl5 -Mlocal::lib`
+```
+Add the following lines to your `bash_profile` (or`.profile/.bashrc/`):
+
+```
+eval `perl -I ~/perl5/lib/perl5 -Mlocal::lib`
+export MANPATH=$HOME/perl5/man:$MANPATH
+```
+
+Once you have cpanm installed, then installing the dependencies should be as simple as:
+
+```
+cd svParser
+bash install_deps.sh
+```
+
 ## Parsing structural variants from VCF files called by LUMPY DELLY and novoBreak
 
 ## Summarise variants

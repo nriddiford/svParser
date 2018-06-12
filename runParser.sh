@@ -41,9 +41,8 @@ then
 fi
 
 # Change to the 'script' dir in svParser
-#script_bin=/Users/Nick/iCloud/Desktop/script_test/SV_Parser/script # home
-script_bin=/Users/Nick_curie/Desktop/script_test/svParser/script # work
-#script_bin=/Users/Nick_curie/Desktop/svParser/script # work
+dir=dirname "$0"
+script_bin="$dir/script"
 
 # Change to the bed file to filter svs called in unmappable regions
 exclude_file=/Users/Nick_curie/Documents/Curie/Data/Genomes/Dmel_v6.12/Mappability/dmel6_unmappable_100.bed
@@ -56,10 +55,7 @@ fi
 
 if [[ $filter -eq 1 ]]
 then
-
-  # need to give differnt params for germline run; only lumpy so far
-  # these are the same as somatic, except here we require at least 6 reads supporting var [ is this a good idea? ]
-
+  
   for lumpy_file in data/lumpy/*.vcf
   do
     echo "perl $script_bin/svParse.pl -v $lumpy_file -t l -f chr=1 -f su=4 -f dp=10 -f rdr=0.1 -f sq=10 -e $exclude_file -p"
