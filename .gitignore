@@ -9,3 +9,5 @@ germline/*
 !script/notch_hits.pl
 !script/plotBPs.r
 !script/update_bps.py
+tests/**
+.idea/**
