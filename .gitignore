@@ -11,3 +11,4 @@ germline/*
 !script/update_bps.py
 tests/**
 .idea/**
+.gitignore
