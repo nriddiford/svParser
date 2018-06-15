@@ -134,8 +134,6 @@ print "\n";
 # Retun SV and info hashes
 my ( $SVs, $info, $filtered_vars, $call_lookup) = svParser::typer( $vcf_file, $method, \@exclude_regions, \@keys, \%filters );
 
-# print Dumper %{ $filtered_vars };
-
 testCalls($true_positives, $SVs, $info, $filter_switch, $PON_print, $call_lookup) if $true_positives;
 
 if ($method ne 'snp') {

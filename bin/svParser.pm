@@ -167,11 +167,9 @@ sub parse {
     if ($type eq 'lumpy'){
       ( $SV_length, $chr2, $stop, $t_SR, $t_PE, $ab, $genotype, $filter_list ) = lumpy( $id, $chr, $info_block, $SV_type, $alt, $start, \%sample_info, $tumour_name, $control_name, \@samples, \@normals, \@filter_reasons, \%filter_flags );
     }
-
     elsif ($type eq 'delly'){
       ( $SV_length, $chr2, $stop, $t_SR, $t_PE, $ab, $genotype, $filter_list ) = delly( $id, $info_block, $start, $SV_type, $tumour_name, $control_name, \@normals, \@filter_reasons, \%filter_flags, \%sample_info );
     }
-
     elsif ($type eq 'novobreak'){
       @samples = qw/tumour normal/;
       my ( $sample_info_novo, $format_novo, $format_long_novo );
@@ -181,7 +179,6 @@ sub parse {
       @format = @{ $format_novo };
       %format_long = %{ $format_long_novo };
     }
-
     elsif ($type eq 'snp'){
       $chr2 = $chr;
       $filter_list = \@filter_reasons;
@@ -218,11 +215,8 @@ sub parse {
 
     if (@$filter_list == 0){
       $filtered_SVs{$.} = $_;
-
       my $lookup_id = $chr . "_" . $start . "_" . $chr2 . "_" . $stop;
       $call_lookup{$lookup_id} = $id;
-      # say $id;
-      # say $lookup_id;
     }
   }
   return (\%SVs, \%info, \%filtered_SVs, \%call_lookup);
@@ -453,16 +447,15 @@ sub lumpy {
     }
   }
 
-  my ($chr2, $stop) = (0,0);
+  my ($chr2, $stop) = ($chr, 0);
 
-  if ($SV_type eq 'BND'){
+  if ($SV_type =~ /BND|TRA/){
     $chr2 = $alt =~ s/[\[\]N]//g;
     ($chr2, $stop) = $alt =~ /(.+)\:(\d+)/;
     $SV_length = $stop - $start;
   }
   else {
       ($stop) = $info_block =~ /;END=(.*?);/;
-
   }
 
   return ($SV_length, $chr2, $stop, $t_SR, $t_PE, $ab, $genotype, \@filter_reasons);
