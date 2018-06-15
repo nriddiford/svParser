@@ -76,7 +76,7 @@ sub parse {
 
   my %filter_flags = %{ $filter_flags };
 
-  my (%SVs, %info, %filtered_SVs);
+  my (%SVs, %info, %filtered_SVs, %call_lookup);
   my ($tumour_name, $control_name);
   my %format_long;
   my %info_long;
@@ -149,13 +149,11 @@ sub parse {
     my %information;
 
     foreach(@info_parts){
-
       my ($info_key, $info_value);
 
       if (/=/){
         ($info_key, $info_value) = $_ =~ /(.*)=(.*)/;
       }
-
       else {
         ($info_key) = $_ =~ /(.*)/;
         $info_value = "TRUE";
@@ -189,7 +187,7 @@ sub parse {
       $filter_list = \@filter_reasons;
     }
 
-    if ( $filter_flags{'chr'} ){
+    if ( exists $filter_flags{'chr'} ){
       $filter_list = chrom_filter( $chr, $chr2, $filter_list, $chrom_keys );
     }
 
@@ -211,7 +209,7 @@ sub parse {
     }
 
     # Filter for vars falling in an excluded region +/- slop
-    if ( $filter_flags{'e'} and @$filter_list == 0 ){
+    if ( exists $filter_flags{'e'} and @$filter_list == 0 ){
       $filter_list = region_exclude_filter($chr, $start, $chr2, $stop, $exclude_regions, $filter_list);
     }
 
@@ -220,50 +218,60 @@ sub parse {
 
     if (@$filter_list == 0){
       $filtered_SVs{$.} = $_;
-    }
 
+      my $lookup_id = $chr . "_" . $start . "_" . $chr2 . "_" . $stop;
+      $call_lookup{$lookup_id} = $id;
+      # say $id;
+      # say $lookup_id;
+    }
   }
-  return (\%SVs, \%info, \%filtered_SVs);
+  return (\%SVs, \%info, \%filtered_SVs, \%call_lookup);
 }
 
 
 sub lumpy {
   my ( $id, $chr, $info_block, $SV_type, $alt, $start, $sample_info, $tumour, $control, $samples, $normals, $filters, $filter_flags ) = @_;
-
-  my ($SV_length) = $info_block =~ /SVLEN=(.*?);/;
-
   my $genotype;
-
   my %filter_flags   = %{ $filter_flags };
   my @normals        = @{ $normals };
   my %sample_info    = %{ $sample_info };
 
+  my ($SV_length) = $info_block =~ /SVLEN=(.*?);/;
+
   # This is all very redundant with the read support assignment. Combine. 21.12.17
   my ($t_hq_alt_reads, $n_hq_alt_reads) = (0,0);
-
-  if ($sample_info{$id}{$tumour}{'QA'}){
-    $t_hq_alt_reads = $sample_info{$id}{$tumour}{'QA'};
-    $n_hq_alt_reads = $sample_info{$id}{$control}{'QA'};
-  }
-  else{
-    $t_hq_alt_reads = $sample_info{$id}{$tumour}{'SR'} + $sample_info{$id}{$tumour}{'PE'};
-    $n_hq_alt_reads = $sample_info{$id}{$control}{'SR'} + $sample_info{$id}{$control}{'PE'};
-  }
-  my $c_alt_reads = $sample_info{$id}{$control}{'SU'};
-
   my %PON_alt_reads;
+
+  # Non-high quality control read support for alt var
+  my $c_alt_reads = $sample_info{$id}{$control}{'SU'};
 
   for my $normal (@normals[1..$#normals]){
     $PON_alt_reads{$normal} = $sample_info{$id}{$normal}{'QA'};
   }
 
-  ( $genotype, $filters ) = genotype( $id, $t_hq_alt_reads, $c_alt_reads, $n_hq_alt_reads, \%PON_alt_reads, $filters );
+  if (exists $sample_info{$id}{$tumour}{'QA'}){
+    $t_hq_alt_reads = $sample_info{$id}{$tumour}{'QA'};
+    $n_hq_alt_reads = $sample_info{$id}{$control}{'QA'};
+
+    ($genotype, $filters) = genotype( $id, $t_hq_alt_reads, $c_alt_reads, $n_hq_alt_reads, \%PON_alt_reads, $filters );
+  }
+  # if genotype is set to 'NA' (this should be because there are no quality reads, but some supporting reads) then re-genotype using supporting reads
+  if ($genotype eq "NA" or not exists $sample_info{$id}{$tumour}{'QA'}){
+    $t_hq_alt_reads = $sample_info{$id}{$tumour}{'SR'} + $sample_info{$id}{$tumour}{'PE'};
+    $n_hq_alt_reads = $sample_info{$id}{$control}{'SR'} + $sample_info{$id}{$control}{'PE'};
+
+    ($genotype, $filters) = genotype( $id, $t_hq_alt_reads, $c_alt_reads, $n_hq_alt_reads, \%PON_alt_reads, $filters );
+  }
 
   my %PON_info;
 
+  my ($c_HQ, $all_c_HQ) = (0,0);
+
   foreach my $normal (@normals){
     if ($sample_info{$id}{$normal}{'QA'}){
+      $sample_info{$id}{$normal}{'QA'} eq '.' ? $sample_info{$id}{$normal}{'QA'} = '0' : $all_c_HQ += $sample_info{$id}{$normal}{'QA'};
       $PON_info{$normal} = [ $sample_info{$id}{$normal}{'QA'}, $sample_info{$id}{$normal}{'GT'} ];
+
     }
     else{
       $PON_info{$normal} = [ 0, $sample_info{$id}{$normal}{'GT'} ];
@@ -276,28 +284,34 @@ sub lumpy {
 
   my @samples = @{ $samples };
 
-  # Genotype is defualt NA if 0/0 and no quality read support. Set this to somatic_normal/tumour even though these should be filtered out below
+  # Genotype is default NA if 0/0 and no quality read support. Set this to somatic_normal/tumour even though these should be filtered out below
 
-  if ($genotype eq 'NA' and $sample_info{$id}{$tumour}{'QA'} ){
-    if ( $sample_info{$id}{$tumour}{'SU'} >= 1 and $sample_info{$id}{$tumour}{'QA'} == 0) {
-      $genotype = 'somatic_tumour';
-    }
-    elsif ( $sample_info{$id}{$control}{'SU'} >= 1 and $sample_info{$id}{$control}{'QA'} == 0) {
-      $genotype = 'somatic_normal';
-    }
-  }
+#  if ($genotype eq 'NA' and $sample_info{$id}{$tumour}{'QA'} ){
+#    if ( $sample_info{$id}{$tumour}{'SU'} >= 1 and $sample_info{$id}{$tumour}{'QA'} == 0) {
+#      $genotype = 'somatic_tumour';
+#    }
+#    elsif ( $sample_info{$id}{$control}{'SU'} >= 1 and $sample_info{$id}{$control}{'QA'} == 0) {
+#      $genotype = 'somatic_normal';
+#    }
+#  }
+
+  my ($tumour_read_support, $direct_control_read_support) = ($t_hq_alt_reads, $n_hq_alt_reads);
 
   if ( $genotype ne 'somatic_tumour' ){
     # switch tumour normal
     my $tum2norm = $control;
     $control = $tumour;
     $tumour = $tum2norm;
+    $tumour_read_support = $n_hq_alt_reads;
+    $direct_control_read_support = $t_hq_alt_reads;
   }
 
-  my ($t_PE, $t_SR, $c_PE, $c_SR) = (0,0,0,0);
+#  my ($t_PE, $t_SR, $c_PE, $c_SR) = (0,0,0,0);
   my ($all_c_PE, $all_c_SR) = (0,0);
-  my ($tumour_read_support, $direct_control_read_support) = (0,0);
-  my ($c_HQ, $all_c_HQ) = (0,0);
+  my $t_PE = $sample_info{$id}{$tumour}{'PE'};
+  my $t_SR = $sample_info{$id}{$tumour}{'SR'};
+
+#  my ($tumour_read_support, $direct_control_read_support) = (0,0);
 
   # Get allele balance
   my $ab = '-';
@@ -310,28 +324,27 @@ sub lumpy {
   ########################
 
   # Get read support for tumour
-  $t_PE = $sample_info{$id}{$tumour}{'PE'};
-  $t_SR = $sample_info{$id}{$tumour}{'SR'};
-
-  if ($sample_info{$id}{$tumour}{'QA'}){
-    $tumour_read_support = $sample_info{$id}{$tumour}{'QA'};
-  }
-  else{
-    $tumour_read_support = $t_SR + $t_PE;
-  }
-
-  # Get read support for direct control only
-  if ($sample_info{$id}{$control}{'QA'}){
-    $direct_control_read_support = $sample_info{$id}{$control}{'QA'};
-  }
-  else{
-    $direct_control_read_support = $sample_info{$id}{$control}{'PE'} + $sample_info{$id}{$control}{'SR'};
-  }
+#  $t_PE = $sample_info{$id}{$tumour}{'PE'};
+#  $t_SR = $sample_info{$id}{$tumour}{'SR'};
+#
+#  if ($sample_info{$id}{$tumour}{'QA'}){
+#    $tumour_read_support = $sample_info{$id}{$tumour}{'QA'};
+#  }
+#  else{
+#    $tumour_read_support = $t_SR + $t_PE;
+#  }
+#
+#  # Get read support for direct control only
+#  if ($sample_info{$id}{$control}{'QA'}){
+#    $direct_control_read_support = $sample_info{$id}{$control}{'QA'};
+#  }
+#  else{
+#    $direct_control_read_support = $sample_info{$id}{$control}{'PE'} + $sample_info{$id}{$control}{'SR'};
+#  }
 
   # Create temp pseudo counts to avoid illegal division by 0
   my $pc_tumour_read_support         = $tumour_read_support + 0.001;
   my $pc_direct_control_read_support = $direct_control_read_support + 0.001;
-
 
   # $c_PE =  $sample_info{$id}{$control}{'PE'};
   # $c_SR =  $sample_info{$id}{$control}{'SR'};
@@ -351,10 +364,8 @@ sub lumpy {
 
     ### This might be useless - isn't this happening in somatic_filter() ?
     if (@samples > 1){ # In case there are no control samples...
-
       # for precise variants:
       if ($info_block !~ /IMPRECISE;/) {
-
         # We want to be strict, so include all controls used for genotyping (and sum read support)
         @normals = @normals[1..$#normals] if $genotype eq 'somatic_normal';
 
@@ -384,7 +395,6 @@ sub lumpy {
         if ( $filter_flags{'s'} ){
           push @filter_reasons, "Precise call with high quality read support in at least 1 other sample. Total HQ reads=" . $all_control_read_support;
         }
-
       }
 
       # for imprecise variants:
@@ -393,7 +403,6 @@ sub lumpy {
         # Or if there are more than 2 control reads
         if ( $pc_tumour_read_support/$pc_direct_control_read_support < 5 ){
           push @filter_reasons, 'Imprecise call with less than 5 * more tumour reads than normal=' . $direct_control_read_support if $filter_flags{'s'};
-
         }
         if ( $direct_control_read_support > 1 ){
           if ( $genotype eq 'somatic_normal' ){
@@ -404,7 +413,6 @@ sub lumpy {
           }
           push @filter_reasons, 'Imprecise call with control read support=' . $direct_control_read_support if $filter_flags{'s'};
         }
-
       }
     }
 
@@ -640,38 +648,12 @@ sub delly {
 
 
 sub summarise_variants {
-  my ( $SVs, $filter_switch, $chromosome ) = @_;
+  my ( $SVs, $filter_switch, $region ) = @_;
 
   my ($dels, $dups, $trans, $invs, $filtered) = (0,0,0,0,0);
   my ($tds, $CNVs, $ins) = (0,0,0);
 
-  my ( $query_region, $query_start, $query_stop );
-
-  my $specified_region = 0;
-
-    if ( $chromosome ){
-
-      if ( $chromosome =~ /:/ ){
-
-        ($chromosome, $query_region) = split(/:/, $chromosome);
-
-        if ( $query_region !~ /-/ ){
-          die "Error parsing the specified region.\nPlease specify chromosome regions using the folloing format:\tchrom:start-stop\n";
-        }
-
-        ($query_start, $query_stop) = split(/-/, $query_region);
-        $query_start =~ s/,//g;
-        $query_stop =~ s/,//g;
-
-        say "Limiting search to SVs within region '$chromosome:$query_start-$query_stop'";
-
-        $specified_region = 1;
-      }
-      else {
-        say "Limiting search to SVs on chromosome '$chromosome'";
-      }
-
-    }
+  my ( $chromosome, $query_start, $query_stop, $specified_region) = parseChrom($region);
 
   my %support_by_chrom;
 
@@ -699,12 +681,10 @@ sub summarise_variants {
     }
 
     if ( $specified_region ){
-
       if ( ( $start < $query_start or $start > $query_stop ) and ( $stop < $query_stop or $stop > $query_stop ) ){
          next;
        }
     }
-
      # Need this re-assignment for novobreak - should be harmless for lumpy and delly
     $id = $_;
 
@@ -774,9 +754,7 @@ sub summarise_variants {
 
 
 sub get_variant {
-
-  my ($id_lookup, $SVs, $info, $filter_flag) = @_;
-
+  my ($id_lookup, $SVs, $info, $filter_flag, $PON_print) = @_;
   if (not $info->{$id_lookup}){
     say "Couldn't find any variant with ID: '$id_lookup' in file. Abort";
     exit;
@@ -798,16 +776,20 @@ sub get_variant {
 
   my @samples = @{ $samples };
 
-  # Should change so that it will only print filter reasons if user specifies them
+  if ($PON_print > (scalar @samples - 2 )){
+        $PON_print = scalar @samples - 2;
+    }
 
+
+  # Should change so that it will only print filter reasons if user specifies them
   if (scalar @filter_reasons > 0 ){
-  say "\n______________________________________________";
+  say "\n________________________________________________________";
   say "Variant '$id_lookup' will be filtered for the following reasons:";
   say "* $_" foreach @filter_reasons;
-  say "______________________________________________\n";
+  say "________________________________________________________\n";
   }
 
-  printf "%-10s %-s\n",        "ID:",     $id_lookup;
+  printf "%-10s %-s\n",       "ID:",     $id_lookup;
   printf "%-10s %-s\n",       "TYPE:",   $sv_type;
   printf "%-10s %-s\n",       "GENOTYPE:",   $genotype;
   $chr2 ?
@@ -825,60 +807,41 @@ sub get_variant {
   printf "%-10s %-s\n",       "REF:",     $ref;
   printf "%-10s %-s\n",       "ALT:",     $alt;
 
-  say "__________________________________________________________________________________________________________________";
+  my $separating_line = "___________________" x ($PON_print+4);
+  say $separating_line;
   printf "%-20s",         "INFO";
-  printf "%-20s",         $_ for @samples;
+  printf "%-20s",         $_ for @samples[0..$PON_print+1];
   printf "%-s\n",         "EXPLAINER";
-  say "__________________________________________________________________________________________________________________";
+  say $separating_line;
 
   foreach my $format_block (@format){
     printf "%-20s", "$format_block";
-    foreach (@samples){
+
+    foreach (@samples[0..$PON_print+1]){
       printf "%-20s", "$sample_info{$id_lookup}{$_}{$format_block}";
     }
     printf "%-s", "$format_long{$format_block}";
     print "\n";
   }
 
-  say "____________________________________________________________________________________";
+  say "______________________________________________________";
   printf "%-20s %-20s %-s\n", "INFO", "VALUE", "EXPLAINER";
-  say "____________________________________________________________________________________";
+  say "______________________________________________________";
 
   for (sort keys %{$information{$id_lookup}}){
     # turn off warnings for badly formatted novobreak vcf
     no warnings;
     printf "%-20s %-20s %-s\n", $_, $information{$id_lookup}{$_}, $info_long{$_};
   }
-  say "____________________________________________________________________________________";
+  say "______________________________________________________";
 
 }
 
 
 sub dump_variants {
-  my ( $SVs, $info, $filter_flag, $chromosome, $type ) = @_;
-  my ( $query_region, $query_start, $query_stop );
-  my $specified_region = 0;
+  my ( $SVs, $info, $filter_flag, $region, $type, $PON_print ) = @_;
 
-  if ( $chromosome ){
-    if ( $chromosome =~ /:/ ){
-      ($chromosome, $query_region) = split(/:/, $chromosome);
-      if ( $query_region !~ /-/ ){
-        die "Error parsing the specified region.\nPlease specify chromosome regions using the folloing format:\tchrom:start-stop\n";
-      }
-
-      ($query_start, $query_stop) = split(/-/, $query_region);
-      $query_start =~ s/,//g;
-      $query_stop  =~ s/,//g;
-
-      say "Limiting search to SVs within region '$chromosome:$query_start-$query_stop'";
-
-      $specified_region = 1;
-    }
-    else {
-      say "Limiting search to SVs on chromosome '$chromosome'";
-    }
-
-  }
+  my ( $chromosome, $query_start, $query_stop, $specified_region) = parseChrom($region);
 
   say "Running in filter mode - not displaying filtered calls" if $filter_flag;
   say "\nEnter any key to start cycling through calls or enter 'q' to exit";
@@ -915,6 +878,10 @@ sub dump_variants {
 
     my @samples         = @{ $samples };
 
+    if ($PON_print > (scalar @samples - 2 )){
+        $PON_print = scalar @samples - 2;
+    }
+
     if ( scalar @filter_reasons > 0 ){
       next if $filter_flag;
     }
@@ -927,10 +894,10 @@ sub dump_variants {
       exit if $next_line eq 'q';
 
       if (scalar @filter_reasons > 0 ){
-        say "______________________________________________";
+        say "_______________________________________________________";
         say "Variant '$id' will be filtered for the following reasons:";
         say "* $_" foreach @filter_reasons;
-        say "______________________________________________\n";
+        say "________________________________________________________\n";
       }
       if ($type ne 'snp'){
         printf "%-10s %-s\n",        "ID:",         $id;
@@ -962,31 +929,35 @@ sub dump_variants {
         printf "%-10s %-s\n",    "MUT:",    "$ref>$alt";
       }
 
-        say "__________________________________________________________________________________________________________________";
+        my $separating_line = "___________________" x ($PON_print+4);
+
+        say $separating_line;
+
         printf "%-20s",         "INFO";
-        printf "%-20s",         $_ for @samples;
+        printf "%-20s",         $_ for @samples[0..$PON_print+1];
         printf "%-s\n",         "EXPLAINER";
-        say "__________________________________________________________________________________________________________________";
+
+        say $separating_line;
 
       foreach my $format_block (@format){
         printf "%-20s",       $format_block;
-        foreach (@samples){
+        foreach (@samples[0..$PON_print+1]){
           printf "%-20s",     $sample_info{$id}{$_}{$format_block};
         }
         printf "%-s",         $format_long{$format_block};
         print "\n";
       }
 
-      say "____________________________________________________________________________________";
+      say "______________________________________________________";
       printf "%-20s %-20s %-s\n", "INFO", "VALUE", "EXPLAINER";
-      say "____________________________________________________________________________________";
+      say "______________________________________________________";
 
       for (sort keys %{$information{$id}}){
         # turn off warnings for badly formatted novobreak vcf
         no warnings;
         printf "%-20s %-20s %-s\n", $_, $information{$id}{$_}, $info_long{$_};
       }
-      say "____________________________________________________________________________________";
+      say "______________________________________________________";
 
     }
   }
@@ -1117,6 +1088,29 @@ sub write_summary {
 }
 
 
+sub parseChrom {
+  my $region = shift;
+
+  if ( $region =~ /:/ ){
+    my ($chromosome, $query_region) = split(/:/, $region);
+
+    if ( $query_region !~ /-/ ){
+      die "Error parsing the specified region.\nPlease specify chromosome regions using the folloing format:\tchrom:start-stop\n";
+    }
+
+    my ($query_start, $query_stop) = split(/-/, $query_region);
+    $query_start =~ s/,//g;
+    $query_stop =~ s/,//g;
+    say "Limiting search to SVs within region '$chromosome:$query_start-$query_stop'";
+    return($chromosome, $query_start, $query_stop, 1);
+  }
+  else {
+    say "Limiting search to SVs on chromosome '$region'";
+    return($region, undef, undef, 0);
+  }
+}
+# Exclude variants where either breakpoint is withing +/- 250 bps of an unmappable region
+# returns @filter_reasons
 sub region_exclude_filter {
   my ( $chr1, $bp1, $chr2, $bp2, $exclude_regions, $filter_reasons ) = @_;
 
@@ -1128,23 +1122,24 @@ sub region_exclude_filter {
 
   foreach(@bed){
     my ($chromosome, $start, $stop) = split;
-    next if $stop - $start < 200;
+    next if $stop - $start < 200; # don't consider unmappable regions < 200 bps
 
     if ( $bp1 >= ($start - $slop) and $bp1 <= ($stop + $slop) ) {
       next unless $chromosome eq $chr1;
-      push @filter_reasons, 'bp1 in excluded region=' . "$chromosome:$bp1 in:" . $start . '-' . $stop;
+      push @filter_reasons, 'bp1 in or very close to excluded region=' . "$chromosome:$bp1 in:" . $start . '-' . $stop;
       last;
     }
     if ( $bp2 >= ($start - $slop) and $bp2 <= ($stop + $slop) ) {
       next unless $chromosome eq $chr2;
-      push @filter_reasons, 'bp2 in excluded region=' . "$chromosome:$bp2 in:" . $start . '-' . $stop;
+      push @filter_reasons, 'bp2 in or very close to excluded region=' . "$chromosome:$bp2 in:" . $start . '-' . $stop;
       last;
     }
   }
   return (\@filter_reasons);
 }
 
-
+# Remove variants where read support < $filter
+# returns @filter_reasons
 sub read_support_filter {
   my ($tumour_read_support, $read_support_flag, $sample, $filter_reasons ) = @_;
   my @filter_reasons = @{ $filter_reasons };
@@ -1179,24 +1174,6 @@ sub somatic_filter {
 
   my %PON_info = % { $PON_info };
   my @filter_reasons = @{ $filter_reasons };
-
-  # # Filter if ANY of the panel of normals (but not direct control) are NOT 'GT = 0/0' (hom ref)
-  # for my $normal (@normals[1..$#normals]){
-  #   if ( $sample_info{$id}{$normal}{'GT'} eq '1/1' or $sample_info{$id}{$normal}{'GT'} eq '0/1' ){
-  #     push @filter_reasons, "PON member '$normal' not homozygous for reference genotype=" . $sample_info{$id}{$normal}{'GT'};
-  #   }
-  #
-  #
-  #
-  #   if ( $sample_info{$id}{$control_name}{'QA'} != 0 and $sample_info{$id}{$normal}{'QA'} == 0 and $sample_info{$id}{$tumour_name}{'QA'} == 0 ){
-  #     push @filter_reasons, "Somatic NORMAL event '$control_name'=" . $sample_info{$id}{$control_name}{'GT'};
-  #   }
-  #
-  # }
-  #
-  # if ( $sample_info{$id}{$tumour_name}{'GT'} eq '0/0' and $sample_info{$id}{$control_name}{'GT'} ne '0/0' ){
-  #     push @filter_reasons, "Event exclusive to normal '$control_name'=" . $sample_info{$id}{$control_name}{'GT'};
-  #   }
 
   for my $normal (keys %PON_info) {
 
