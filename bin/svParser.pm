@@ -646,7 +646,7 @@ sub summarise_variants {
   my ($dels, $dups, $trans, $invs, $filtered) = (0,0,0,0,0);
   my ($tds, $CNVs, $ins) = (0,0,0);
 
-  my ( $chromosome, $query_start, $query_stop, $specified_region) = parseChrom($region);
+  my ( $chromosome, $query_start, $query_stop, $specified_region) = parseChrom($region) if $region;
 
   my %support_by_chrom;
 
@@ -834,7 +834,7 @@ sub get_variant {
 sub dump_variants {
   my ( $SVs, $info, $filter_flag, $region, $type, $PON_print ) = @_;
 
-  my ( $chromosome, $query_start, $query_stop, $specified_region) = parseChrom($region);
+  my ( $chromosome, $query_start, $query_stop, $specified_region) = parseChrom($region) if $region;
 
   say "Running in filter mode - not displaying filtered calls" if $filter_flag;
   say "\nEnter any key to start cycling through calls or enter 'q' to exit";
