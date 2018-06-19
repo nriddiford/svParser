@@ -12,6 +12,7 @@ use svParser;
 
 use feature qw/ say /;
 use Data::Dumper;
+use Data::Printer;
 use File::Basename;
 use File::Path qw/ make_path / ;
 use File::Slurp;
@@ -25,7 +26,7 @@ my $dump;
 my $chromosome;
 my $method = "guess";
 my $print;
-my $exclude;
+my $exclude = "";
 my %filters;
 my $PON_print = 5;
 my %opt;
@@ -91,42 +92,28 @@ if ($print){
   }
 }
 
-my $filter_switch= 0;
+my %legalOpts = ( 'su'  =>  1,
+                  'dp'  =>  1,
+                  'rdr' =>  1,
+                  'sq'  =>  1,
+                  'chr' =>  1,
+                  'gr'  =>  1,
+                  'gp'  =>  1,
+                  'st'  =>  1,
+                  'sn'  =>  1,
+                  'e'   =>  1,
+                  'a'   =>  1
+);
 
-if ( scalar keys %filters > 0 ){
-  print "\n";
-  if ( exists $filters{'a'} ){
-    $filter_switch = 1;
-    my $filter_ref = allFilters($exclude, \@keys, \%filters);
-  }
-  elsif ( $filters{'su'} or $filters{'dp'} or $filters{'rdr'} or $filters{'sq'} or $filters{'chr'} or $filters{'g'} or $filters{'e'} or $filters{'n'} or $filters{'s'} ) {
-    say "Running in filter mode, using custom filters:";
-    say " o Read support >= $filters{'su'}" if $filters{'su'};
-    say " o Read depth (in both tumour and normal) > $filters{'dp'}" if $filters{'dp'};
-    say " o Read support / depth > $filters{'rdr'}" if $filters{'rdr'};
-    say " o SQ quality > $filters{'sq'}" if $filters{'sq'};
-    say " o Chromosomes: " . join(' ', @keys) if $filters{'chr'};
-    say " o Running in germline mode" if $filters{'g'};
-    say " o Running in somatic TUMOUR mode" if $filters{'s'};
-    say " o Running in somatic NORMAL mode" if $filters{'n'};
-    say " o Excluding calls overlapping: $exclude" if $filters{'e'};
-    $filter_switch = 1;
-  }
-  else {
-    my $illegals = join(",", keys %filters);
-    say "Illegal filter option used: '$illegals'. Please specify filters to run with (or use '-f or -f a' to run all defaults)";
-    say "Filter options available:";
-    say " o Read support: su=INT";
-    say " o Read depth: dp=INT";
-    say " o Read support / depth: rdr=FLOAT";
-    say " o SQ quality: sq=INT";
-    say " o Chromosomes: " . join(' ', @keys);
-    say " o Germline only: g=1";
-    say " o Exclude calls in bed file: e [bed file]";
-    die "Please check filter specification\n";
-     }
+my $filter_switch = 0;
+my $filter_ref;
+
+if ( exists $filters{'a'} ){
+  $filter_ref = allFilters(\%filters);
+  %filters = %{ $filter_ref };
 }
 
+($filter_switch, $filter_ref) = checkFilters(\%filters, \%legalOpts, 0, $exclude, \@keys) if scalar keys %filters > 0;
 my ($name, $extention) = split(/\.([^.]+)$/, basename($vcf_file), 2);
 
 print "\n";
@@ -148,21 +135,13 @@ if ($method ne 'snp') {
 
   # Write out variants passing filters
   # Write out some useful info to txt file
-  if ( $filters{'g'} ){
-    print "Printing germline events\n";
-    svParser::print_variants( $SVs, $filtered_vars, $name, $filtered_out, 1 ) if $print;
-    svParser::write_summary( $SVs, $name, $summary_out, $method, 1) if $print;
-  }
-  else {
-    svParser::print_variants( $SVs, $filtered_vars, $name, $filtered_out, 0 ) if $print;
-    svParser::write_summary( $SVs, $name, $summary_out, $method, 0 ) if $print;
-  }
+  svParser::print_variants( $SVs, $filtered_vars, $name, $filtered_out, 0 ) if $print;
+  svParser::write_summary( $SVs, $name, $summary_out, $method, 0 ) if $print;
 }
 
 if ($method eq 'snp') {
   # Dump all variants to screen
   svParser::dump_variants( $SVs, $info, $filter_switch, $chromosome, $method) if $dump;
-
   if ($print or $id ){
     die "Print and get variants not supported for SNP data\n";
   }
@@ -200,18 +179,55 @@ sub testCalls {
 
 
 sub allFilters {
-  my ($exclude_file, $chroms, $f) = @_;
+  my $f = shift;
   my %filters = %{$f};
-  say "Running in filter mode, using all default filters:";
-  say " o Read support >= 4";
-  say " o Read depth (in both tumour and normal) > 10";
-  say " o Read support / depth > 0.1";
-  say " o SQ quality > 10";
-  say " o Chromosomes: " . join(' ', @{$chroms} );
-  say " o Excldung calls in regions: $exclude_file";
-
-  $filters{'su'} = 4;
+  $filters{'a'} = 1;
+  $filters{'su'}  = 4;
+  $filters{'dp'}  = 10;
+  $filters{'rdr'} = 0.1;
+  $filters{'sq'}  = 10;
+  $filters{'chr'} = 1;
   return(\%filters)
+}
+
+
+sub checkFilters {
+  my ($filter_given, $legalOpts, $filter_switch, $exclude, $chroms) = @_;
+  my %legalOpts = %{$legalOpts};
+  my %filters = %{$filter_given};
+  say "Running in filter mode, using custom filters:";
+
+  for my $k (keys %{ $filter_given } ){
+    if (exists $legalOpts{$k}){
+      explainFilters(\%legalOpts, $k, $exclude, $chroms);
+      $filter_switch = 1;
+    }
+    else {
+      printIllegals($k);
+    }
+  }
+  return($filter_switch, $filter_given);
+}
+
+sub explainFilters {
+  my ($legals, $filter_given, $exclude, $chroms) = @_;
+  my %legalOpts = %{ $legals };
+      say " o Read support >= $legalOpts{'su'}" if $filter_given eq 'su';
+      say " o Read depth (in both tumour and normal) > $legalOpts{'dp'}" if $filter_given eq 'dp';
+      say " o Read support / depth > $legalOpts{'rdr'}" if $filter_given eq 'rdr';
+      say " o SQ quality > $legalOpts{'sq'}" if $filter_given eq 'sq';
+      say " o Chromosomes: " . join(' ', @{$chroms}) if $filter_given eq 'chr';
+      say " o Running in germline PRIVATE mode" if $filter_given eq 'gp';
+      say " o Running in germline RECURRANT mode" if $filter_given eq 'gr';
+      say " o Running in somatic TUMOUR mode" if $filter_given eq 'st';
+      say " o Running in somatic NORMAL mode" if $filter_given eq 'sn';
+      say " o Excluding calls overlapping: $exclude" if $filter_given eq 'e';
+}
+
+sub printIllegals {
+  my $illegal_option = shift;
+  say "Illegal filter option used: '$illegal_option'. Please specify filters to run with (or use '-f or -f a' to run all defaults)";
+  die usage();
 }
 
 
@@ -251,7 +267,10 @@ arguments:
                             -f rdr=FLOAT [fraction of supporting reads/tumour depth - a value of 1 would mean all reads support variant]
                             -f sq=INT    [phred-scaled variant likelihood]
                             -f chr=1     [only show chromosomes in 'chroms.txt'. [Default use Drosophila chroms: 2L 2R 3L 3R 4 X Y]
-                            -f s=1       [only keep somatic tumour events]
+                            -f st=1      [only keep somatic tumour events]
+                            -f sn=1      [only keep somatic normal events]
+                            -f gp=1      [only keep germline private events]
+                            -f gr=1      [only keep germline recurrent events]
                             -f, -f a     [apply default filters: -f su=4 -f dp=10 -f rdr=0.1 -f sq=10 -f chr=1 ]
 "
 }

@@ -272,8 +272,17 @@ sub lumpy {
     }
   }
 
-  if ( $filter_flags{'s'} ){
-    $filters = somatic_filter( $id, $tumour, $control, $normals, $filters, \%PON_info );
+  if ( $filter_flags{'st'} ){
+    $filters = genotype_filter( $id, $genotype, $filters, 'somatic_tumour' );
+  }
+  elsif ( $filter_flags{'sn'} ){
+    $filters = genotype_filter( $id, $genotype, $filters, 'somatic_normal' );
+  }
+  elsif ( $filter_flags{'gp'} ){
+    $filters = genotype_filter( $id, $genotype, $filters, 'germline_private' );
+  }
+  elsif ( $filter_flags{'gr'} ){
+    $filters = genotype_filter( $id, $genotype, $filters, 'germline_recurrent' );
   }
 
   my @samples = @{ $samples };
@@ -356,7 +365,7 @@ sub lumpy {
 
   my @filter_reasons = @{ $filters };
 
-    ### This might be useless - isn't this happening in somatic_filter() ?
+    ### This might be useless - isn't this happening in genotype_filter() ?
     if (@samples > 1){ # In case there are no control samples...
       # for precise variants:
       if ($info_block !~ /IMPRECISE;/) {
@@ -621,8 +630,8 @@ sub delly {
     $PON_info{$normal} = [ ($sample_info{$id}{$normal}{'DV'} + $sample_info{$id}{$normal}{'RV'}) , $sample_info{$id}{$normal}{'GT'} ];
   }
 
-  if ( $filter_flags{'s'} ){
-    $filters = somatic_filter( $id, $tumour_name, $control_name, $normals, $filters, \%PON_info );
+  if ( $filter_flags{'st'} ){
+    $filters = genotype_filter( $id, $genotype, $filters, 'somatic_tumour' );
   }
 
   if ( $filter_flags{'su'} ){
@@ -642,20 +651,14 @@ sub delly {
 
 sub summarise_variants {
   my ( $SVs, $filter_switch, $region ) = @_;
-
   my ($dels, $dups, $trans, $invs, $filtered) = (0,0,0,0,0);
   my ($tds, $CNVs, $ins) = (0,0,0);
 
   my ( $chromosome, $query_start, $query_stop, $specified_region) = parseChrom($region) if $region;
-
   my %support_by_chrom;
-
   my $read_support;
-
   my %filtered_sv;
-
   my %sv_type_count;
-
   my @gens = qw/germline_recurrent germline_private somatic_tumour somatic_normal/;
   my @types = qw/DEL DUP INV BND TRA DUP:TANDEM CNV INS /;
 
@@ -666,13 +669,11 @@ sub summarise_variants {
   }
 
   for (keys %{ $SVs } ){
-
     my ( $chr, $start, $id, $ref, $alt, $quality_score, $filt, $info_block, $format_block, $tumour_info_block, $normal_info_block, $sv_type, $SV_length, $stop, $chr2, $SR, $PE, $ab, $filters, $genotype, $samples ) = @{ $SVs->{$_} };
 
     if ( $chromosome ){
       next if $chr ne $chromosome;
     }
-
     if ( $specified_region ){
       if ( ( $start < $query_start or $start > $query_stop ) and ( $stop < $query_stop or $stop > $query_stop ) ){
          next;
@@ -693,12 +694,9 @@ sub summarise_variants {
       next if $filter_switch;
     }
 
-
     $read_support = ( $SR + $PE );
     $support_by_chrom{$id} = [ $read_support, $sv_type, $chr, $SV_length, $start ];
-
     $sv_type_count{$genotype}{$sv_type}++;
-
   }
   print "\n";
 
@@ -1162,23 +1160,12 @@ sub read_depth_filter {
 }
 
 
-sub somatic_filter {
-  my ($id, $tumour_name, $control_name, $PON, $filter_reasons, $PON_info) = @_;
-
-  my %PON_info = % { $PON_info };
+sub genotype_filter {
+  my ($id, $genotype, $filter_reasons, $selected_genotype ) = @_;
   my @filter_reasons = @{ $filter_reasons };
-
-  for my $normal (keys %PON_info) {
-
-    if ( $PON_info{$normal}[1] eq '1/1' or $PON_info{$normal}[1] eq '0/1' ){
-      push @filter_reasons, "PON member '$normal' not homozygous for reference genotype=" . $PON_info{$normal}[1];
+    if ( $genotype ne $selected_genotype ){
+      push @filter_reasons,  "Not $selected_genotype: genotype=" . $genotype;
     }
-    # Filter if any quality reads support var in any normal in PON
-    if ( $PON_info{$normal}[0] != 0){
-      push @filter_reasons, "PON member '$normal' has quality support for alternative genotype=" . $PON_info{$normal}[0];
-    }
-
-  }
   return(\@filter_reasons);
 }
 
