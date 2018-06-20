@@ -51,33 +51,70 @@ if (not $vcf_file) {
    exit usage();
 }
 
-my @keys;
-if (-e 'chroms.txt'){
-  say "\nReading chromosomes file from 'chroms.txt'";
-  @keys = read_file('chroms.txt', chomp=>1);
-}
-else {
-  say "\nFiltering for Drosophila chroms: 2L 2R 3L 3R 4 X Y ";
-  @keys = qw / 2L 2R 3L 3R 4 X Y /;
-}
-
-my @exclude_regions;
-if ($exclude){
-  my @exclude = read_file($exclude, chomp=>1);
-  my %chroms;
-  @chroms{@keys} = ();
-  # Should speed things up a bit by removing any chromosomes in exclude (.bed) file that aren't in our list of chroms we want to look at (@keys)
-  foreach(@exclude){
-    my $chrom = (split)[0];
-    next unless exists $chroms{$chrom};
-    push @exclude_regions, $_;
-  }
-  undef @exclude;
-  $filters{'e'} = 1;
-}
+my ($name, $extention) = split(/\.([^.]+)$/, basename($vcf_file), 2);
 
 my ($filtered_out, $summary_out);
-if ($print){
+
+makeDirs() if $print;
+
+my %legalFilters = ('su'  =>  1,
+                    'dp'  =>  1,
+                    'rdr' =>  1,
+                    'sq'  =>  1,
+                    'chr' =>  1,
+                    'gr'  =>  1,
+                    'gp'  =>  1,
+                    'st'  =>  1,
+                    'sn'  =>  1,
+                    'e'   =>  1,
+                    'a'   =>  1
+);
+
+my $filter_switch = 0;
+my $filter_ref = \%filters;
+
+if ( exists $filters{'a'} ){
+  $filter_ref = allFilters(\%filters);
+  %filters = %{ $filter_ref };
+}
+
+my $chroms;
+$chroms = getChroms() if exists $filters{'chr'};
+
+my $exclude_regions;
+($filter_ref, $exclude_regions) =  readUnmappable($exclude, $filter_ref, $chroms) if $exclude;
+($filter_switch, $filter_ref) = checkFilters($filter_ref, \%legalFilters, 0, $exclude, $chroms) if scalar keys %filters > 0;
+
+print "\n";
+
+# Retun SV and info hashes
+my ( $SVs, $info, $filtered_vars, $call_lookup) = svParser::typer( $vcf_file, $method, $exclude_regions, $chroms, $filter_ref );
+testCalls($true_positives, $SVs, $info, $filter_switch, $PON_print, $call_lookup) if $true_positives;
+
+if ($method ne 'snp') {
+  # Print summary to screen
+  svParser::summarise_variants( $SVs, $filter_switch, $chromosome ) unless $id or $dump or $true_positives;
+  # Print all info for specified id
+  svParser::get_variant( $id, $SVs, $info, $filter_switch, $PON_print) if $id and not $true_positives;
+  # Dump all variants to screen
+  svParser::dump_variants( $SVs, $info, $filter_switch, $chromosome, $method, $PON_print ) if $dump and not $true_positives;
+  # Write out variants passing filters
+  # Write out some useful info to txt file
+  svParser::print_variants( $SVs, $filtered_vars, $name, $filtered_out, 0 ) if $print;
+  svParser::write_summary( $SVs, $name, $summary_out, $method, 0 ) if $print;
+}
+
+
+elsif ($method eq 'snp') {
+  # Dump all variants to screen
+  svParser::dump_variants( $SVs, $info, $filter_switch, $chromosome, $method) if $dump;
+  if ($print or $id ){
+    die "Print and get variants not supported for SNP data\n";
+  }
+}
+
+
+sub makeDirs {
   $filtered_out = "$Bin/../filtered/";
   eval { make_path($filtered_out) };
 
@@ -89,61 +126,6 @@ if ($print){
 
   if ($@) {
     print "Couldn't create '$summary_out': $@";
-  }
-}
-
-my %legalOpts = ( 'su'  =>  1,
-                  'dp'  =>  1,
-                  'rdr' =>  1,
-                  'sq'  =>  1,
-                  'chr' =>  1,
-                  'gr'  =>  1,
-                  'gp'  =>  1,
-                  'st'  =>  1,
-                  'sn'  =>  1,
-                  'e'   =>  1,
-                  'a'   =>  1
-);
-
-my $filter_switch = 0;
-my $filter_ref;
-
-if ( exists $filters{'a'} ){
-  $filter_ref = allFilters(\%filters);
-  %filters = %{ $filter_ref };
-}
-
-($filter_switch, $filter_ref) = checkFilters(\%filters, \%legalOpts, 0, $exclude, \@keys) if scalar keys %filters > 0;
-my ($name, $extention) = split(/\.([^.]+)$/, basename($vcf_file), 2);
-
-print "\n";
-
-# Retun SV and info hashes
-my ( $SVs, $info, $filtered_vars, $call_lookup) = svParser::typer( $vcf_file, $method, \@exclude_regions, \@keys, \%filters );
-
-testCalls($true_positives, $SVs, $info, $filter_switch, $PON_print, $call_lookup) if $true_positives;
-
-if ($method ne 'snp') {
-  # Print summary to screen
-  svParser::summarise_variants( $SVs, $filter_switch, $chromosome ) unless $id or $dump or $true_positives;
-
-  # Print all info for specified id
-  svParser::get_variant( $id, $SVs, $info, $filter_switch, $PON_print) if $id and not $true_positives;
-
-  # Dump all variants to screen
-  svParser::dump_variants( $SVs, $info, $filter_switch, $chromosome, $method, $PON_print ) if $dump and not $true_positives;
-
-  # Write out variants passing filters
-  # Write out some useful info to txt file
-  svParser::print_variants( $SVs, $filtered_vars, $name, $filtered_out, 0 ) if $print;
-  svParser::write_summary( $SVs, $name, $summary_out, $method, 0 ) if $print;
-}
-
-if ($method eq 'snp') {
-  # Dump all variants to screen
-  svParser::dump_variants( $SVs, $info, $filter_switch, $chromosome, $method) if $dump;
-  if ($print or $id ){
-    die "Print and get variants not supported for SNP data\n";
   }
 }
 
@@ -192,14 +174,14 @@ sub allFilters {
 
 
 sub checkFilters {
-  my ($filter_given, $legalOpts, $filter_switch, $exclude, $chroms) = @_;
-  my %legalOpts = %{$legalOpts};
+  my ($filter_given, $legalFilters, $filter_switch, $exclude, $chroms) = @_;
+  my %legalFilters = %{$legalFilters};
   my %filters = %{$filter_given};
   say "Running in filter mode, using custom filters:";
 
   for my $k (keys %{ $filter_given } ){
-    if (exists $legalOpts{$k}){
-      explainFilters(\%legalOpts, $k, $exclude, $chroms);
+    if (exists $legalFilters{$k}){
+      explainFilters(\%legalFilters, $k, $exclude, $chroms);
       $filter_switch = 1;
     }
     else {
@@ -209,13 +191,14 @@ sub checkFilters {
   return($filter_switch, $filter_given);
 }
 
+
 sub explainFilters {
   my ($legals, $filter_given, $exclude, $chroms) = @_;
-  my %legalOpts = %{ $legals };
-      say " o Read support >= $legalOpts{'su'}" if $filter_given eq 'su';
-      say " o Read depth (in both tumour and normal) > $legalOpts{'dp'}" if $filter_given eq 'dp';
-      say " o Read support / depth > $legalOpts{'rdr'}" if $filter_given eq 'rdr';
-      say " o SQ quality > $legalOpts{'sq'}" if $filter_given eq 'sq';
+  my %legalFilters = %{ $legals };
+      say " o Read support >= $legalFilters{'su'}" if $filter_given eq 'su';
+      say " o Read depth (in both tumour and normal) > $legalFilters{'dp'}" if $filter_given eq 'dp';
+      say " o Read support / depth > $legalFilters{'rdr'}" if $filter_given eq 'rdr';
+      say " o SQ quality > $legalFilters{'sq'}" if $filter_given eq 'sq';
       say " o Chromosomes: " . join(' ', @{$chroms}) if $filter_given eq 'chr';
       say " o Running in germline PRIVATE mode" if $filter_given eq 'gp';
       say " o Running in germline RECURRANT mode" if $filter_given eq 'gr';
@@ -224,10 +207,48 @@ sub explainFilters {
       say " o Excluding calls overlapping: $exclude" if $filter_given eq 'e';
 }
 
+
 sub printIllegals {
   my $illegal_option = shift;
   say "Illegal filter option used: '$illegal_option'. Please specify filters to run with (or use '-f or -f a' to run all defaults)";
   die usage();
+}
+
+
+sub getChroms {
+  my @keys;
+  if (-e 'chroms.txt'){
+    say "\nReading chromosomes file from 'chroms.txt'";
+    @keys = read_file('chroms.txt', chomp=>1);
+  }
+  else {
+    say "\nFiltering for Drosophila chroms: 2L 2R 3L 3R 4 X Y ";
+    @keys = qw / 2L 2R 3L 3R 4 X Y /;
+  }
+  return(\@keys);
+}
+
+
+sub readUnmappable {
+  my ($x, $f, $c) = @_;
+  my %filts = %{$f};
+  my @keys = @{$c};
+  my @exclude_regions;
+  my @exclude = read_file($x, chomp=>1);
+  if (exists $filts{'chr'}){
+    my %chroms;
+    @chroms{@keys} = ();
+    # Should speed things up a bit by removing any chromosomes in exclude (.bed)
+    # file that aren't in our list of chroms we want to look at (@keys)
+    foreach(@exclude){
+      my $chrom = (split)[0];
+      next unless exists $chroms{$chrom};
+      push @exclude_regions, $_;
+    }
+    undef @exclude;
+  }
+  $filts{'e'} = 1;
+  return(\%filts, \@exclude_regions);
 }
 
 

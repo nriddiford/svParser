@@ -73,7 +73,6 @@ sub parse {
   open my $in, '<', $file or die $!;
 
   my @headers;
-
   my %filter_flags = %{ $filter_flags };
 
   my (%SVs, %info, %filtered_SVs, %call_lookup);
@@ -1238,9 +1237,7 @@ sub chrom_filter {
   elsif ( not $chrom_filt{$chr2} ){
     push @filter_reasons, 'chrom2=' . $chr2;
   }
-
   return (\@filter_reasons);
-
 }
 
 
