@@ -17,19 +17,19 @@ our $VERSION = '1.1';
 sub typer {
   my ($file, $type, $exclude_regions, $chrom_keys, $filters ) = @_;
 
-  if ( $type eq 'l' ){
+  if ( $type eq 'l' or $type =~ m/lumpy/i ){
     say "Specified $file as a Lumpy file";
     $type = 'lumpy';
     parse($file, $type, $exclude_regions, $chrom_keys, $filters);
   }
 
-  elsif ( $type eq 'd' ){
+  elsif ( $type eq 'd' or $type =~ m/delly/i ){
     say "Specified $file as a Delly file";
     $type = 'delly';
     parse($file, $type, $exclude_regions, $chrom_keys, $filters);
   }
 
-  elsif ( $type eq 'n' ){
+  elsif ( $type eq 'n' or $type =~ m/novobreak/i ){
     say "Specified $file as a novoBreak file";
     $type = 'novobreak';
     parse($file, $type, $exclude_regions, $chrom_keys, $filters);
@@ -57,11 +57,7 @@ sub typer {
       $type = 'novobreak';
       parse($file, $type, $exclude_regions, $chrom_keys, $filters);
     }
-    else {
-      die "This VCF can not be parsed. Try specfiying type '-t' explicitly. See -h for details. Abort";
-    }
   }
-
   else {
     die "This VCF can not be parsed. Try specfiying type '-t' explicitly. See -h for details. Abort";
   }
@@ -85,7 +81,6 @@ sub parse {
 
   while(<$in>){
     chomp;
-
     if (/^#{2}/){
       push @headers, $_;
       $filtered_SVs{$.} = $_;
@@ -200,9 +195,10 @@ sub parse {
         }
     }
 
-    if ( $SV_type ne 'TRA' and $SV_type ne "BND" and $SV_length <= 50 ){
-      push @{$filter_list}, "$SV_type < 50 bp=" . $SV_length;
-    }
+    # # Remove small SVs
+    # if ( $SV_type ne 'TRA' and $SV_type ne "BND" and $SV_length <= 50 ){
+    #   push @{$filter_list}, "$SV_type < 50 bp=" . $SV_length;
+    # }
 
     # Filter for vars falling in an excluded region +/- slop
     if ( exists $filter_flags{'e'} and @$filter_list == 0 ){
@@ -248,7 +244,6 @@ sub lumpy {
     $n_sq = $sample_info{$id}{$control}{'SQ'};
 
     ($genotype, $filters) = genotype( $id, $t_hq_alt_reads, $c_alt_reads, $n_sq, $n_hq_alt_reads, \%PON_alt_reads, $filters );
-    say "First attempt to genotype $id: $genotype" if $id eq '2426_1';
   }
   # if genotype is set to 'NA' (this should be because there are no quality reads, but some supporting reads) then re-genotype using supporting reads
   if ($genotype eq "NA" or not exists $sample_info{$id}{$tumour}{'QA'}){
@@ -256,8 +251,6 @@ sub lumpy {
     $n_hq_alt_reads = $sample_info{$id}{$control}{'SR'} + $sample_info{$id}{$control}{'PE'};
 
     ($genotype, $filters) = genotype( $id, $t_hq_alt_reads, $c_alt_reads, "NA", $n_hq_alt_reads, \%PON_alt_reads, $filters );
-    say "Second attempt to genotype $id: $genotype" if $id eq '2426_1';
-
   }
 
   my %PON_info;
@@ -291,7 +284,6 @@ sub lumpy {
   my @samples = @{ $samples };
 
   # Genotype is default NA if 0/0 and no quality read support. Set this to somatic_normal/tumour even though these should be filtered out below
-
 #  if ($genotype eq 'NA' and $sample_info{$id}{$tumour}{'QA'} ){
 #    if ( $sample_info{$id}{$tumour}{'SU'} >= 1 and $sample_info{$id}{$tumour}{'QA'} == 0) {
 #      $genotype = 'somatic_tumour';
@@ -361,70 +353,14 @@ sub lumpy {
 
   if ( $filter_flags{'su'} ){
     $filters = read_support_filter($tumour_read_support, $filter_flags{'su'}, $tumour, $filters);
-    if ($genotype eq 'germline_private' or $genotype eq 'germline_recurrent' ){ # also require same read suppport for tumour
+    if ($genotype eq 'germline_private' or $genotype eq 'germline_recurrent' ){
+      # also require same read suppport for tumour
+      # Maybe this is too harsh??
       $filters = read_support_filter($pc_direct_control_read_support, $filter_flags{'su'}, $control, $filters);
     }
   }
 
   my @filter_reasons = @{ $filters };
-  #
-  #   ### This might be useless - isn't this happening in genotype_filter() ?
-  #   if (@samples > 1){ # In case there are no control samples...
-  #     # for precise variants:
-  #     if ($info_block !~ /IMPRECISE;/) {
-  #       # We want to be strict, so include all controls used for genotyping (and sum read support)
-  #       @normals = @normals[1..$#normals] if $genotype eq 'somatic_normal';
-  #
-  #       for my $normal (@normals){
-  #         $sample_info{$id}{$normal}{'QA'} eq '.' ? $sample_info{$id}{$normal}{'QA'} = '0' : $all_c_HQ += $sample_info{$id}{$normal}{'QA'};
-  #       }
-  #
-  #       # Could just iterate over PON[1..#$PON] and save this step
-  #       my $all_control_read_support;
-  #       if ($genotype eq 'somatic_normal'){
-  #         $all_control_read_support = $c_HQ + $all_c_HQ;
-  #       }
-  #       else {
-  #         $all_control_read_support = $all_c_HQ;
-  #       }
-  #
-  #       # Filter if there are more than 1 control reads
-  #       if ( $all_control_read_support > 1 ){
-  #         if ( $genotype eq 'somatic_normal' ){
-  #           $genotype = 'germline_recurrent'
-  #         }
-  #         elsif ( $genotype eq 'somatic_tumour' ){
-  #           $genotype = 'germline_recurrent'
-  #         }
-  #       }
-  #       say "Third attempt to genotype $id: $genotype" if $id eq '20';
-  #
-  #
-  #       if ( $filter_flags{'s'} ){
-  #         push @filter_reasons, "Precise call with high quality read support in at least 1 other sample. Total HQ reads=" . $all_control_read_support;
-  #       }
-  #     }
-  #
-  #     # for imprecise variants:
-  #     elsif ($info_block =~ /IMPRECISE;/) {
-  #       # Filter if # tumour reads supporting var is less than 5 * control reads
-  #       # Or if there are more than 2 control reads
-  #       if ( $pc_tumour_read_support/$pc_direct_control_read_support < 5 ){
-  #         push @filter_reasons, 'Imprecise call with less than 5 * more tumour reads than normal=' . $direct_control_read_support if $filter_flags{'s'};
-  #       }
-  #       if ( $direct_control_read_support > 1 ){
-  #         if ( $genotype eq 'somatic_normal' ){
-  #           $genotype = 'germline_private';
-  #         }
-  #         elsif ( $genotype eq 'somatic_tumour' ){
-  #           $genotype = 'germline_private'
-  #         }
-  #         say "Fourth attempt to genotype $id: $genotype" if $id eq '20';
-  #
-  #         push @filter_reasons, 'Imprecise call with control read support=' . $direct_control_read_support if $filter_flags{'s'};
-  #       }
-  #     }
-    # }
 
   ######################
   # Read depth filters #
@@ -438,17 +374,20 @@ sub lumpy {
       $c_DP = 0 if $c_DP eq '.';
 
       # Flag if either control or tumour has depth < 10 at site
+      # slightly redundant section in fun (could just call fun once for each sample?)
       $filters = read_depth_filter($tumour, $control, $t_DP, $c_DP, $filter_flags{'dp'}, $filters);
     }
     @filter_reasons = @{ $filters };
 
     # Subtract control reads from tumour reads
     # If this number of SU is less than 10% of tumour read_depth then filter
-    if ( exists $filter_flags{'rdr'} and ( $tumour_read_support - $pc_direct_control_read_support ) / ( $t_DP + 0.01 ) < $filter_flags{'rdr'} ){ # Maybe this is too harsh...
-      push @filter_reasons, 'tumour_reads/tumour_depth<' . ($filter_flags{'rdr'}*100) . "%" . '=' . $tumour_read_support . "/" . $t_DP if $filter_flags{'t'};
-      push @filter_reasons, 'normal_reads/normal_depth<' . ($filter_flags{'rdr'}*100) . "%" . '=' . $tumour_read_support . "/" . $t_DP if $filter_flags{'n'};
+    if ( exists $filter_flags{'rdr'} and ( $tumour_read_support  / ( $t_DP + 0.01 ) ) < $filter_flags{'rdr'} ){
+    # Maybe this is too harsh...
+    # This is quite harsh!!!
+    # Modified 21.6.18 to print once if 'rdr' filter used
+      push @filter_reasons, "$tumour\_reads/$tumour\_depth<" . ($filter_flags{'rdr'}*100) . "%" . '=' . $tumour_read_support . "/" . $t_DP;
+      # push @filter_reasons, 'normal_reads/normal_depth<' . ($filter_flags{'rdr'}*100) . "%" . '=' . $tumour_read_support . "/" . $t_DP if $filter_flags{'sn'};
     }
-
   }
 
   ##################
@@ -1182,7 +1121,7 @@ sub genotype {
   my $genotype = 'NA';
   $n_sq = 20 if $n_sq eq "NA";
   $n_sq = 0 if  $n_sq eq ".";
-  
+
   my $germline_recurrent = 0;
   my $tum = 0;
   my $norm = 0;
@@ -1191,7 +1130,7 @@ sub genotype {
   if ( $t_hq_alt_reads > 0){
     $tum = 1;
   }
-  if ( $n_hq_alt_reads > 0 and $n_sq > 10 ){
+  if ( $n_hq_alt_reads > 0 and $n_sq > 1 ){
     $norm = 1;
   }
   # What was this for ?
