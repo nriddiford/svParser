@@ -5,6 +5,17 @@ Run without options or with `--help` or `-h` to print usage statement.
 
 This tool is under constant development. Please feel free to [contact me](mailto:nick.riddiford@curie.fr), or [raise an issue](https://github.com/nriddiford/svParser/issues) if you encounter any problems.
 
+
+* [Installation](#installation)
+* [Summarise variants](#summarise-variants)
+* [Genotyping variants](#genotyping-variants)
+* [Filtering variants](#filtering-variants)
+* [Test filters against true positives](#test-filters-on-true-positive-variant-calls)
+* [Inspecting variants](#inspect-specific-variant-call)
+* [Browse variants](#browse-variants)
+* [Print variants](#print-variants)
+* [Combine variants from multiple sources](#combining-calls-from-multiple-sources)
+
 ## Installation
 ```
 git clone https://github.com/nriddiford/svParser.git
@@ -35,10 +46,8 @@ cd svParser
 bash install_deps.sh
 ```
 
-## Parsing structural variants from VCF files called by LUMPY DELLY and novoBreak
 
 ## Summarise variants
-
 A good place to start is with a summary of variants called in VCF file:
 
 #### Read vcf file from lumpy (or delly/novobreak) and see summary of variants called:
@@ -46,15 +55,20 @@ A good place to start is with a summary of variants called in VCF file:
 It's reccomended to explicity tag files on the caller that has produced them using the `--method` flag:
 `perl script/svParse.pl -v data/Droso_R7.lumpy.vcf -m l`
 
-## Filtering variants
+
+## Genotyping variants
 The defualt behaviour of svParser is to consider all variants present in a VCF file, and classify these according to genotype. Genotype will be assigned as follows:
 * germline_recurrent - variants with high quality read support in both a tumour and normal sample and at least one other sample in a Panel of Normals (PON)
 * germline_private - variants with high quality read support in both a tumour and normal sample but NOT in a any samples in a PON
 * somatic_normal - variants with high quality read support in normal sample, but not in tumour sample
 * somatic_tumour - variants with high quality read support in tumour sample, but not in normal sample
 
-Variants called by LUMPY must also be genotyped by [SVTyper](https://github.com/hall-lab/svtyper)
+Genotypes can also be selcted for using the genotype filters outlined in the [filter section](#filters-available)
 
+**NOTE:** Variants called by LUMPY must also be genotyped by [SVTyper](https://github.com/hall-lab/svtyper)
+
+
+## Filtering variants
 The real power of svParser comes from its ability to easily filter variant calls on anumber of different criteria, and quickly assess how this affects your callset.
 It is highly recommended to play around with differnt combinations of filters that suit your needs. Filter flags can be used with any of the other options aid in fine tuning
 
@@ -82,7 +96,7 @@ It is highly recommended to play around with differnt combinations of filters th
 
 * In addition, users can provide a bed file containing regions to exclude by using `-e [path/to/exclude.bed]`
 
-# Filter-check-filter strategy to hone filters
+### Filter-check-filter strategy to hone filters
 Filters can be used in combination with other features of svParser to experiment with filters that remove obvious false positives while retaining true positives. E.g:
 
 #### See summary of variants that have >= 4 reads supporting call in tumour (`-f su=4`)
@@ -92,7 +106,7 @@ Filters can be used in combination with other features of svParser to experiment
 `perl script/svParse.pl -v data/Droso_R7.lumpy.vcf -m l -f su=4 -f chr=1`
 
 
-# Test filters on true positive data
+## Test filters on true positive variant calls
 If you have a set of true positive calls that you want to protect from filtering, you can provide a set of sample-specfic true positives:
 
 ```
@@ -103,13 +117,16 @@ R7      lumpy    DEL    X        456393   X         4588700
 
 This allows you to see how adjusting filters affects your true positives.
 
+
 ## Inspect specific variant call
+Sometimes it's useful to see the information behind a spcific variant call. svParser makes it easy to dig out a variant using it's `id` (taken from the VCF column `ID`)
+If the variant is affected by supplied filters this will be reported in the summary
 
 #### Investigate a specific variant (by ID) using the `--id` flag:
 `perl script/svParse.pl -v data/Droso_R7.lumpy.vcf -m l -i 1`
 
-## Browse variants (-d)
 
+## Browse variants
 Browse variants using the `--dump` flag. This cycles through each line of the VCF file, printing an easy-mo-read breakdown for each variant.
 Press any key to move to the next variant, or `q` to quit
 
@@ -126,7 +143,6 @@ Press any key to move to the next variant, or `q` to quit
 
 
 ## Print variants
-
 Write a new VCF file (`filtered/input.filtered.vcf`) and a summary txt file containing useful info (`filtered/summary/input.filtered.summary.txt`).
 
 #### Print (`-p`) all variants that passed all defualt filters (`-f a`):
@@ -134,11 +150,9 @@ Write a new VCF file (`filtered/input.filtered.vcf`) and a summary txt file cont
 
 
 # Combining calls from multiple sources
-
 Another useful feature of svParser is its ability to combine calls made by multiple callers into a unified call set per sample
 
 ### Run on all samples
-
 #### Generate filtered vcf and summary file for calls made by delly, lumpy and novoBreak:
 
 ```
@@ -189,7 +203,6 @@ done
 ```
 
 ### Annotate calls from a .gtf file
-
 #### This takes a user-provided .gtf file and annotates variants with what feature/gene they affect:
 
 ```
@@ -205,8 +218,7 @@ done
 
 
 ### Cleaning results
-
-The recommended next step from here is to inspect calls that remain. Any obvious false positives can be marked as false positives by entering `F` in the `T/F` field for each `_annotated.txt` file.
+The recommended next step from here is to inspect calls that remain. Any obvious false positives can be marked as false positives by entering `F` in the `T/F` column for each `_annotated.txt` file.
 
 These can then be removed by using:
 
@@ -221,6 +233,4 @@ done
 See [svBreaks](https://github.com/nriddiford/svBreaks) for plotting functions. This takes as input the annotated SV calls per sample
 
 # To do
-- [x] Exclude file
-- [x] User provided chromosomes on whcih to filter
-- [ ] Germline tagging
+- [ ] Improve merged VCF
