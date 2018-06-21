@@ -1,4 +1,4 @@
-[![License: MIT](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](https://github.com/nriddiford/svParser/blob/master/LICENSE)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/nriddiford/svParser/blob/master/LICENSE)
 
 # svParser
 
