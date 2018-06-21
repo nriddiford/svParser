@@ -1,6 +1,6 @@
 # svParser
 
-Parse VCF output from structural variant callers LUMPY and DELLY (also supports input from novoBreak).
+Filter, genotype, annotate and combine VCF files from structural variant callers LUMPY, DELLY and novobreak.
 Run without options or with `--help` or `-h` to print usage statement.
 
 This tool is under constant development. Please feel free to [contact me](mailto:nick.riddiford@curie.fr), or [raise an issue](https://github.com/nriddiford/svParser/issues) if you encounter any problems.
