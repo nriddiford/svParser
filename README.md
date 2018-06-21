@@ -8,6 +8,7 @@ Run without options or with `--help` or `-h` to print usage statement.
 This tool is under constant development. Please feel free to [contact me](mailto:nick.riddiford@curie.fr), or [raise an issue](https://github.com/nriddiford/svParser/issues) if you encounter any problems.
 
 
+# Table of Contents
 * [Installation](#installation)
 * [Summarise variants](#summarise-variants)
 * [Genotyping variants](#genotyping-variants)
@@ -75,26 +76,26 @@ The real power of svParser comes from its ability to easily filter variant calls
 It is highly recommended to play around with differnt combinations of filters that suit your needs. Filter flags can be used with any of the other options aid in fine tuning
 
 #### Filters available:
-* `su`     - number of tumour reads supporting var. Expects integer e.g. `-f su=5`
-* `dp`     - minimum depth for both tumour normal at variant site. Expects integer e.g. `-f dp=10`
-* `rdr`    - supporting reads/tumour depth - a value of 1 would mean all reads support variant. Expects integer/float e.g. `-f rdr=0.2`
-* `sq`     - phred-scaled variant likelihood. Expects integer e.g. `-f sq=10`
-* `chr`    - filter out chromosomes not in `chroms.txt` (if not provided, defaults to chromosomes 2L 2R 3L 3R 4 X Y). Expects binary e.g. `-f chr=1`
-* `st`     - only keep somatic TUMOUR variants. Expects binary e.g. `-f st=1`
-* `sn`     - only keep somatic NORMAL variants. Expects binary e.g. `-f sn=1`
-* `gp`     - only keep germline PRIVATE variants. Expects binary e.g. `-f gp=1`
-* `gr`     - only keep germline RECURRENT variants. Expects binary e.g. `-f gr=1`
-* `a`      - apply default combination of filters. Equivalent to:
+```
+su   -   number of tumour reads supporting variant. Expects integer e.g. `-f su=5`
+dp   -   minimum depth for both tumour normal at variant site. Expects integer e.g. `-f dp=10`
+rdr  -   supporting reads/tumour depth - a value of 1 would mean all reads support variant. Expects integer/float e.g. `-f rdr=0.2`
+sq   -   phred-scaled variant likelihood. Expects integer e.g. `-f sq=10`
+chr  -   filter out chromosomes not in `chroms.txt` (if not provided, defaults to chromosomes 2L 2R 3L 3R 4 X Y). Expects binary e.g. `-f chr=1`
+st   -   only keep somatic TUMOUR variants. Expects binary e.g. `-f st=1`
+sn   -   only keep somatic NORMAL variants. Expects binary e.g. `-f sn=1`
+gp   -   only keep germline PRIVATE variants. Expects binary e.g. `-f gp=1`
+gr   -   only keep germline RECURRENT variants. Expects binary e.g. `-f gr=1`
+a    -   apply default combination of filters. Equivalent to:
 
- ```
- perl script/svParse.pl \
- -v data/Droso_R7.lumpy.vcf \
- -f su=4 \     # min 4 reads supporting event in tumour
- -f dp=10 \    # min read depth of 10 in both tumour/normal
- -f rdr=0.1 \  # min 10% of reads at breakpoint supporting variant
- -f sq=10 \    # min Log10 likelihood of 10
- -f chr=1      # filter out calls on chromosomes not in 'chroms.txt'
- ```
+perl script/svParse.pl \
+-v data/Droso_R7.lumpy.vcf \
+-f su=4 \     # min 4 reads supporting event in tumour
+-f dp=10 \    # min read depth of 10 in both tumour/normal
+-f rdr=0.1 \  # min 10% of reads at breakpoint supporting variant
+-f sq=10 \    # min Log10 likelihood of 10
+-f chr=1      # filter out calls on chromosomes not in 'chroms.txt'
+```
 
 * In addition, users can provide a bed file containing regions to exclude by using `-e [path/to/exclude.bed]`
 
