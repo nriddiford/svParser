@@ -232,7 +232,7 @@ sub lumpy {
   my ($SV_length) = $info_block =~ /SVLEN=(.*?);/;
 
   # This is all very redundant with the read support assignment. Combine. 21.12.17
-  my ($t_hq_alt_reads, $n_hq_alt_reads) = (0,0);
+  my ($t_hq_alt_reads, $n_hq_alt_reads, $n_sq) = (0,0,0);
   my %PON_alt_reads;
 
   # Non-high quality control read support for alt var
@@ -245,15 +245,19 @@ sub lumpy {
   if (exists $sample_info{$id}{$tumour}{'QA'}){
     $t_hq_alt_reads = $sample_info{$id}{$tumour}{'QA'};
     $n_hq_alt_reads = $sample_info{$id}{$control}{'QA'};
+    $n_sq = $sample_info{$id}{$control}{'SQ'};
 
-    ($genotype, $filters) = genotype( $id, $t_hq_alt_reads, $c_alt_reads, $n_hq_alt_reads, \%PON_alt_reads, $filters );
+    ($genotype, $filters) = genotype( $id, $t_hq_alt_reads, $c_alt_reads, $n_sq, $n_hq_alt_reads, \%PON_alt_reads, $filters );
+    say "First attempt to genotype $id: $genotype" if $id eq '2426_1';
   }
   # if genotype is set to 'NA' (this should be because there are no quality reads, but some supporting reads) then re-genotype using supporting reads
   if ($genotype eq "NA" or not exists $sample_info{$id}{$tumour}{'QA'}){
     $t_hq_alt_reads = $sample_info{$id}{$tumour}{'SR'} + $sample_info{$id}{$tumour}{'PE'};
     $n_hq_alt_reads = $sample_info{$id}{$control}{'SR'} + $sample_info{$id}{$control}{'PE'};
 
-    ($genotype, $filters) = genotype( $id, $t_hq_alt_reads, $c_alt_reads, $n_hq_alt_reads, \%PON_alt_reads, $filters );
+    ($genotype, $filters) = genotype( $id, $t_hq_alt_reads, $c_alt_reads, "NA", $n_hq_alt_reads, \%PON_alt_reads, $filters );
+    say "Second attempt to genotype $id: $genotype" if $id eq '2426_1';
+
   }
 
   my %PON_info;
@@ -363,60 +367,64 @@ sub lumpy {
   }
 
   my @filter_reasons = @{ $filters };
-
-    ### This might be useless - isn't this happening in genotype_filter() ?
-    if (@samples > 1){ # In case there are no control samples...
-      # for precise variants:
-      if ($info_block !~ /IMPRECISE;/) {
-        # We want to be strict, so include all controls used for genotyping (and sum read support)
-        @normals = @normals[1..$#normals] if $genotype eq 'somatic_normal';
-
-        for my $normal (@normals){
-          $sample_info{$id}{$normal}{'QA'} eq '.' ? $sample_info{$id}{$normal}{'QA'} = '0' : $all_c_HQ += $sample_info{$id}{$normal}{'QA'};
-        }
-
-        # Could just iterate over PON[1..#$PON] and save this step
-        my $all_control_read_support;
-        if ($genotype eq 'somatic_normal'){
-          $all_control_read_support = $c_HQ + $all_c_HQ;
-        }
-        else {
-          $all_control_read_support = $all_c_HQ;
-        }
-
-        # Filter if there are more than 1 control reads
-        if ( $all_control_read_support > 1 ){
-          if ( $genotype eq 'somatic_normal' ){
-            $genotype = 'germline_recurrent'
-          }
-          elsif ( $genotype eq 'somatic_tumour' ){
-            $genotype = 'germline_recurrent'
-          }
-        }
-
-        if ( $filter_flags{'s'} ){
-          push @filter_reasons, "Precise call with high quality read support in at least 1 other sample. Total HQ reads=" . $all_control_read_support;
-        }
-      }
-
-      # for imprecise variants:
-      elsif ($info_block =~ /IMPRECISE;/) {
-        # Filter if # tumour reads supporting var is less than 5 * control reads
-        # Or if there are more than 2 control reads
-        if ( $pc_tumour_read_support/$pc_direct_control_read_support < 5 ){
-          push @filter_reasons, 'Imprecise call with less than 5 * more tumour reads than normal=' . $direct_control_read_support if $filter_flags{'s'};
-        }
-        if ( $direct_control_read_support > 1 ){
-          if ( $genotype eq 'somatic_normal' ){
-            $genotype = 'germline_private'
-          }
-          elsif ( $genotype eq 'somatic_tumour' ){
-            $genotype = 'germline_private'
-          }
-          push @filter_reasons, 'Imprecise call with control read support=' . $direct_control_read_support if $filter_flags{'s'};
-        }
-      }
-    }
+  #
+  #   ### This might be useless - isn't this happening in genotype_filter() ?
+  #   if (@samples > 1){ # In case there are no control samples...
+  #     # for precise variants:
+  #     if ($info_block !~ /IMPRECISE;/) {
+  #       # We want to be strict, so include all controls used for genotyping (and sum read support)
+  #       @normals = @normals[1..$#normals] if $genotype eq 'somatic_normal';
+  #
+  #       for my $normal (@normals){
+  #         $sample_info{$id}{$normal}{'QA'} eq '.' ? $sample_info{$id}{$normal}{'QA'} = '0' : $all_c_HQ += $sample_info{$id}{$normal}{'QA'};
+  #       }
+  #
+  #       # Could just iterate over PON[1..#$PON] and save this step
+  #       my $all_control_read_support;
+  #       if ($genotype eq 'somatic_normal'){
+  #         $all_control_read_support = $c_HQ + $all_c_HQ;
+  #       }
+  #       else {
+  #         $all_control_read_support = $all_c_HQ;
+  #       }
+  #
+  #       # Filter if there are more than 1 control reads
+  #       if ( $all_control_read_support > 1 ){
+  #         if ( $genotype eq 'somatic_normal' ){
+  #           $genotype = 'germline_recurrent'
+  #         }
+  #         elsif ( $genotype eq 'somatic_tumour' ){
+  #           $genotype = 'germline_recurrent'
+  #         }
+  #       }
+  #       say "Third attempt to genotype $id: $genotype" if $id eq '20';
+  #
+  #
+  #       if ( $filter_flags{'s'} ){
+  #         push @filter_reasons, "Precise call with high quality read support in at least 1 other sample. Total HQ reads=" . $all_control_read_support;
+  #       }
+  #     }
+  #
+  #     # for imprecise variants:
+  #     elsif ($info_block =~ /IMPRECISE;/) {
+  #       # Filter if # tumour reads supporting var is less than 5 * control reads
+  #       # Or if there are more than 2 control reads
+  #       if ( $pc_tumour_read_support/$pc_direct_control_read_support < 5 ){
+  #         push @filter_reasons, 'Imprecise call with less than 5 * more tumour reads than normal=' . $direct_control_read_support if $filter_flags{'s'};
+  #       }
+  #       if ( $direct_control_read_support > 1 ){
+  #         if ( $genotype eq 'somatic_normal' ){
+  #           $genotype = 'germline_private';
+  #         }
+  #         elsif ( $genotype eq 'somatic_tumour' ){
+  #           $genotype = 'germline_private'
+  #         }
+  #         say "Fourth attempt to genotype $id: $genotype" if $id eq '20';
+  #
+  #         push @filter_reasons, 'Imprecise call with control read support=' . $direct_control_read_support if $filter_flags{'s'};
+  #       }
+  #     }
+    # }
 
   ######################
   # Read depth filters #
@@ -430,7 +438,7 @@ sub lumpy {
       $c_DP = 0 if $c_DP eq '.';
 
       # Flag if either control or tumour has depth < 10 at site
-      $filters = read_depth_filter($tumour, $control, $t_DP, $c_DP, $filter_flags{'dp'}, \@filter_reasons);
+      $filters = read_depth_filter($tumour, $control, $t_DP, $c_DP, $filter_flags{'dp'}, $filters);
     }
     @filter_reasons = @{ $filters };
 
@@ -1170,24 +1178,26 @@ sub genotype_filter {
 
 
 sub genotype {
-  my ( $id, $t_hq_alt_reads, $c_alt_reads, $n_hq_alt_reads, $PON, $filter_reasons ) = @_;
-
+  my ( $id, $t_hq_alt_reads, $c_alt_reads, $n_sq, $n_hq_alt_reads, $PON, $filter_reasons ) = @_;
   my $genotype = 'NA';
+  $n_sq = 20 if $n_sq eq "NA";
+  $n_sq = 0 if  $n_sq eq ".";
+  
   my $germline_recurrent = 0;
   my $tum = 0;
   my $norm = 0;
-
   my @filter_reasons = @{ $filter_reasons };
 
   if ( $t_hq_alt_reads > 0){
     $tum = 1;
   }
-  if ( $n_hq_alt_reads > 0){
+  if ( $n_hq_alt_reads > 0 and $n_sq > 10 ){
     $norm = 1;
   }
-  if ( $c_alt_reads == 0){
-    $norm = 0;
-  }
+  # What was this for ?
+  # if ( $c_alt_reads == 0){
+  #   $norm = 0;
+  # }
 
   my %PON_alt_reads = %{ $PON };
 

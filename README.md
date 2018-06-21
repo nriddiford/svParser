@@ -94,12 +94,14 @@ Filters can be used in combination with other features of svParser to experiment
 
 # Test filters on true positive data
 If you have a set of true positive calls that you want to protect from filtering, you can provide a set of sample-specfic true positives:
-`perl script/svParse.pl -v data/Droso_R7.lumpy.vcf -m l -f su=4 -f chr=1 -t tests/`
 
 ```
 sample  caller   type   chrom1   bp1      chrom2    bp2
 R7      lumpy    DEL    X        456393   X         4588700
 ```
+`perl script/svParse.pl -v data/Droso_R7.lumpy.vcf -m l -f su=4 -f chr=1 -t tests/`
+
+This allows you to see how adjusting filters affects your true positives.
 
 ## Inspect specific variant call
 
