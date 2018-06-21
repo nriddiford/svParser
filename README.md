@@ -1,3 +1,5 @@
+[![License: MIT](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](https://github.com/nriddiford/svParser/blob/master/LICENSE)
+
 # svParser
 
 Filter, genotype, annotate and combine VCF files from structural variant callers LUMPY, DELLY and novobreak.
