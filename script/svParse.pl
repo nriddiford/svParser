@@ -157,6 +157,13 @@ sub testCalls {
   }
 
   print "$found/$total true positves retained in filtered data\n";
+
+  for my $k (keys %calls){
+    if (not exists $truth{$k}){
+      say "New variant found not in true positives: $calls{$k}";
+    }
+  }
+
 }
 
 
@@ -181,7 +188,7 @@ sub checkFilters {
 
   for my $k (keys %{ $filter_given } ){
     if (exists $legalFilters{$k}){
-      explainFilters(\%legalFilters, $k, $exclude, $chroms);
+      explainFilters(\%legalFilters, $k, $exclude, $chroms, \%filters);
       $filter_switch = 1;
     }
     else {
@@ -193,12 +200,13 @@ sub checkFilters {
 
 
 sub explainFilters {
-  my ($legals, $filter_given, $exclude, $chroms) = @_;
+  my ($legals, $filter_given, $exclude, $chroms, $filters) = @_;
   my %legalFilters = %{ $legals };
-      say " o Read support >= $legalFilters{'su'}" if $filter_given eq 'su';
-      say " o Read depth (in both tumour and normal) > $legalFilters{'dp'}" if $filter_given eq 'dp';
-      say " o Read support / depth > $legalFilters{'rdr'}" if $filter_given eq 'rdr';
-      say " o SQ quality > $legalFilters{'sq'}" if $filter_given eq 'sq';
+  my %selectedFilters = %{ $filters };
+      say " o Read support >= $selectedFilters{'su'}" if $filter_given eq 'su';
+      say " o Read depth (in both tumour and normal) > $selectedFilters{'dp'}" if $filter_given eq 'dp';
+      say " o Read support / depth > $selectedFilters{'rdr'}" if $filter_given eq 'rdr';
+      say " o SQ quality > $selectedFilters{'sq'}" if $filter_given eq 'sq';
       say " o Chromosomes: " . join(' ', @{$chroms}) if $filter_given eq 'chr';
       say " o Running in germline PRIVATE mode" if $filter_given eq 'gp';
       say " o Running in germline RECURRANT mode" if $filter_given eq 'gr';
@@ -266,32 +274,32 @@ arguments:
   -h, --help                show this help message and exit
   -v file, --vcf            VCF input    [required]
   -p, --print               print filtered vcf and summary file to './filtered'
-  -m str, --method            specify input source [default: guess from input]
-                                -l = LUMPY
-                                -d = DELLY
-                                -n = novobreak
-                                -snp = snp/snv
+  -m str, --method          specify input source [default: guess from input]
+                              -l = LUMPY
+                              -d = DELLY
+                              -n = novobreak
+                              -snp = snp/snv
 
   -i str, --id              breakpoint id to inspect
   -d, --dump                print each variant called to screen, press any key to advance, q to exit
 
   -n, --normalPrint         maximum number of PON members to print to screen when using -d or -i [default: 5]
   -c str, --chromosome      limit search to chromosome and/or region (e.g. X:10000-20000)
-                            can be used in conjunction with -d
+                              can be used in conjunction with -d
 
   -e file, --exclude        path to .bed file containing regions to exlcude
 
   -f key=val, --filter
-                            filters to apply:
-                            -f su=INT    [number of tumour reads supporting var]
-                            -f dp=INT    [minimum depth for both tumour normal at variant site]
-                            -f rdr=FLOAT [fraction of supporting reads/tumour depth - a value of 1 would mean all reads support variant]
-                            -f sq=INT    [phred-scaled variant likelihood]
-                            -f chr=1     [only show chromosomes in 'chroms.txt'. [Default use Drosophila chroms: 2L 2R 3L 3R 4 X Y]
-                            -f st=1      [only keep somatic tumour events]
-                            -f sn=1      [only keep somatic normal events]
-                            -f gp=1      [only keep germline private events]
-                            -f gr=1      [only keep germline recurrent events]
-                            -f, -f a     [apply default filters: -f su=4 -f dp=10 -f rdr=0.1 -f sq=10 -f chr=1 ]
+                            filter options:
+                              -f su=INT    [number of tumour reads supporting var]
+                              -f dp=INT    [minimum depth for both tumour normal at variant site]
+                              -f rdr=FLOAT [fraction of supporting reads/tumour depth - a value of 1 would mean all reads support variant]
+                              -f sq=INT    [phred-scaled variant likelihood]
+                              -f chr=1     [only show chromosomes in 'chroms.txt'. [Default use Drosophila chroms: 2L 2R 3L 3R 4 X Y]
+                              -f st=1      [only keep somatic tumour events]
+                              -f sn=1      [only keep somatic normal events]
+                              -f gp=1      [only keep germline private events]
+                              -f gr=1      [only keep germline recurrent events]
+                              -f, -f a     [apply default filters: -f su=4 -f dp=10 -f rdr=0.1 -f sq=10 -f chr=1 ]
 "
 }
