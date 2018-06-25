@@ -245,23 +245,21 @@ sub lumpy {
 
     ($genotype, $filters) = genotype( $id, $t_hq_alt_reads, $c_alt_reads, $n_sq, $n_hq_alt_reads, \%PON_alt_reads, $filters );
   }
-  # if genotype is set to 'NA' (this should be because there are no quality reads, but some supporting reads) then re-genotype using supporting reads
+  # if genotype is set to 'NA' (this should be because there are no quality reads,
+  # but some supporting reads) then re-genotype using supporting reads
   if ($genotype eq "NA" or not exists $sample_info{$id}{$tumour}{'QA'}){
     $t_hq_alt_reads = $sample_info{$id}{$tumour}{'SR'} + $sample_info{$id}{$tumour}{'PE'};
     $n_hq_alt_reads = $sample_info{$id}{$control}{'SR'} + $sample_info{$id}{$control}{'PE'};
-
     ($genotype, $filters) = genotype( $id, $t_hq_alt_reads, $c_alt_reads, "NA", $n_hq_alt_reads, \%PON_alt_reads, $filters );
   }
 
   my %PON_info;
-
   my ($c_HQ, $all_c_HQ) = (0,0);
 
   foreach my $normal (@normals){
     if ($sample_info{$id}{$normal}{'QA'}){
       $sample_info{$id}{$normal}{'QA'} eq '.' ? $sample_info{$id}{$normal}{'QA'} = '0' : $all_c_HQ += $sample_info{$id}{$normal}{'QA'};
       $PON_info{$normal} = [ $sample_info{$id}{$normal}{'QA'}, $sample_info{$id}{$normal}{'GT'} ];
-
     }
     else{
       $PON_info{$normal} = [ 0, $sample_info{$id}{$normal}{'GT'} ];
@@ -281,18 +279,7 @@ sub lumpy {
     $filters = genotype_filter( $id, $genotype, $filters, 'germline_recurrent' );
   }
 
-  my @samples = @{ $samples };
-
-  # Genotype is default NA if 0/0 and no quality read support. Set this to somatic_normal/tumour even though these should be filtered out below
-#  if ($genotype eq 'NA' and $sample_info{$id}{$tumour}{'QA'} ){
-#    if ( $sample_info{$id}{$tumour}{'SU'} >= 1 and $sample_info{$id}{$tumour}{'QA'} == 0) {
-#      $genotype = 'somatic_tumour';
-#    }
-#    elsif ( $sample_info{$id}{$control}{'SU'} >= 1 and $sample_info{$id}{$control}{'QA'} == 0) {
-#      $genotype = 'somatic_normal';
-#    }
-#  }
-
+  # my @samples = @{ $samples };
   my ($tumour_read_support, $direct_control_read_support) = ($t_hq_alt_reads, $n_hq_alt_reads);
 
   if ( $genotype ne 'somatic_tumour' ){
@@ -321,35 +308,9 @@ sub lumpy {
   # Read support filters #
   ########################
 
-  # Get read support for tumour
-#  $t_PE = $sample_info{$id}{$tumour}{'PE'};
-#  $t_SR = $sample_info{$id}{$tumour}{'SR'};
-#
-#  if ($sample_info{$id}{$tumour}{'QA'}){
-#    $tumour_read_support = $sample_info{$id}{$tumour}{'QA'};
-#  }
-#  else{
-#    $tumour_read_support = $t_SR + $t_PE;
-#  }
-#
-#  # Get read support for direct control only
-#  if ($sample_info{$id}{$control}{'QA'}){
-#    $direct_control_read_support = $sample_info{$id}{$control}{'QA'};
-#  }
-#  else{
-#    $direct_control_read_support = $sample_info{$id}{$control}{'PE'} + $sample_info{$id}{$control}{'SR'};
-#  }
-
   # Create temp pseudo counts to avoid illegal division by 0
   my $pc_tumour_read_support         = $tumour_read_support + 0.001;
   my $pc_direct_control_read_support = $direct_control_read_support + 0.001;
-
-  # $c_PE =  $sample_info{$id}{$control}{'PE'};
-  # $c_SR =  $sample_info{$id}{$control}{'SR'};
-  # $c_HQ = $sample_info{$id}{$control}{'QA'};
-
-  # my $direct_control_read_support = ( $c_PE + $c_SR );
-  # my $direct_control_read_support = $c_HQ;
 
   if ( $filter_flags{'su'} ){
     $filters = read_support_filter($tumour_read_support, $filter_flags{'su'}, $tumour, $filters);
@@ -369,31 +330,28 @@ sub lumpy {
   if ( $filter_flags{'dp'} and $sample_info{$id}{$tumour}{'DP'} ){
     my $t_DP =  $sample_info{$id}{$tumour}{'DP'};
 
-    if (@samples > 1){ # In case there are no control samples...
+    if (scalar @{$samples} > 1){ # In case there are no control samples...
       my $c_DP =  $sample_info{$id}{$control}{'DP'};
       $c_DP = 0 if $c_DP eq '.';
 
       # Flag if either control or tumour has depth < 10 at site
       # slightly redundant section in fun (could just call fun once for each sample?)
-      $filters = read_depth_filter($tumour, $control, $t_DP, $c_DP, $filter_flags{'dp'}, $filters);
+      $filters = read_depth_filter($tumour, $control, $t_DP, $c_DP, $filter_flags{'dp'}, \@filter_reasons);
     }
     @filter_reasons = @{ $filters };
 
     # Subtract control reads from tumour reads
     # If this number of SU is less than 10% of tumour read_depth then filter
     if ( exists $filter_flags{'rdr'} and ( $tumour_read_support  / ( $t_DP + 0.01 ) ) < $filter_flags{'rdr'} ){
-    # Maybe this is too harsh...
-    # This is quite harsh!!!
+    # This is quite harsh (particularly for germline recuurent if theres poor cov in tum/normal...)
     # Modified 21.6.18 to print once if 'rdr' filter used
       push @filter_reasons, "$tumour\_reads/$tumour\_depth<" . ($filter_flags{'rdr'}*100) . "%" . '=' . $tumour_read_support . "/" . $t_DP;
-      # push @filter_reasons, 'normal_reads/normal_depth<' . ($filter_flags{'rdr'}*100) . "%" . '=' . $tumour_read_support . "/" . $t_DP if $filter_flags{'sn'};
     }
   }
 
   ##################
   # Quality filter #
   ##################
-
   if ( $sample_info{$id}{$tumour}{'SQ'} and exists $filter_flags{'sq'} ){
     $sample_info{$id}{$tumour}{'SQ'} = 0 if $sample_info{$id}{$tumour}{'SQ'} eq '.';
 
@@ -403,7 +361,6 @@ sub lumpy {
   }
 
   my ($chr2, $stop) = ($chr, 0);
-
   if ($SV_type =~ /BND|TRA/){
     $chr2 = $alt =~ s/[\[\]N]//g;
     ($chr2, $stop) = $alt =~ /(.+)\:(\d+)/;
@@ -412,7 +369,6 @@ sub lumpy {
   else {
       ($stop) = $info_block =~ /;END=(.*?);/;
   }
-
   return ($SV_length, $chr2, $stop, $t_SR, $t_PE, $ab, $genotype, \@filter_reasons);
 }
 
