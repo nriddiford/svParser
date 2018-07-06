@@ -234,6 +234,7 @@ sub lumpy {
   # Non-high quality control read support for alt var
   my $c_alt_reads = $sample_info{$id}{$control}{'SU'};
 
+  # will fail if not svtyper
   for my $normal (@normals[1..$#normals]){
     $PON_alt_reads{$normal} = $sample_info{$id}{$normal}{'QA'};
   }
@@ -477,6 +478,15 @@ sub delly {
   my %sample_info    = % { $sample_ref };
   my @normals        = @{ $normals };
 
+
+  # if (exists $sample_info{$id}{$tumour}{'QA'}){
+  #   $t_hq_alt_reads = $sample_info{$id}{$tumour}{'QA'};
+  #   $n_hq_alt_reads = $sample_info{$id}{$control}{'QA'};
+  #   $n_sq = $sample_info{$id}{$control}{'SQ'};
+  #
+  #   ($genotype, $filters) = genotype( $id, $t_hq_alt_reads, $c_alt_reads, $n_sq, $n_hq_alt_reads, \%PON_alt_reads, $filters );
+  # }
+
   # TUM alt PE
   my $dv = $sample_info{$id}{$tumour_name}{'DV'};
   # TUM alt SR
@@ -495,19 +505,40 @@ sub delly {
   # NORM ref SR
   my $n_rr = $sample_info{$id}{$control_name}{'RR'};
 
-  my $tum_alt = $dv + $rv;
+  my $t_hq_alt_reads = $dv + $rv;
   my $tum_ref = $dr + $rr;
-  my $norm_alt = $n_dv + $n_rv;
+  my $n_hq_alt_reads = $n_dv + $n_rv;
   my $norm_ref = $n_dr + $n_rr;
 
   my %PON_alt_reads;
 
-  for my $normal (@normals[1..$#normals]){
-    $PON_alt_reads{$normal} = ($sample_info{$id}{$normal}{'DV'} + $sample_info{$id}{$normal}{'RV'});
-  }
+
+
+  my $c_alt_reads = $n_hq_alt_reads;
+
+  # will fail if not svtyper
 
   my $genotype;
-  ( $genotype, $filters ) = genotype( $id, $tum_alt, $norm_alt, $norm_alt, \%PON_alt_reads, $filters );
+  my $n_sq = 0;
+
+  if (exists $sample_info{$id}{$tumour_name}{'QA'}){
+    $n_sq = $sample_info{$id}{$control_name}{'SQ'};
+    for my $normal (@normals[1..$#normals]){
+      $PON_alt_reads{$normal} = $sample_info{$id}{$normal}{'QA'};
+    }
+  }
+  else {
+    $n_sq = 10;  ### Need to fix...
+    for my $normal (@normals[1..$#normals]){
+      $sample_info{$id}{$normal}{'DV'} eq '.' ? $sample_info{$id}{$normal}{'DV'} = '0' : $sample_info{$id}{$normal}{'DV'};
+      $sample_info{$id}{$normal}{'RV'} eq '.' ? $sample_info{$id}{$normal}{'RV'} = '0' : $sample_info{$id}{$normal}{'RV'};
+      $PON_alt_reads{$normal} = ($sample_info{$id}{$normal}{'DV'} + $sample_info{$id}{$normal}{'RV'});
+    }
+  }
+  ($genotype, $filters) = genotype( $id, $t_hq_alt_reads, $c_alt_reads, $n_sq, $n_hq_alt_reads, \%PON_alt_reads, $filters );
+
+  my $tum_alt = $t_hq_alt_reads + 0.001;
+  my $norm_alt = $n_hq_alt_reads + 0.001;
 
   my $ab = $tum_alt/($tum_alt+$tum_ref);
 
@@ -516,20 +547,28 @@ sub delly {
   my ($SV_length) = ($stop - $start);
   my ($t_SR, $t_PE) = (0,0);
 
-    if ($info_block =~ /;SR=(\d+);/){
-      $t_SR = $1;
+  if ($info_block =~ /;SR=(\d+);/){
+    $t_SR = $1;
+  }
+
+  if ($info_block =~ /;PE=(\d+);/){
+    $t_PE = $1;
+  }
+
+  my $tumour_read_support = $t_hq_alt_reads;
+
+  # my %PON_info;
+  # #
+  # foreach my $normal (@normals){
+  #   $PON_info{$normal} = [ ($sample_info{$id}{$normal}{'DV'} + $sample_info{$id}{$normal}{'RV'}) , $sample_info{$id}{$normal}{'GT'} ];
+  # }
+
+  if ( $sample_info{$id}{$tumour_name}{'SQ'} and exists $filter_flags{'sq'} ){
+    $sample_info{$id}{$tumour_name}{'SQ'} = 0 if $sample_info{$id}{$tumour_name}{'SQ'} eq '.';
+
+    if ( $sample_info{$id}{$tumour_name}{'SQ'} <= $filter_flags{'sq'} ){
+      push @{$filters}, "SQ<" . $filter_flags{'sq'} . '=' . $sample_info{$id}{$tumour_name}{'SQ'};
     }
-
-    if ($info_block =~ /;PE=(\d+);/){
-      $t_PE = $1;
-    }
-
-  my $tumour_read_support = ( $t_PE + $t_SR );
-
-  my %PON_info;
-
-  foreach my $normal (@normals){
-    $PON_info{$normal} = [ ($sample_info{$id}{$normal}{'DV'} + $sample_info{$id}{$normal}{'RV'}) , $sample_info{$id}{$normal}{'GT'} ];
   }
 
   if ( $filter_flags{'st'} ){
@@ -1096,8 +1135,8 @@ sub genotype {
 
   my %PON_alt_reads = %{ $PON };
 
-  for my $normal ( keys %PON_alt_reads ){
-    if ( $PON_alt_reads{$normal} > 0){
+  for my $n ( keys %PON_alt_reads ){
+    if ( $PON_alt_reads{$n} > 0){
       $germline_recurrent = 1;
     }
   }
