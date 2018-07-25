@@ -72,7 +72,7 @@ sub parse {
   my %filter_flags = %{ $filter_flags };
 
   my (%SVs, %info, %filtered_SVs, %call_lookup);
-  my ($tumour_name, $control_name);
+  my ($tumour_name, $control);
   my %format_long;
   my %info_long;
   my $filter_count;
@@ -106,7 +106,7 @@ sub parse {
       push @samples, $_ foreach @split[9..$#split];
 
       $tumour_name = $samples[0];
-      $control_name = $samples[1];
+      $control = $samples[1];
       next;
     }
 
@@ -159,15 +159,17 @@ sub parse {
     my ($SV_length, $chr2, $stop, $t_SR, $t_PE, $ab, $genotype, $filter_list);
 
     if ($type eq 'lumpy'){
-      ( $SV_length, $chr2, $stop, $t_SR, $t_PE, $ab, $genotype, $filter_list ) = lumpy( $id, $chr, $info_block, $SV_type, $alt, $start, \%sample_info, $tumour_name, $control_name, \@samples, \@normals, \@filter_reasons, \%filter_flags );
+      ( $SV_length, $chr2, $stop, $t_SR, $t_PE, $ab, $genotype, $filter_list ) = lumpy( $id, $chr, $info_block, $SV_type, $alt, $start, \%sample_info, $tumour_name, $control, \@samples, \@normals, \@filter_reasons, \%filter_flags );
     }
     elsif ($type eq 'delly'){
-      ( $SV_length, $chr2, $stop, $t_SR, $t_PE, $ab, $genotype, $filter_list ) = delly( $id, $info_block, $start, $SV_type, $tumour_name, $control_name, \@normals, \@filter_reasons, \%filter_flags, \%sample_info );
+      next if $SV_type eq 'TRA'; # temp to resolve issues with svTyper...
+
+      ( $SV_length, $chr2, $stop, $t_SR, $t_PE, $ab, $genotype, $filter_list ) = delly( $id, $info_block, $start, $SV_type, $tumour_name, $control, \@normals, \@filter_reasons, \%filter_flags, \%sample_info );
     }
     elsif ($type eq 'novobreak'){
       @samples = qw/tumour normal/;
       my ( $sample_info_novo, $format_novo, $format_long_novo );
-      ( $SV_length, $chr2, $stop, $t_PE, $t_SR, $genotype, $filter_list, $sample_info_novo, $format_novo, $format_long_novo ) = novobreak( $id, $info_block, $start, $SV_type, $tumour_name, $control_name, \@filter_reasons, \@sample_info, \%filter_flags );
+      ( $SV_length, $chr2, $stop, $t_PE, $t_SR, $genotype, $filter_list, $sample_info_novo, $format_novo, $format_long_novo ) = novobreak( $id, $info_block, $start, $SV_type, $tumour_name, $control, \@filter_reasons, \@sample_info, \%filter_flags );
       %sample_info = %{ $sample_info_novo };
       $ab = "-";
       @format = @{ $format_novo };
@@ -184,20 +186,23 @@ sub parse {
 
     $SV_length = abs($SV_length);
 
-    # Don't include DELS/INVs < 1kb with split read support == 0
-    # Unless there is high PE support
-    if ( $filter_flags{'su'} ){
-      if ( ($SV_type eq "DEL" or $SV_type eq "INV") and ( $SV_length < 1000 and $t_SR == 0 ) ){
-          push @{$filter_list}, "$SV_type < 1kb with no split read support and PE support < 2*$filter_flags{'su'}=" . $t_PE if $t_PE <= $filter_flags{'su'} * 2;
-        }
-      elsif ( ($SV_type eq "BND" and $chr eq $chr2) and ( $SV_length < 1000 and $t_SR == 0 ) ){
-          push @{$filter_list}, "$SV_type < 1kb with no split read support and PE support < 2*$filter_flags{'su'}=" . $t_PE if $t_PE <= $filter_flags{'su'} * 2;
-        }
+    ## NEW 25.7.18
+    # Now filter any var with no SR support unless PE = su*2
+
+    if ( $filter_flags{'su'} and $t_SR == 0 and ($t_PE <= $filter_flags{'su'} * 2) ){
+      push @{$filter_list}, "$SV_type has no split read support and PE support < 2*$filter_flags{'su'}=" . $t_PE;
     }
 
-    # # Remove small SVs
-    # if ( $SV_type ne 'TRA' and $SV_type ne "BND" and $SV_length <= 50 ){
-    #   push @{$filter_list}, "$SV_type < 50 bp=" . $SV_length;
+
+    # Don't include DELS/INVs < 1kb with split read support == 0
+    # Unless there is high PE support
+    # if ( $filter_flags{'su'} ){
+    #   if ( ($SV_type eq "DEL" or $SV_type eq "INV") and ( $SV_length < 1000 and $t_SR == 0 ) ){
+    #       push @{$filter_list}, "$SV_type < 1kb with no split read support and PE support < 2*$filter_flags{'su'}=" . $t_PE if $t_PE <= $filter_flags{'su'} * 2;
+    #     }
+    #   elsif ( ($SV_type eq "BND" and $chr eq $chr2) and ( $SV_length < 1000 and $t_SR == 0 ) ){
+    #       push @{$filter_list}, "$SV_type < 1kb with no split read support and PE support < 2*$filter_flags{'su'}=" . $t_PE if $t_PE <= $filter_flags{'su'} * 2;
+    #     }
     # }
 
     # Filter for vars falling in an excluded region +/- slop
@@ -254,7 +259,7 @@ sub lumpy {
     ($genotype, $filters) = genotype( $id, $t_hq_alt_reads, $c_alt_reads, "NA", $n_hq_alt_reads, \%PON_alt_reads, $filters );
   }
 
-  my %PON_info;
+  my %PON_info; # What is this for? 25.7.18
   my ($c_HQ, $all_c_HQ) = (0,0);
 
   foreach my $normal (@normals){
@@ -353,6 +358,7 @@ sub lumpy {
   ##################
   # Quality filter #
   ##################
+
   if ( $sample_info{$id}{$tumour}{'SQ'} and exists $filter_flags{'sq'} ){
     $sample_info{$id}{$tumour}{'SQ'} = 0 if $sample_info{$id}{$tumour}{'SQ'} eq '.';
 
@@ -375,7 +381,7 @@ sub lumpy {
 
 
 sub novobreak {
-  my ( $id, $info_block, $start, $SV_type, $tumour_name, $control_name, $filters, $info, $filter_flags) = @_;
+  my ( $id, $info_block, $start, $SV_type, $tumour_name, $control, $filters, $info, $filter_flags) = @_;
 
   my %filter_flags = %{ $filter_flags };
 
@@ -472,38 +478,33 @@ sub novobreak {
 
 
 sub delly {
-  my ($id, $info_block, $start, $SV_type, $tumour_name, $control_name, $normals, $filters, $filter_flags, $sample_ref) = @_;
+  my ($id, $info_block, $start, $SV_type, $tumour, $control, $normals, $filters, $filter_flags, $sample_ref) = @_;
 
   my %filter_flags   = %{ $filter_flags };
   my %sample_info    = % { $sample_ref };
   my @normals        = @{ $normals };
 
-
-  # if (exists $sample_info{$id}{$tumour}{'QA'}){
-  #   $t_hq_alt_reads = $sample_info{$id}{$tumour}{'QA'};
-  #   $n_hq_alt_reads = $sample_info{$id}{$control}{'QA'};
-  #   $n_sq = $sample_info{$id}{$control}{'SQ'};
-  #
-  #   ($genotype, $filters) = genotype( $id, $t_hq_alt_reads, $c_alt_reads, $n_sq, $n_hq_alt_reads, \%PON_alt_reads, $filters );
-  # }
-
   # TUM alt PE
-  my $dv = $sample_info{$id}{$tumour_name}{'DV'};
+  my $dv = $sample_info{$id}{$tumour}{'DV'};
   # TUM alt SR
-  my $rv = $sample_info{$id}{$tumour_name}{'RV'};
+  my $rv = $sample_info{$id}{$tumour}{'RV'};
   # TUM ref PE
-  my $dr = $sample_info{$id}{$tumour_name}{'DR'};
+  my $dr = $sample_info{$id}{$tumour}{'DR'};
   # TUM ref SR
-  my $rr = $sample_info{$id}{$tumour_name}{'RR'};
+  my $rr = $sample_info{$id}{$tumour}{'RR'};
 
   # NORM alt PE
-  my $n_dv = $sample_info{$id}{$control_name}{'DV'};
+  my $n_dv = $sample_info{$id}{$control}{'DV'};
   # NORM alt SR
-  my $n_rv = $sample_info{$id}{$control_name}{'RV'};
+  my $n_rv = $sample_info{$id}{$control}{'RV'};
   # NORM ref PE
-  my $n_dr = $sample_info{$id}{$control_name}{'DR'};
+  my $n_dr = $sample_info{$id}{$control}{'DR'};
   # NORM ref SR
-  my $n_rr = $sample_info{$id}{$control_name}{'RR'};
+  my $n_rr = $sample_info{$id}{$control}{'RR'};
+
+  if ($sample_info{$id}{$tumour}{'FT'} ne 'PASS'){
+    push @{$filters}, "LowQual flag in tumour";
+  }
 
   my $t_hq_alt_reads = $dv + $rv;
   my $tum_ref = $dr + $rr;
@@ -511,40 +512,27 @@ sub delly {
   my $norm_ref = $n_dr + $n_rr;
 
   my %PON_alt_reads;
-
-
-
-  my $c_alt_reads = $n_hq_alt_reads;
-
-  # will fail if not svtyper
-
   my $genotype;
   my $n_sq = 0;
 
-  if (exists $sample_info{$id}{$tumour_name}{'QA'}){
-    $n_sq = $sample_info{$id}{$control_name}{'SQ'};
-    for my $normal (@normals[1..$#normals]){
-      $PON_alt_reads{$normal} = $sample_info{$id}{$normal}{'QA'};
-    }
+  $n_sq = 10;  ### Need to fix...
+  for my $n (@normals[1..$#normals]){
+    $sample_info{$id}{$n}{'DV'} eq '.' ? $sample_info{$id}{$n}{'DV'} = 0 : $sample_info{$id}{$n}{'DV'} = $sample_info{$id}{$n}{'DV'};
+    $sample_info{$id}{$n}{'RV'} eq '.' ? $sample_info{$id}{$n}{'RV'} = 0 : $sample_info{$id}{$n}{'DV'} = $sample_info{$id}{$n}{'RV'};
+    $PON_alt_reads{$n} = ( $sample_info{$id}{$n}{'DV'} + $sample_info{$id}{$n}{'RV'} );
   }
-  else {
-    $n_sq = 10;  ### Need to fix...
-    for my $normal (@normals[1..$#normals]){
-      $sample_info{$id}{$normal}{'DV'} eq '.' ? $sample_info{$id}{$normal}{'DV'} = '0' : $sample_info{$id}{$normal}{'DV'};
-      $sample_info{$id}{$normal}{'RV'} eq '.' ? $sample_info{$id}{$normal}{'RV'} = '0' : $sample_info{$id}{$normal}{'RV'};
-      $PON_alt_reads{$normal} = ($sample_info{$id}{$normal}{'DV'} + $sample_info{$id}{$normal}{'RV'});
-    }
-  }
-  ($genotype, $filters) = genotype( $id, $t_hq_alt_reads, $c_alt_reads, $n_sq, $n_hq_alt_reads, \%PON_alt_reads, $filters );
+  ($genotype, $filters) = genotype( $id, $t_hq_alt_reads, $n_hq_alt_reads, $n_sq, $n_hq_alt_reads, \%PON_alt_reads, $filters );
 
-  my $tum_alt = $t_hq_alt_reads + 0.001;
-  my $norm_alt = $n_hq_alt_reads + 0.001;
+  my $pc_tumour_read_support = $t_hq_alt_reads + 0.001;
+  my $pc_direct_control_read_support = $n_hq_alt_reads + 0.001;
 
-  my $ab = $tum_alt/($tum_alt+$tum_ref);
+  my $ab = $pc_tumour_read_support/($pc_tumour_read_support+$tum_ref);
 
   my ($stop) = $info_block =~ /;END=(.*?);/;
   my ($chr2) = $info_block =~ /CHR2=(.*?);/;
   my ($SV_length) = ($stop - $start);
+  # my ($t_SR, $t_PE) = ($rv, $dv);
+
   my ($t_SR, $t_PE) = (0,0);
 
   if ($info_block =~ /;SR=(\d+);/){
@@ -563,27 +551,53 @@ sub delly {
   #   $PON_info{$normal} = [ ($sample_info{$id}{$normal}{'DV'} + $sample_info{$id}{$normal}{'RV'}) , $sample_info{$id}{$normal}{'GT'} ];
   # }
 
-  if ( $sample_info{$id}{$tumour_name}{'SQ'} and exists $filter_flags{'sq'} ){
-    $sample_info{$id}{$tumour_name}{'SQ'} = 0 if $sample_info{$id}{$tumour_name}{'SQ'} eq '.';
-
-    if ( $sample_info{$id}{$tumour_name}{'SQ'} <= $filter_flags{'sq'} ){
-      push @{$filters}, "SQ<" . $filter_flags{'sq'} . '=' . $sample_info{$id}{$tumour_name}{'SQ'};
-    }
-  }
-
   if ( $filter_flags{'st'} ){
     $filters = genotype_filter( $id, $genotype, $filters, 'somatic_tumour' );
   }
-
-  if ( $filter_flags{'su'} ){
-    $filters = read_support_filter($tumour_read_support, $filter_flags{'su'}, $tumour_name, $filters);
+  elsif ( $filter_flags{'sn'} ){
+    $filters = genotype_filter( $id, $genotype, $filters, 'somatic_normal' );
+  }
+  elsif ( $filter_flags{'gp'} ){
+    $filters = genotype_filter( $id, $genotype, $filters, 'germline_private' );
+  }
+  elsif ( $filter_flags{'gr'} ){
+    $filters = genotype_filter( $id, $genotype, $filters, 'germline_recurrent' );
   }
 
-  my $tum_depth = $tum_alt + $tum_ref;
-  my $norm_depth = $norm_alt + $norm_ref;
+  ########################
+  # Read support filters #
+  ########################
+
+  if ( $filter_flags{'su'} ){
+    $filters = read_support_filter($tumour_read_support, $filter_flags{'su'}, $tumour, $filters);
+    if ($genotype eq 'germline_private' or $genotype eq 'germline_recurrent' ){
+      # also require same read suppport for tumour
+      # Maybe this is too harsh??
+      $filters = read_support_filter($pc_direct_control_read_support, $filter_flags{'su'}, $control, $filters);
+    }
+  }
+
+  ######################
+  # Read depth filters #
+  ######################
+
+  my $tum_depth = $pc_tumour_read_support + $tum_ref;
+  my $norm_depth = $pc_direct_control_read_support + $norm_ref;
 
   if ( $filter_flags{'dp'}){
-    $filters = read_depth_filter($tumour_name, $control_name, $tum_depth, $norm_depth, $filter_flags{'dp'}, $filters);
+    $filters = read_depth_filter($tumour, $control, $tum_depth, $norm_depth, $filter_flags{'dp'}, $filters);
+  }
+
+  ##################
+  # Quality filter #
+  ##################
+
+  if ( $sample_info{$id}{$tumour}{'SQ'} and exists $filter_flags{'sq'} ){
+    $sample_info{$id}{$tumour}{'SQ'} = 0 if $sample_info{$id}{$tumour}{'SQ'} eq '.';
+
+    if ( $sample_info{$id}{$tumour}{'SQ'} <= $filter_flags{'sq'} ){
+      push @{$filters}, "SQ<" . $filter_flags{'sq'} . '=' . $sample_info{$id}{$tumour}{'SQ'};
+    }
   }
 
   return ($SV_length, $chr2, $stop, $t_SR, $t_PE, $ab, $genotype, $filters );
@@ -899,16 +913,9 @@ sub dump_variants {
 sub print_variants {
 
   my ( $SVs, $filtered_SVs, $name, $output_dir, $germline ) = @_;
-  my $out;
 
-  if ($germline){
-    open $out, '>', $output_dir . $name . ".germline_filtered.vcf" or die $!;
-    say "Writing output to " . "'$output_dir" . $name . ".germline_filtered.vcf'";
-  }
-  else{
-    open $out, '>', $output_dir . $name . ".filtered.vcf" or die $!;
-    say "Writing output to " . "'$output_dir" . $name . ".filtered.vcf'";
-  }
+  open my $out, '>', $output_dir . $name . ".filtered.vcf" or die $!;
+  say "Writing output to " . "'$output_dir" . $name . ".filtered.vcf'";
 
   my %filtered_SVs = %{ $filtered_SVs };
   my $sv_count = 0;
@@ -1085,12 +1092,12 @@ sub read_support_filter {
 
 
 sub read_depth_filter {
-  my ($tumour_name, $control_name, $tum_depth, $norm_depth, $depth_threshold, $filter_reasons) = @_;
+  my ($tumour_name, $control, $tum_depth, $norm_depth, $depth_threshold, $filter_reasons) = @_;
 
   my @filter_reasons = @{ $filter_reasons };
 
   if ( $norm_depth < $depth_threshold ){
-    push @filter_reasons, "$control_name has depth < " . $depth_threshold . '=' . $norm_depth;
+    push @filter_reasons, "$control has depth < " . $depth_threshold . '=' . $norm_depth;
   }
 
   if ( $tum_depth < $depth_threshold ){
