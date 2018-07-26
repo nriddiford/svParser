@@ -68,7 +68,9 @@ The defualt behaviour of svParser is to consider all variants present in a VCF f
 
 Genotypes can also be selcted for using the genotype filters outlined in the [filter section](#filters-available)
 
-**NOTE:** Variants called by LUMPY must also be genotyped by [SVTyper](https://github.com/hall-lab/svtyper)
+**IMPORTANT:**
+*  Variants called by LUMPY must also be genotyped by [SVTyper](https://github.com/hall-lab/svtyper)  
+*  Genotyping requires that the samples in the VCF are ordered as follows: `TUMOUR NORMAL PON.1 ... PON.N`
 
 
 ## Filtering variants
