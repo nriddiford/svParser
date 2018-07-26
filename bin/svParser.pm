@@ -169,7 +169,7 @@ sub parse {
     elsif ($type eq 'novobreak'){
       @samples = qw/tumour normal/;
       my ( $sample_info_novo, $format_novo, $format_long_novo );
-      ( $SV_length, $chr2, $stop, $t_PE, $t_SR, $genotype, $filter_list, $sample_info_novo, $format_novo, $format_long_novo ) = novobreak( $id, $info_block, $start, $SV_type, $tumour_name, $control, \@filter_reasons, \@sample_info, \%filter_flags );
+      ( $SV_length, $chr2, $stop, $t_PE, $t_SR, $genotype, $filter_list, $sample_info_novo, $format_novo, $format_long_novo ) = novobreak( $id, $info_block, $start, $SV_type, $tumour_name, $control, \@sample_info, \@filter_reasons, \%filter_flags );
       %sample_info = %{ $sample_info_novo };
       $ab = "-";
       @format = @{ $format_novo };
@@ -381,7 +381,7 @@ sub lumpy {
 
 
 sub novobreak {
-  my ( $id, $info_block, $start, $SV_type, $tumour_name, $control, $filters, $info, $filter_flags) = @_;
+  my ( $id, $info_block, $start, $SV_type, $tumour_name, $control, $info, $filters, $filter_flags) = @_;
 
   my %filter_flags = %{ $filter_flags };
 
@@ -389,53 +389,78 @@ sub novobreak {
 
   my %sample_info;
   my %format_long;
-
+  my $genotype;
+  # for my $i (0 .. $#info){
+  #   say "$i: $info[$i]";
+  # }
+  # Tumour reads
   my $bp1_SR = $info[9];  # high qual split reads bp1
-  my $bp1_PE = $info[26]; # PE reads bp1
   my $bp2_SR = $info[19]; # high qual split reads bp2
+  my $bp1_PE = $info[26]; # PE reads bp1
   my $bp2_PE = $info[28]; # PE reads bp2
 
   my $t_SR = $bp1_SR + $bp2_SR;
   my $t_PE = $bp1_PE + $bp2_PE;
 
+  # Normal reads
+  my $n_bp1_SR = $info[14]; # high qual split reads bp1
+  my $n_bp2_SR = $info[24]; # high qual split reads bp2
+  my $n_bp1_PE = $info[27]; # PE reads bp1
+  my $n_bp2_PE = $info[29]; # PE reads bp2
+
+
+  # say "ID: $id";
+  # say "bp1SR: $bp1_SR";
+  # say "bp2SR: $bp2_SR";
+  # say "bp1PE: $bp1_PE";
+  # say "bp2PE: $bp2_PE";
+  # say "---";
+
+  my $n_SR = $n_bp1_SR + $n_bp2_SR;
+  my $n_PE = $n_bp1_PE + $n_bp2_PE;
+
   # $t_SR = $t_SR/2;
   # $t_PE = $t_PE/2;
 
-  $t_SR = int($t_SR + 0.5);
-  $t_PE = int($t_PE + 0.5);
+  # $t_SR = int($t_SR + 0.5);
+  # $t_PE = int($t_PE + 0.5);
 
-  # my $t_PE = 0; # Don't believe PE read support!
+  my ($t_DP_1, $t_DP_2) = @info[6,16];
 
-  my $tumour_read_support = ( $t_SR );
+  if ($t_PE > ($t_DP_1 + $t_DP_2) ){
+    $t_PE = 0; # Don't believe PE read support if greater than depth!!
+    $n_PE = 0
+  }
+
+  my $tumour_read_support = ( $t_SR + $t_PE );
+  my $all_control_read_support = ( $n_SR + $n_PE );
 
   ########################
   # Read support filters #
   ########################
 
-
   if ( $filter_flags{'su'} ){
     $filters = read_support_filter($tumour_read_support, $filter_flags{'su'}, 'tumour', $filters);
   }
 
-  my $n_bp1_SR = $info[14]; # high qual split reads bp1
-  my $n_bp1_PE = $info[27]; # PE reads bp1
-  my $n_bp2_SR = $info[24]; # high qual split reads bp2
-  my $n_bp2_PE = $info[29]; # PE reads bp2
+  # We don't have a PON for novobreak - so create a dummy
+  my %dummy_hash;
+  $dummy_hash{'dummy'} = 0;
 
-  say "$n_bp1_SR, $n_bp1_PE, $n_bp2_SR, $n_bp2_PE";
+  ($genotype, $filters) = genotype( $id, $tumour_read_support, $all_control_read_support, 10, $all_control_read_support, \%dummy_hash, $filters );
 
-  my $all_control_read_support = ( $n_bp1_SR + $n_bp2_SR );
-
-  my $genotype;
-  my %PON_alt_reads;
-  ( $genotype, $filters ) = genotype( $id, $tumour_read_support, $all_control_read_support, $all_control_read_support, \%PON_alt_reads, $filters );
+  if ( $filter_flags{'st'} ){
+    $filters = genotype_filter( $id, $genotype, $filters, 'somatic_tumour' );
+  }
+  elsif ( $filter_flags{'sn'} ){
+    $filters = genotype_filter( $id, $genotype, $filters, 'somatic_normal' );
+  }
 
   ######################
   # Read depth filters #
   ######################
 
-  my ($c_DP_1, $c_DP_2) = @info[6,16];
-  my ($t_DP_1, $t_DP_2) = @info[11,21];
+  my ($c_DP_1, $c_DP_2) = @info[11,21];
 
   my $c_DP = ($c_DP_1 + $c_DP_2)/2;
   my $t_DP = ($t_DP_1 + $t_DP_2)/2;
