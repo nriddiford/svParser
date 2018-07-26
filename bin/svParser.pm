@@ -599,7 +599,6 @@ sub delly {
       push @{$filters}, "SQ<" . $filter_flags{'sq'} . '=' . $sample_info{$id}{$tumour}{'SQ'};
     }
   }
-
   return ($SV_length, $chr2, $stop, $t_SR, $t_PE, $ab, $genotype, $filters );
 }
 

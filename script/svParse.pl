@@ -129,6 +129,12 @@ sub makeDirs {
   }
 }
 
+=item testCalls()
+
+Test variants that pass filter against a
+  list of true positives for that sample
+
+=cut
 
 sub testCalls {
   my ($truePositves, $SVs, $info, $filter_switch, $PON_print, $call_lookup) = @_;
