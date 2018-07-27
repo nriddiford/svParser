@@ -7,6 +7,7 @@ usage:   run_parser.sh [options]
 options:
   -f    filter
   -m    merge
+  -o    output directory
   -a    annotate
   -c    clean-up false positives anad reannotate
   -s    stats
@@ -17,16 +18,18 @@ options:
 
 filter=0
 merge=0
+outdir=""
 annotate=0
 clean=0
 stats=0
 nstats=0
-while getopts 'fmacsnh' flag; do
+while getopts 'fmacsnho:' flag; do
   case "${flag}" in
     f)  filter=1 ;;
     m)  merge=1 ;;
     a)  annotate=1 ;;
     c)  clean=1 ;;
+    o)  outdir="$OPTARG" ;;
     s)  stats=1 ;;
     n)  nstats=1 ;;
     h)  usage
@@ -47,15 +50,11 @@ script_bin="$dir/script"
 # Change to the bed file to filter svs called in unmappable regions
 exclude_file=/Users/Nick_curie/Documents/Curie/Data/Genomes/Dmel_v6.12/Mappability/dmel6_unmappable_100.bed
 
-
-if [ ! -d $script_bin/../filtered/summary/merged/ ]
-then
-  mkdir -p $script_bin/../filtered/summary/merged/
-fi
+# mkdir -p "${outdir}/filtered/summary/merged/"
 
 if [[ $filter -eq 1 ]]
 then
-  
+
   for lumpy_file in data/lumpy/*.vcf
   do
     echo "perl $script_bin/svParse.pl -v $lumpy_file -t l -f chr=1 -f su=4 -f dp=10 -f rdr=0.1 -f sq=10 -e $exclude_file -p"
@@ -74,12 +73,12 @@ then
     perl $script_bin/svParse.pl -v $novo_file -t n -f chr=1 -f su=4 -f dp=10 -f rdr=0.1 -f sq=10 -e $exclude_file -p
   done
 
-  meer_files+=( $(ls -1 data/meerkat/*.variants | cut -d '.' -f 1 | sort -u ) )
-  for ((i=0;i<${#meer_files[@]};++i))
-  do
-    echo "perl $script_bin/parseMeerkat.pl ${meer_files[i]}.*.variants ${meer_files[i]}.*_af ${meer_files[i]}.*.fusions 4"
-    perl $script_bin/parseMeerkat.pl ${meer_files[i]}.*.variants ${meer_files[i]}.*_af ${meer_files[i]}.*.fusions 4
-  done
+  # meer_files+=( $(ls -1 data/meerkat/*.variants | cut -d '.' -f 1 | sort -u ) )
+  # for ((i=0;i<${#meer_files[@]};++i))
+  # do
+  #   echo "perl $script_bin/parseMeerkat.pl ${meer_files[i]}.*.variants ${meer_files[i]}.*_af ${meer_files[i]}.*.fusions 4"
+  #   perl $script_bin/parseMeerkat.pl ${meer_files[i]}.*.variants ${meer_files[i]}.*_af ${meer_files[i]}.*.fusions 4
+  # done
 
   for cnv_file in data/cnv/*.txt
   do
@@ -243,32 +242,4 @@ then
 
 fi
 
-if [[ $stats -eq 1 ]]
-then
-
-  if [ -z all_genes.txt ]
-  then
-    echo "'all_genes' not found! Exiting"
-    exit 1
-  fi
-
-  echo "Calculating breakpoint stats..."
-  perl $script_bin/bpstats.pl all_bps_filtered.txt
-
-fi
-#
-# if [[ $nstats -eq 1 ]]
-# then
-#
-#   if [ -z all_genes.txt ]
-#   then
-#     echo "'all_genes' not found! Exiting"
-#     exit 1
-#   fi
-#
-#   echo "Calculating breakpoint stats..."
-#   perl $script_bin/bpstats.pl -n all_bps_filtered.txt
-#
-# fi
-#
-# exit 0
+exit 0
