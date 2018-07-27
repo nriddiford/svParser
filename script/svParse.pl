@@ -20,6 +20,7 @@ use File::Slurp;
 use Getopt::Long qw/ GetOptions /;
 
 my $vcf_file;
+my $output_dir = "$Bin/../filtered/";
 my $help;
 my $id;
 my $dump;
@@ -36,6 +37,7 @@ GetOptions( 'vcf=s'             =>    \$vcf_file,
             'method=s'          =>    \$method,
             'id=s'              =>    \$id,
             'dump'              =>    \$dump,
+            'output_dir=s'      =>    \$output_dir,
             'filter:s'          =>    \%filters,
             'print'             =>    \$print,
             'normalPrint=s'     =>    \$PON_print,
@@ -53,9 +55,7 @@ if (not $vcf_file) {
 
 my ($name, $extention) = split(/\.([^.]+)$/, basename($vcf_file), 2);
 
-my ($filtered_out, $summary_out);
-
-makeDirs() if $print;
+my $summary_out = makeDirs($output_dir) if $print;
 
 my %legalFilters = ('su'  =>  1,
                     'dp'  =>  1,
@@ -88,7 +88,7 @@ my $exclude_regions;
 print "\n";
 
 # Retun SV and info hashes
-my ( $SVs, $info, $filtered_vars, $call_lookup) = svParser::typer( $vcf_file, $method, $exclude_regions, $chroms, $filter_ref );
+my ( $SVs, $info, $filtered_vars, $call_lookup, $type) = svParser::typer( $vcf_file, $method, $exclude_regions, $chroms, $filter_ref );
 testCalls($true_positives, $SVs, $info, $filter_switch, $PON_print, $call_lookup) if $true_positives;
 
 if ($method ne 'snp') {
@@ -100,8 +100,8 @@ if ($method ne 'snp') {
   svParser::dump_variants( $SVs, $info, $filter_switch, $chromosome, $method, $PON_print ) if $dump and not $true_positives;
   # Write out variants passing filters
   # Write out some useful info to txt file
-  svParser::print_variants( $SVs, $filtered_vars, $name, $filtered_out, 0 ) if $print;
-  svParser::write_summary( $SVs, $name, $summary_out, $method, 0 ) if $print;
+  svParser::print_variants( $SVs, $filtered_vars, $name, $output_dir, 0 ) if $print;
+  svParser::write_summary( $SVs, $name, $summary_out, $type ) if $print;
 }
 
 
@@ -115,18 +115,21 @@ elsif ($method eq 'snp') {
 
 
 sub makeDirs {
-  $filtered_out = "$Bin/../filtered/";
+
+  my $filtered_out = shift;
   eval { make_path($filtered_out) };
 
   if ($@) {
     print "Couldn't create '$filtered_out': $@";
   }
-  $summary_out = "$Bin/../filtered/summary/";
+  my $summary_out = File::Spec->catdir( $filtered_out, 'summary' );
+  # $summary_out = "$Bin/../filtered/summary/";
   eval { make_path($summary_out) };
 
   if ($@) {
     print "Couldn't create '$summary_out': $@";
   }
+  return($summary_out);
 }
 
 =item testCalls()
@@ -279,7 +282,8 @@ description: Browse vcf output from several SV callers LUMPY, DELLY and novobrea
 arguments:
   -h, --help                show this help message and exit
   -v file, --vcf            VCF input    [required]
-  -p, --print               print filtered vcf and summary file to './filtered'
+  -o, --output_dir          Directory to write all output to [Default: 'filtered/']
+  -p, --print               print filtered vcf and summary file to output_dir
   -m str, --method          specify input source [default: guess from input]
                               -l = LUMPY
                               -d = DELLY
