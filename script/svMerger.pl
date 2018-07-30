@@ -11,14 +11,16 @@ use feature qw/ say /;
 use Data::Dumper;
 use Getopt::Long qw/ GetOptions /;
 use Cwd;
+use autodie;
 
 my @files;
 my $help;
+my $output_dir;
 
 # foo=s{1,} indicates one or more values
-
-GetOptions( 'files=s{1,}'   =>    \@files,
-            'help'          =>    \$help
+GetOptions( 'files=s{1,}'   =>   \@files,
+            'output_dir=s'  =>   \$output_dir,
+            'help'          =>   \$help
           ) or die usage();
 
 if ($help) { exit usage() }
@@ -28,23 +30,19 @@ if (@files == 0){
   exit usage();
 }
 
-my $dir = 'merged/';
-# my $dir = "$Bin/../filtered/summary/merged/";
-#
-# eval { make_path($dir) };
-# if ($@) {
-#   print "Couldn't create $dir: $@";
-# }
+eval { make_path($output_dir) };
+if ($@) {
+  print "Couldn't create $output_dir: $@";
+}
 
-my @parts = split( /\./, basename($files[0]) );
-
-
-open my $out, '>', "$dir" . $parts[0] . "_merged_SVs.txt" or die $!;
-
-say "Writing merged files to: " . "'$dir" . $parts[0] . "_merged_SVs.txt'";
-
-
+my ($name, $extention) = split(/\.([^.]+)$/, basename($files[0]), 2);
+$name = (split /\./, $name)[0];
+my $outfile =  $name . '_merged_SVs.txt';
+my $outpath = File::Spec->catdir( $output_dir, $outfile );
+open my $out, '>', $outpath;
+say "Writing merged files to: '$outpath'";
 say "Merging files: ";
+
 my %SVs;
 my $header;
 foreach (@files){
