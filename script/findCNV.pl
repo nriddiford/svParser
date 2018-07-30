@@ -10,10 +10,10 @@ use Getopt::Long qw/ GetOptions /;
 my $cnv_file;
 my $output_dir;
 my $help;
-my $variants_file;
+my @variants_files;
 
 GetOptions( 'cnvs=s'        =>   \$cnv_file,
-            'variants=s'    =>   \$variants_file,
+            'variants=s{1,}'   =>    \@variants_files,
             'output_dir=s'  =>   \$output_dir,
             'help'          =>   \$help
 ) or die usage();
@@ -83,23 +83,34 @@ sub findCNV {
 
 sub readParser {
   my ($d, $variants_file) = @_;
+  my ($name, $extention) = split(/\.([^.]+)$/, basename($variants_file), 2);
+  my $outfile =  $name . '.cnv.txt';
+  my $outpath = File::Spec->catdir( dirname($variants_file), $outfile );
   open my $in, '<', $variants_file;
+  open my $out, '>', $outpath or die $!;
   my @header = qw/ source type chromosome1 bp1 chromosome2 bp2 split_reads disc_reads genotype id length(Kb) position consensus microhomology configuration allele_frequency log2(cnv) /;
   while(<$in>){
     chomp;
     next if /^source/;
     my @parts = split;
-    my ($chr, $bp1, $bp2) = @parts[2,3,5];
-    say "$chr, $bp1, $bp2";
-    my ($r, $i) = findCNV($d, $chr, $bp1, $bp2);
-    my $av_r = sprintf("%.2f", $r/$i);
-    say "Average log2 FC: $av_r over $i windows";
+    my ($chr, $bp1, $bp2, $genotype) = @parts[2,3,5,8];
+    my ($r, $i, $av_r) = (0, 0, 0);
+
+    if($genotype =~ 'somatic'){
+      ($r, $i) = findCNV($d, $chr, $bp1, $bp2);
+      $av_r = sprintf("%.2f", $r/$i);
+    }
+    splice(@parts, 16, 1, $av_r);
+    print $out join("\t", @parts) . "\n";
+    # say "Average log2 FC: $av_r over $i windows";
   }
 }
 
 my $d = readCNV($cnv_file);
 say "Read file '$cnv_file'";
-readParser($d, $variants_file);
+foreach(@variants_files){
+  readParser($d, $_)
+}
 
 sub usage {
   print "usage: perl $Script -c cnvs -o output_dir\n";
