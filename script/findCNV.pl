@@ -89,6 +89,8 @@ sub readParser {
   open my $in, '<', $variants_file;
   open my $out, '>', $outpath or die $!;
   my @header = qw/ source type chromosome1 bp1 chromosome2 bp2 split_reads disc_reads genotype id length(Kb) position consensus microhomology configuration allele_frequency log2(cnv) /;
+  print $out join("\t", @header) . "\n";
+
   while(<$in>){
     chomp;
     next if /^source/;
