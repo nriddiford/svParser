@@ -12,10 +12,10 @@ my $output_dir;
 my $help;
 my @variants_files;
 
-GetOptions( 'cnvs=s'        =>   \$cnv_file,
-            'variants=s{1,}'   =>    \@variants_files,
-            'output_dir=s'  =>   \$output_dir,
-            'help'          =>   \$help
+GetOptions( 'cnvs=s'           =>   \$cnv_file,
+            'variants=s{1,}'   =>   \@variants_files,
+            'output_dir=s'     =>   \$output_dir,
+            'help'             =>   \$help
 ) or die usage();
 
 if (not $cnv_file) {
