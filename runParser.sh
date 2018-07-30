@@ -1,5 +1,5 @@
 #!/bin/sh
-
+set -euo pipefail
 ## usage
 usage() {
     echo "
@@ -18,20 +18,23 @@ options:
 
 filter=0
 merge=0
-outdir=""
 annotate=0
-clean=0
-stats=0
-nstats=0
-while getopts 'fmacsnho:' flag; do
+replace=0
+out_dir='filtered/'
+data_dir='data/'
+cnv_dir=
+exclude_file='/Users/Nick_curie/Documents/Curie/Data/Genomes/Dmel_v6.12/Mappability/dmel6_unmappable_100.bed'
+
+while getopts 'fmarho:d:c:e:' flag; do
   case "${flag}" in
     f)  filter=1 ;;
     m)  merge=1 ;;
     a)  annotate=1 ;;
-    c)  clean=1 ;;
-    o)  outdir="$OPTARG" ;;
-    s)  stats=1 ;;
-    n)  nstats=1 ;;
+    r)  replace=1 ;;
+    d)  data_dir="$OPTARG" ;;
+    o)  out_dir="$OPTARG" ;;
+    c)  cnv_dir="$OPTARG" ;;
+    e)  exclude_file="$OPTARG" ;;
     h)  usage
         exit 0 ;;
   esac
@@ -44,51 +47,102 @@ then
 fi
 
 # Change to the 'script' dir in svParser
-dir=dirname "$0"
+dir=$(dirname "$0")
 script_bin="$dir/script"
+script_bin="$( cd "$script_bin" ; pwd -P )"
 
-# Change to the bed file to filter svs called in unmappable regions
-exclude_file=/Users/Nick_curie/Documents/Curie/Data/Genomes/Dmel_v6.12/Mappability/dmel6_unmappable_100.bed
+echo "Reading data from '$data_dir'"
+echo "Writing data to '$out_dir'"
+echo "Exclude file set to '$exclude_file'"
 
-# mkdir -p "${outdir}/filtered/summary/merged/"
+mkdir -p "$out_dir/summary"
 
 if [[ $filter -eq 1 ]]
 then
 
-  for lumpy_file in data/lumpy/*.vcf
+  for lumpy_file in "$data_dir/lumpy/*.vcf"
   do
-    echo "perl $script_bin/svParse.pl -v $lumpy_file -t l -f chr=1 -f su=4 -f dp=10 -f rdr=0.1 -f sq=10 -e $exclude_file -p"
-    perl $script_bin/svParse.pl -v $lumpy_file -t l -f chr=1 -f su=4 -f dp=10 -f rdr=0.1 -f sq=10 -e $exclude_file -p
+    if [ ! -f $lumpy_file ]
+    then
+      echo "No files in $data_dir/lumpy/"
+    else
+      echo "perl $script_bin/svParse.pl -v $lumpy_file -m l -f chr=1 -f su=4 -f dp=10 -f rdr=0.1 -f sq=10 -e $exclude_file -o $out_dir -p"
+      perl $script_bin/svParse.pl -v $lumpy_file -m l -f chr=1 -f su=4 -f dp=10 -f rdr=0.1 -f sq=10 -e $exclude_file -p -o $out_dir
+    fi
   done
 
-  for delly_file in data/delly/*.vcf
+  for delly_file in "$data_dir/delly/*.vcf"
   do
-    echo "perl $script_bin/svParse.pl -v $delly_file -t d -f chr=1 -f su=4 -f dp=10 -f rdr=0.1 -f sq=10 -e $exclude_file -p"
-    perl $script_bin/svParse.pl -v $delly_file -t d -f chr=1 -f su=4 -f dp=10 -f rdr=0.1 -f sq=10 -e $exclude_file -p
+    if [ ! -f $delly_file ]
+    then
+      echo "No files in $data_dir/delly/"
+    else
+      echo "perl $script_bin/svParse.pl -v $delly_file -m d -f chr=1 -f su=4 -f dp=10 -f rdr=0.1 -f sq=10 -e $exclude_file -o $out_dir -p"
+      perl $script_bin/svParse.pl -v $delly_file -m d -f chr=1 -f su=4 -f dp=10 -f rdr=0.1 -f sq=10 -e $exclude_file -p -o $out_dir
+    fi
   done
 
-  for novo_file in data/novobreak/*.vcf
+  for novo_file in "$data_dir/novobreak/*.vcf"
   do
-    echo "perl $script_bin/svParse.pl -v $novo_file -t n -f chr=1 -f su=4 -f dp=10 -f rdr=0.1 -f sq=10 -e $exclude_file -p"
-    perl $script_bin/svParse.pl -v $novo_file -t n -f chr=1 -f su=4 -f dp=10 -f rdr=0.1 -f sq=10 -e $exclude_file -p
+    if [ ! -f $novo_file ]
+    then
+      echo "No files in $data_dir/novobreak/"
+    else
+      echo "perl $script_bin/svParse.pl -v $novo_file -m n -f chr=1 -f su=4 -f dp=10 -f rdr=0.1 -f sq=10 -e $exclude_file -o $out_dir -p"
+      perl $script_bin/svParse.pl -v $novo_file -m n -f chr=1 -f su=4 -f dp=10 -f rdr=0.1 -f sq=10 -e $exclude_file -p -o $out_dir
+    fi
   done
 
-  # meer_files+=( $(ls -1 data/meerkat/*.variants | cut -d '.' -f 1 | sort -u ) )
-  # for ((i=0;i<${#meer_files[@]};++i))
-  # do
-  #   echo "perl $script_bin/parseMeerkat.pl ${meer_files[i]}.*.variants ${meer_files[i]}.*_af ${meer_files[i]}.*.fusions 4"
-  #   perl $script_bin/parseMeerkat.pl ${meer_files[i]}.*.variants ${meer_files[i]}.*_af ${meer_files[i]}.*.fusions 4
-  # done
-
-  for cnv_file in data/cnv/*.txt
+  for cnv_file in "$data_dir/cnv/*.txt"
   do
-    echo "perl $script_bin/parseCNV.pl $cnv_file"
-    perl $script_bin/parseCNV.pl $cnv_file
+    if [ ! -f $cnv_file ]
+    then
+      echo "No files in $data_dir/cnv/"
+    else
+      echo "perl $script_bin/parseCNV.pl -c $cnv_file -o $out_dir/summary"
+      perl $script_bin/parseCNV.pl -c $cnv_file -o $out_dir/summary
+    fi
   done
 
 fi
 
-cd filtered
+function getBase(){
+  stem=$(basename "$1" )
+  name=$(echo $stem | cut -d '.' -f 1)
+  echo $name
+}
+
+if [ -n "$cnv_dir" ]
+then
+  cd $out_dir/summary
+  samples+=( $(ls -1 *.filtered.summary.txt | cut -d '.' -f 1 | sort -u ) )
+
+  for ((i=0;i<${#samples[@]};++i))
+  do
+    # echo $out_dir/summary/${samples[i]}*.txt
+    # echo $cnv_dir/${samples[i]}.*.cnv
+    perl $script_bin/findCNV.pl -c $cnv_dir/${samples[i]}.*.cnv -v $out_dir/summary/${samples[i]}*.txt
+  done
+fi
+
+#   echo "Getting read depth information from $cnv_dir"
+#   for cnv_file in $(ls -1 $cnv_dir/*.cnv)
+#   do
+#     cname=$(getBase $cnv_file)
+#     for sum_file in $(ls -1 $out_dir/summary/*.txt)
+#     do
+#       sname=$(getBase $sum_file)
+#       if [[ $cname == $sname ]]
+#       then
+#         echo" perl $script_bin/findCNV.pl -c $cnv_dir -v $sum_file"
+#       fi
+#     done
+#   done
+# fi
+
+
+cd $out_dir
+
 
 if [[ $merge -eq 1 ]]
 then
@@ -111,6 +165,7 @@ cd summary
 
 if [[ $merge -eq 1 ]]
 then
+  mkdir -p "$out_dir/summary/merged/"
 
   samples+=( $(ls -1 *.txt | cut -d '.' -f 1 | sort -u ) )
 
@@ -188,7 +243,7 @@ then
 
 fi
 
-if [[ $clean -eq 1 ]]
+if [[ $replace -eq 1 ]]
 then
     echo "Adding any new CNV calls to data/cnv'"
     for annofile in *_annotated_SVs.txt
