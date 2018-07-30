@@ -21,7 +21,7 @@ GetOptions( 'cnvs=s'        =>   \$cnvs,
             'help'          =>   \$help
 ) or die usage();
 
-if (not $cnvs and $output_dir) {
+if (not $cnvs or not $output_dir) {
    exit usage();
 }
 
@@ -35,7 +35,6 @@ my $outpath = File::Spec->catdir( $output_dir, $outfile );
 open my $out, '>', $outpath;
 
 my @header = qw/ source type chromosome1 bp1 chromosome2 bp2 split_reads disc_reads genotype id length(Kb) position consensus microhomology configuration allele_frequency log2(cnv) /;
-
 print $out join("\t", @header) . "\n";
 
 my @lines = @{$cnv_ref};
@@ -62,11 +61,11 @@ sub extractVars {
                             '-',                   # id
                             $length,               # length
                             "$chrom:$start-$stop", # IGV
-                            '-',                   # misc1 (type)
+                            '-',                   # consensus
                             '-',                   # microhomology
                             '-',                   # configuration
                             '-',                   # allele frequency
-                            $fc);                  # misc (cnv)
+                            $fc);                  # log2(cnv)
 
   }
   return(\@cnv);
