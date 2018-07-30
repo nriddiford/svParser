@@ -8,7 +8,6 @@ use File::Basename;
 use File::Path qw(make_path);
 use FindBin qw($Bin);
 use feature qw/ say /;
-use Data::Dumper;
 use Getopt::Long qw/ GetOptions /;
 use Cwd;
 use autodie;
