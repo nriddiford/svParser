@@ -93,7 +93,7 @@ testCalls($true_positives, $SVs, $info, $filter_switch, $PON_print, $call_lookup
 
 if ($method ne 'snp') {
   # Print summary to screen
-  svParser::summarise_variants( $SVs, $filter_switch, $chromosome ) unless $id or $dump or $true_positives;
+  svParser::summarise_variants( $SVs, $filter_switch, $chromosome ) unless $id or $dump or $true_positives or $print;
   # Print all info for specified id
   svParser::get_variant( $id, $SVs, $info, $filter_switch, $PON_print) if $id and not $true_positives;
   # Dump all variants to screen
