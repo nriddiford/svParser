@@ -258,30 +258,29 @@ sub annotate_SVs {
       #   }
       # }
 
-    if ($whitelist){
-      if (exists $true_positives{$whitelookup}){
-        say "* Annotating call from whitelist: $whitelookup";
-        my @cols = @{$true_positives{$whitelookup}};
-        print $annotated_svs join("\t", $event, @cols[1..$#cols]) . "\n";
-        $call++;
-        next;
-      }
+
+    if ($whitelist and exists $true_positives{$whitelookup}){
+      say "* Annotating call from whitelist: $whitelookup";
+      my @cols = @{$true_positives{$whitelookup}};
+      print $annotated_svs join("\t", $event, @cols[1..$#cols]) . "\n";
+      $call++;
+      next;
     }
 
-    elsif ($mark and abs($cnv) < 0.2 and ($type eq 'DEL' or $type eq 'DUP') ){
+
+    if ($mark and (abs($cnv) < 0.2) and ($type eq 'DEL' or $type eq 'DUP') ){
       print $annotated_svs join("\t", $_, $hit_bp1, $hit_bp2, $joined_genes2print, "F", "Low CN in $type") . "\n";
       $call++;
       next;
     }
 
-    elsif ($blacklist){
-      if (exists $false_positives{$blacklookup}){
-        say "* Marking blacklisted call as FP: $blacklookup";
-        print $annotated_svs join("\t", $_, $hit_bp1, $hit_bp2, $joined_genes2print, "F") . "\n";
-        $call++;
-        next;
-      }
+    if ($blacklist and exists $false_positives{$blacklookup}){
+      say "* Marking blacklisted call as FP: $blacklookup";
+      print $annotated_svs join("\t", $_, $hit_bp1, $hit_bp2, $joined_genes2print, "F") . "\n";
+      $call++;
+      next;
     }
+
       # else {
       #   unless($blacklist and exists $false_positives{$blacklookup}){
       #     print $annotated_svs join("\t", $_, $hit_bp1, $hit_bp2, $joined_genes2print, " ") . "\n";
