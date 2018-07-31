@@ -23,6 +23,7 @@ GetOptions( 'files=s{1,}'   =>   \@files,
             'help'          =>   \$help
           ) or die usage();
 
+if (scalar @files == 0) { exit usage() }
 if ($help) { exit usage() }
 
 if (@files == 0){
@@ -55,10 +56,8 @@ foreach (@files){
       $header = $_;
       next;
     }
-    my ($source, $chromosome1, $bp1, $chromosome2, $bp2) = (split)[ 0,2,3,4,5 ];
-
+    my ($source, $chromosome1, $bp1, $chromosome2, $bp2) = (split)[ 0,2..5 ];
     push @{$SVs{$chromosome1}{$bp1}{$chromosome2}{$bp2}}, $_;
-
   }
 }
 
@@ -85,18 +84,5 @@ for my $chr1 (sort keys %SVs){
 }
 
 sub usage {
-  print
-"
-usage: perl svMerger.pl [-h] [-f FILE]
-
-svMerger
-author: Nick Riddiford (nick.riddiford\@curie.fr)
-version: v0.1
-description: Merge summary output of SV calls from svParser
-
-arguments:
-  -h, --help            show this help message and exit
-  -f FILE, --file
-                        All summary files to be merged for a sample [required]
-"
+  print "usage: perl svMerger.pl -f file1 .. fileN\n";
 }
