@@ -10,6 +10,7 @@ use FindBin qw($Bin);
 use feature qw/ say /;
 use Getopt::Long qw/ GetOptions /;
 use Cwd;
+use Data::Printer;
 use autodie;
 
 my @files;
@@ -56,18 +57,28 @@ foreach (@files){
     }
     my ($source, $chromosome1, $bp1, $chromosome2, $bp2) = (split)[ 0,2,3,4,5 ];
 
-    push @{$SVs{$chromosome1}{$bp1}{$bp2}{$chromosome2}}, $_;
+    push @{$SVs{$chromosome1}{$bp1}{$chromosome2}{$bp2}}, $_;
 
   }
 }
 
 print $out "$header\n";
 
+my %chr1_seen;
+my %chr2_seen;
 for my $chr1 (sort keys %SVs){
   for my $bp1 (sort { $a <=> $b } keys %{ $SVs{$chr1} }){
-    for my $chromosome2 (sort keys %{ $SVs{$chr1}{$bp1} }){
-      for my $bp2 (sort keys %{ $SVs{$chr1}{$bp1}{$chromosome2} }){
-        print $out "$_\n" foreach @{ $SVs{$chr1}{$bp1}{$chromosome2}{$bp2} };
+    my $b1_key = "$chr1\_$bp1";
+    $chr1_seen{$b1_key}++;
+    for my $chr2 (sort keys %{ $SVs{$chr1}{$bp1} }){
+      for my $bp2 (sort { $a <=> $b } %{ $SVs{$chr1}{$bp1}{$chr2} }){
+        my $b2_key = "$chr2\_$bp2";
+        if( $chr1_seen{$b2_key} ){
+          say "Duplicated entry: $chr1:$bp1    $chr2:$bp2";
+          p(@{ $SVs{$chr1}{$bp1}{$chr2}{$bp2} });
+          next;
+        }
+        print $out "$_\n" foreach @{ $SVs{$chr1}{$bp1}{$chr2}{$bp2} };
       }
     }
   }
