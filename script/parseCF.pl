@@ -7,7 +7,7 @@ use Data::Dumper;
 use autodie;
 
 use File::Basename;
-use FindBin qw($Bin);
+use FindBin qw / $Bin /;
 use FindBin qw/ $Script /;
 
 use Getopt::Long qw/ GetOptions /;
@@ -29,8 +29,6 @@ my $cnv_ref = extractVars($cnvs);
 
 my @name_fields = split( /\_/, basename($cnvs) );
 
-say @name_fields;
-
 my $outfile =  $name_fields[0] . ".freec.filtered.summary.txt";
 my $outpath = File::Spec->catdir( $output_dir, $outfile );
 open my $out, '>', $outpath;
@@ -51,7 +49,7 @@ sub extractVars {
     next if /KolmogorovSmirnovPvalue/;
     my ($chrom, $start, $stop, $cn, $type, $wilcox, $KS) = split;
     $type = ($type eq 'gain') ? 'DUP' : 'DEL';
-    my $length = $stop - $start;
+    my ($length) = sprintf("%.1f", (($stop - $start)/1000));
 
     push @cnv, join("\t", "Control-Freec",         # source
                             $type,                 # type
