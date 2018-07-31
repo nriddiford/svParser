@@ -179,8 +179,8 @@ sub annotate_SVs {
         my ($bp2_gene, $bp2_feature) = split(", ", $bp2_locus);
         $bp2_feature = 'intergenic' if not length $bp2_feature;
 
-        print $bp_out join("\t", $event, $bptype, $sample, $genotype, $chrom1, $bp1, $bp1_gene, $bp1_feature, $chrom2, $bp2, $bp2_gene, $bp2_feature, $type, $length) . "\n" if $bptype eq 'bp1';
-        print $bp_out join("\t", $event, $bptype, $sample, $genotype, $chrom2, $bp2, $bp2_gene, $bp2_feature, $chrom1, $bp1, $bp1_gene, $bp1_feature, $type, $length) . "\n" if $bptype eq 'bp2';
+        print $bp_out join("\t", $event, $bptype, $sample, $genotype, $chrom1, $bp1, $bp1_gene, $bp1_feature, $chrom2, $bp2, $bp2_gene, $bp2_feature, $type, $length, $af) . "\n" if $bptype eq 'bp1';
+        print $bp_out join("\t", $event, $bptype, $sample, $genotype, $chrom2, $bp2, $bp2_gene, $bp2_feature, $chrom1, $bp1, $bp1_gene, $bp1_feature, $type, $length, $af) . "\n" if $bptype eq 'bp2';
       }
       next;
     }
