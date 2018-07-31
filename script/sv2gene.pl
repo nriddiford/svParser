@@ -250,13 +250,6 @@ sub annotate_SVs {
 
     my $blacklookup = join("_", $sample, $chrom1, $bp1, $chrom2, $bp2);
 
-    if ($blacklist){
-      if (exists $false_positives{$blacklookup}){
-        say "* Marking blacklisted call as FP: $blacklookup";
-        print $annotated_svs join("\t", $_, $hit_bp1, $hit_bp2, $joined_genes2print, "F") . "\n";
-        $call++;
-        next;
-      }
       # else {
       #   unless($whitelist and exists $true_positives{$whitelookup}){
       #     print $annotated_svs join("\t", $_, $hit_bp1, $hit_bp2, $joined_genes2print, " ") . "\n";
@@ -264,7 +257,6 @@ sub annotate_SVs {
       #     next;
       #   }
       # }
-    }
 
     if ($whitelist){
       if (exists $true_positives{$whitelookup}){
@@ -274,7 +266,22 @@ sub annotate_SVs {
         $call++;
         next;
       }
+    }
 
+    elsif ($mark and abs($cnv) < 0.2 and ($type eq 'DEL' or $type eq 'DUP') ){
+      print $annotated_svs join("\t", $_, $hit_bp1, $hit_bp2, $joined_genes2print, "F", "Low CN in $type") . "\n";
+      $call++;
+      next;
+    }
+
+    elsif ($blacklist){
+      if (exists $false_positives{$blacklookup}){
+        say "* Marking blacklisted call as FP: $blacklookup";
+        print $annotated_svs join("\t", $_, $hit_bp1, $hit_bp2, $joined_genes2print, "F") . "\n";
+        $call++;
+        next;
+      }
+    }
       # else {
       #   unless($blacklist and exists $false_positives{$blacklookup}){
       #     print $annotated_svs join("\t", $_, $hit_bp1, $hit_bp2, $joined_genes2print, " ") . "\n";
@@ -282,13 +289,7 @@ sub annotate_SVs {
       #     next;
       #   }
       # }
-    }
-
-    if ($mark and abs($cnv) < 0.2 and ($type eq 'DEL' or $type eq 'DUP') ){
-      print $annotated_svs join("\t", $_, $hit_bp1, $hit_bp2, $joined_genes2print, "F", "Low CN in $type") . "\n";
-      $call++;
-      next;
-    }
+    # }
 
     else {
       print $annotated_svs join("\t", $_, $hit_bp1, $hit_bp2, $joined_genes2print, " ") . "\n";
