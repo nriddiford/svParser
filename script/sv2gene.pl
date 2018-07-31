@@ -147,7 +147,8 @@ sub annotate_SVs {
     # Check to see if the SV has already been annotated - print and skip if next
 
     if ($genotype =~ 'germline' and $somatic){
-      print $annotated_svs join("\t", $_, "NA", "NA", "-", "", "") . "\n";
+      print $annotated_svs join("\t", $_, "NA", "NA", "-", "", "") . "\n" if not $reannotate;
+      print $annotated_svs "$_\n" if $reannotate;
       next;
     }
     if ( $cells[18] and $cells[18] ne ' ' and $cells[18] ne '-' and $reannotate ){
