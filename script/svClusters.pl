@@ -4,34 +4,51 @@ use strict;
 use warnings;
 
 use autodie;
-use Data::Dumper;
+use Data::Printer;
 use File::Basename;
+use File::Path qw(make_path);
 use feature qw/ say /;
-
-use FindBin qw($Bin);
 use Cwd;
+use FindBin qw($Bin);
+use FindBin qw/ $Script /;
+use Getopt::Long qw/ GetOptions /;
 
+my $variants;
+my $distance = 50;
+my $output_dir = getcwd;
+my $help;
 
-my $in = $ARGV[0];
+GetOptions( 'variants=s'     =>   \$variants,
+            'distance=s'     =>   \$distance,
+            'output_dir=s'   =>   \$output_dir,
+            'help'           =>   \$help
+) or die usage();
 
-# my $dir = "$Bin/../filtered/summary/merged/";
-my $dir = getcwd;
+if (not $variants) {
+   exit usage();
+}
 
-my @parts = split( /\_/, basename($in) );
+eval { make_path($output_dir) };
+if ($@) {
+  print "Couldn't create $output_dir: $@";
+}
 
-open my $out, '>', "$dir/" . $parts[0] . "_clustered_SVs.txt" or die $!;
-say "Writing clustered sv file to: " . "'$dir/" . $parts[0] . "_clustered_SVs.txt'";
-#
-# open my $out, '>', $parts[0] . "_clustered_SVs.txt" or die $!;
-# say "Writing clustered sv file to: " . $parts[0] . "_clustered_SVs.txt'";
+my ($name, $extention) = split(/\.([^.]+)$/, basename($variants), 2);
+$name = (split /\./, $name)[0];
+my $outfile =  $name . "_clustered_SVs.txt";
+my $outpath = File::Spec->catdir( $output_dir, $outfile );
+
+open my $out, '>', $outpath;
+say "Writing clustered sv file to: " . $outpath;
 
 my $sample_count;
 
-run($in);
+run($variants, $distance, $name);
 
 sub run {
-    my $file = shift;
+    my ($file, $distance, $name) = @_;
 
+    say "Clustering variants +/- $distance bps";
     open my $fh, '<', $file;
 
     my @header = split(/\t/, scalar <$fh>);
@@ -44,24 +61,23 @@ sub run {
       $sample_count++;
       my %event;
       @event{ @header } = split(/\t/);
+      # $events[-1] last element of array
 
-        # $events[-1] last element of array
-        unless (@{ $events[-1] }) {
-            push @{ $events[-1] }, \%event;
-            next;
-        }
+      unless (@{ $events[-1] }) {
+          push @{ $events[-1] }, \%event;
+          next;
+      }
 
-        if (same_event($events[-1][-1], \%event, 50)) {
-            push @{ $events[-1] }, \%event;
-            next;
-        }
-
-        push @events, [ \%event ];
+      if (same_event($events[-1][-1], \%event, $distance)) {
+          push @{ $events[-1] }, \%event;
+          next;
+      }
+      push @events, [ \%event ];
     }
 
     print $out join("\t", event => @header), "\n";
 
-    say $sample_count . " calls were grouped into " . scalar @events . " events for " . $parts[0];
+    say $sample_count . " calls were grouped into " . scalar @events . " events for " . $name;
 
     for my $i (1 .. @events) {
         for my $ev (@{ $events[$i - 1] }) {
@@ -73,8 +89,13 @@ sub run {
 
 sub same_event {
     my ($x, $y, $threshold) = @_;
+    return if $x->{genotype} =~ 'germline';
     return if $x->{chromosome1} ne $y->{chromosome1};
     return if abs($x->{bp1} - $y->{bp1}) > $threshold;
     return if abs($x->{bp2} - $y->{bp2}) > $threshold;
     return 1;
+}
+
+sub usage {
+  print "usage: perl $Script -v variants -d distance -o output_dir\n";
 }
