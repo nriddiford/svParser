@@ -70,7 +70,7 @@ sub findCNV {
   my($d, $c1, $bp1, $bp2) = @_;
 
   my %cnvs = %{ $d };
-  my ($r, $i) = (0, 0);
+  my ($r, $i) = (0, 1);
   for my $st (keys %{$cnvs{$c1}}){
     my ($end, $test, $ref, $p, $log2) = @{$cnvs{$c1}{$st}};
     if($bp1 <= $st and $bp2 >= $end){
@@ -94,18 +94,19 @@ sub readParser {
   while(<$in>){
     chomp;
     next if /^source/;
-    my @parts = split;
-    my ($chr, $bp1, $bp2, $genotype) = @parts[2,3,5,8];
+    my @parts = split(/\t/);
+    my ($type, $chr1, $bp1, $chr2, $bp2, $genotype) = @parts[1..5,8];
+
     my ($r, $i, $av_r) = (0, 0, 0);
 
-    if($genotype =~ 'somatic'){
-      ($r, $i) = findCNV($d, $chr, $bp1, $bp2);
+    if( $chr1 eq $chr2 and $genotype =~ 'somatic' ){
+      ($r, $i) = findCNV($d, $chr1, $bp1, $bp2);
       $av_r = sprintf("%.2f", $r/$i);
     }
     splice(@parts, 16, 1, $av_r);
     print $out join("\t", @parts) . "\n";
-    # say "Average log2 FC: $av_r over $i windows";
   }
+
 }
 
 my $d = readCNV($cnv_file);
