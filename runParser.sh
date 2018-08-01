@@ -26,13 +26,15 @@ out_dir='filtered/'
 data_dir='data/'
 cnv_dir=
 exclude_file='/Users/Nick_curie/Documents/Curie/Data/Genomes/Dmel_v6.12/Mappability/dmel6_unmappable_100.bed'
+somatic=0
 
-while getopts 'fmarho:d:c:e:' flag; do
+while getopts 'fmarsho:d:c:e:' flag; do
   case "${flag}" in
     f)  filter=1 ;;
     m)  merge=1 ;;
     a)  annotate=1 ;;
     r)  replace=1 ;;
+    s)  somatic=1 ;;
     d)  data_dir="$OPTARG" ;;
     o)  out_dir="$OPTARG" ;;
     c)  cnv_dir="$OPTARG" ;;
@@ -58,10 +60,14 @@ echo "Writing data to '$out_dir'"
 echo "Exclude file set to '$exclude_file'"
 
 mkdir -p "$out_dir/summary"
-
+s=
 # Run svParser for each type of variant file
 if [[ $filter -eq 1 ]]
 then
+  if [[ $somatic -eq 1 ]]
+  then
+    s='-f st=1'
+  fi
 
   echo "**************************"
   echo "*** Filtering variants ***"
@@ -70,20 +76,20 @@ then
   for lumpy_file in $data_dir/lumpy/*.vcf
   do
     echo $lumpy_file
-    echo "perl $script_bin/svParse.pl -v $lumpy_file -m l -f chr=1 -f su=4 -f dp=10 -f rdr=0.1 -f sq=10 -e $exclude_file -o $out_dir -p"
-    perl $script_bin/svParse.pl -v $lumpy_file -m l -f chr=1 -f su=4 -f dp=10 -f rdr=0.1 -f sq=10 -e $exclude_file -p -o $out_dir
+    echo "perl $script_bin/svParse.pl -v $lumpy_file -m l -f chr=1 -f su=4 -f dp=10 -f rdr=0.1 -f sq=10 $s -e $exclude_file -o $out_dir -p"
+    perl $script_bin/svParse.pl -v $lumpy_file -m l -f chr=1 -f su=4 -f dp=10 -f rdr=0.1 -f sq=10 $s -e $exclude_file -p -o $out_dir
   done
 
   for delly_file in $data_dir/delly/*.vcf
   do
-    echo "perl $script_bin/svParse.pl -v $delly_file -m d -f chr=1 -f su=4 -f dp=10 -f rdr=0.1 -f sq=10 -e $exclude_file -o $out_dir -p"
-    perl $script_bin/svParse.pl -v $delly_file -m d -f chr=1 -f su=4 -f dp=10 -f rdr=0.1 -f sq=10 -e $exclude_file -p -o $out_dir
+    echo "perl $script_bin/svParse.pl -v $delly_file -m d -f chr=1 -f su=4 -f dp=10 -f rdr=0.1 -f sq=10 $s -e $exclude_file -o $out_dir -p"
+    perl $script_bin/svParse.pl -v $delly_file -m d -f chr=1 -f su=4 -f dp=10 -f rdr=0.1 -f sq=10 $s -e $exclude_file -p -o $out_dir
 done
 
   for novo_file in $data_dir/novobreak/*.vcf
   do
-    echo "perl $script_bin/svParse.pl -v $novo_file -m n -f chr=1 -f su=4 -f dp=10 -f rdr=0.1 -f sq=10 -e $exclude_file -o $out_dir -p"
-    perl $script_bin/svParse.pl -v $novo_file -m n -f chr=1 -f su=4 -f dp=10 -f rdr=0.1 -f sq=10 -e $exclude_file -p -o $out_dir
+    echo "perl $script_bin/svParse.pl -v $novo_file -m n -f chr=1 -f su=4 -f dp=10 -f rdr=0.1 -f sq=10 $s -e $exclude_file -o $out_dir -p"
+    perl $script_bin/svParse.pl -v $novo_file -m n -f chr=1 -f su=4 -f dp=10 -f rdr=0.1 -f sq=10 $s -e $exclude_file -p -o $out_dir
   done
 
   for freec_file in $data_dir/freec/*.txt
