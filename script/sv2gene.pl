@@ -40,7 +40,7 @@ if($somatic){
   say "Running in somatic mode - will annotate all germline events as 'NA'";
 }
 if($mark){
-  say "Running in mark mode. Somatic dels and dups with abs(log2(FC) < 0.1) will be marked as F in T/F column";
+  say "Running in mark mode. Somatic dels and dups with abs(log2(FC) < 0.26) will be marked as F in T/F column";
 }
 
 my (%false_positives, %true_positives);
@@ -72,7 +72,6 @@ my (%transcript_length, %genes, %features);
 my ($sample, $annotated_svs, $genes_out, $bp_out);
 
 make_gene_hash($features);
-
 annotate_SVs($sv_calls);
 
 sub make_gene_hash {
@@ -143,7 +142,7 @@ sub annotate_SVs {
         next;
       }
     }
-    my ($event, $source, $type, $chrom1, $bp1, $chrom2, $bp2, undef, undef, $genotype, undef, $length, undef, undef, undef, undef, $af, $cnv) = @cells[0..17];
+    my ($event, $source, $type, $chrom1, $bp1, $chrom2, $bp2, $sr, $pe, $genotype, undef, $length, undef, undef, undef, undef, $af, $cnv) = @cells[0..17];
     # Check to see if the SV has already been annotated - print and skip if next
 
     if ($genotype =~ 'germline' and $somatic){
@@ -250,15 +249,6 @@ sub annotate_SVs {
 
     my $blacklookup = join("_", $sample, $chrom1, $bp1, $chrom2, $bp2);
 
-      # else {
-      #   unless($whitelist and exists $true_positives{$whitelookup}){
-      #     print $annotated_svs join("\t", $_, $hit_bp1, $hit_bp2, $joined_genes2print, " ") . "\n";
-      #     $call++;
-      #     next;
-      #   }
-      # }
-
-
     if ($whitelist and exists $true_positives{$whitelookup}){
       say "* Annotating call from whitelist: $whitelookup";
       my @cols = @{$true_positives{$whitelookup}};
@@ -267,11 +257,19 @@ sub annotate_SVs {
       next;
     }
 
-
-    if ($mark and (abs($cnv) < 0.2) and ($type eq 'DEL' or $type eq 'DUP') ){
-      print $annotated_svs join("\t", $_, $hit_bp1, $hit_bp2, $joined_genes2print, "F", "Low CN in $type") . "\n";
-      $call++;
-      next;
+    if ($mark) {
+      # If called by a CN approach then mark as FP unless > log2(1.5)
+      if ( (abs($cnv) < 0.58) and $sr eq '-' and $pe eq '-' ){
+        print $annotated_svs join("\t", $_, $hit_bp1, $hit_bp2, $joined_genes2print, "F", "Low FC in $type called by CN") . "\n";
+        $call++;
+        next;
+      }
+      # Unless there's read support, in which case only mark if < log2(1.2)
+      elsif ( (abs($cnv) < 0.26) and ($type eq 'DEL' or $type eq 'DUP') and $length > 1 ) {
+        print $annotated_svs join("\t", $_, $hit_bp1, $hit_bp2, $joined_genes2print, "F", "Low FC in $type") . "\n";
+        $call++;
+        next;
+      }
     }
 
     if ($blacklist and exists $false_positives{$blacklookup}){
@@ -280,15 +278,6 @@ sub annotate_SVs {
       $call++;
       next;
     }
-
-      # else {
-      #   unless($blacklist and exists $false_positives{$blacklookup}){
-      #     print $annotated_svs join("\t", $_, $hit_bp1, $hit_bp2, $joined_genes2print, " ") . "\n";
-      #     $call++;
-      #     next;
-      #   }
-      # }
-    # }
 
     else {
       print $annotated_svs join("\t", $_, $hit_bp1, $hit_bp2, $joined_genes2print, " ") . "\n";

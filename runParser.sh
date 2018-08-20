@@ -121,7 +121,7 @@ then
   do
     if [ ! -f $cnv_dir/${samples[i]}.*.cnv ]
     then
-      echo "No corresponding CNV file for ${samples[i]} in $cnv_dir"
+      echo " -> ! No corresponding CNV file for ${samples[i]} in $cnv_dir"
     else
       echo "perl $script_bin/findCNV.pl -c $cnv_dir/${samples[i]}.*.cnv -v $out_dir/summary/${samples[i]}*.filtered.summary.txt"
       perl $script_bin/findCNV.pl -c $cnv_dir/${samples[i]}.*.cnv -v $out_dir/summary/${samples[i]}*.filtered.summary.txt
@@ -168,8 +168,8 @@ if [[ $merge -eq 1 ]]
 then
   for f in *_merged_SVs.txt
   do
-    echo "perl $script_bin/svClusters.pl -v $f -d 250"
-    perl $script_bin/svClusters.pl -v $f -d 250
+    echo "perl $script_bin/svClusters.pl -v $f -d 500"
+    perl $script_bin/svClusters.pl -v $f -d 500
     rm $f
   done
 fi
