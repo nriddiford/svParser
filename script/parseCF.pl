@@ -7,7 +7,7 @@ use Data::Dumper;
 use autodie;
 
 use File::Basename;
-use FindBin qw($Bin);
+use FindBin qw / $Bin /;
 use FindBin qw/ $Script /;
 
 use Getopt::Long qw/ GetOptions /;
@@ -29,9 +29,8 @@ my $cnv_ref = extractVars($cnvs);
 
 my @name_fields = split( /\_/, basename($cnvs) );
 
-my $outfile =  $name_fields[0] . ".cnvseq.filtered.summary.txt";
+my $outfile =  $name_fields[0] . ".freec.filtered.summary.txt";
 my $outpath = File::Spec->catdir( $output_dir, $outfile );
-
 open my $out, '>', $outpath;
 
 my @header = qw/ source type chromosome1 bp1 chromosome2 bp2 split_reads disc_reads genotype id length(Kb) position consensus microhomology configuration allele_frequency log2(cnv) /;
@@ -42,14 +41,17 @@ print $out "$_\n" foreach @lines;
 
 
 sub extractVars {
-  my $in = shift;
-  open my $annotated_cnvs, '<', $in;
+  my $f = shift;
+  open my $in, '<', $f;
   my @cnv;
-  while(<$annotated_cnvs>){
+  while(<$in>){
     chomp;
-    my ($chrom, $start, $stop, $type, $length, $fc) = split;
+    next if /KolmogorovSmirnovPvalue/;
+    my ($chrom, $start, $stop, $cn, $type, $wilcox, $KS) = split;
+    $type = ($type eq 'gain') ? 'DUP' : 'DEL';
+    my ($length) = sprintf("%.1f", (($stop - $start)/1000));
 
-    push @cnv, join("\t", "CNV-Seq",               # source
+    push @cnv, join("\t", "Control-Freec",         # source
                             $type,                 # type
                             $chrom,                # chrom1
                             $start,                # bp1
@@ -61,11 +63,11 @@ sub extractVars {
                             '-',                   # id
                             $length,               # length
                             "$chrom:$start-$stop", # IGV
-                            '-',                   # consensus
+                            '-',                   # misc1 (type)
                             '-',                   # microhomology
                             '-',                   # configuration
                             '-',                   # allele frequency
-                            $fc);                  # log2(cnv)
+                            '-');                  # misc (cnv)
 
   }
   return(\@cnv);
