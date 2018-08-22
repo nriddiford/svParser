@@ -53,7 +53,7 @@ fi
 # Change to the 'script' dir in svParser
 dir=$(dirname "$0")
 script_bin="$dir/script"
-script_bin="$( cd "$script_bin" ; pwd -P )"
+script_bin="$( cd ""$script_bin"" ; pwd -P )"
 
 echo "Reading data from '$data_dir'"
 echo "Writing data to '$out_dir'"
@@ -76,32 +76,32 @@ then
   for lumpy_file in $data_dir/lumpy/*.vcf
   do
     echo $lumpy_file
-    echo "perl $script_bin/svParse.pl -v $lumpy_file -m l -f chr=1 -f su=4 -f dp=10 -f rdr=0.1 -f sq=10 $s -e $exclude_file -o $out_dir -p"
-    perl $script_bin/svParse.pl -v $lumpy_file -m l -f chr=1 -f su=4 -f dp=10 -f rdr=0.1 -f sq=10 $s -e $exclude_file -p -o $out_dir
+    echo "perl "$script_bin"/svParse.pl -v $lumpy_file -m l -f chr=1 -f su=4 -f dp=10 -f rdr=0.1 -f sq=10 $s -e $exclude_file -o $out_dir -p"
+    perl "$script_bin"/svParse.pl -v $lumpy_file -m l -f chr=1 -f su=4 -f dp=10 -f rdr=0.1 -f sq=10 $s -e $exclude_file -p -o $out_dir
   done
 
   for delly_file in $data_dir/delly/*.vcf
   do
-    echo "perl $script_bin/svParse.pl -v $delly_file -m d -f chr=1 -f su=4 -f dp=10 -f rdr=0.1 -f sq=10 $s -e $exclude_file -o $out_dir -p"
-    perl $script_bin/svParse.pl -v $delly_file -m d -f chr=1 -f su=4 -f dp=10 -f rdr=0.1 -f sq=10 $s -e $exclude_file -p -o $out_dir
+    echo "perl "$script_bin"/svParse.pl -v $delly_file -m d -f chr=1 -f su=4 -f dp=10 -f rdr=0.1 -f sq=10 $s -e $exclude_file -o $out_dir -p"
+    perl "$script_bin"/svParse.pl -v $delly_file -m d -f chr=1 -f su=4 -f dp=10 -f rdr=0.1 -f sq=10 $s -e $exclude_file -p -o $out_dir
 done
 
   for novo_file in $data_dir/novobreak/*.vcf
   do
-    echo "perl $script_bin/svParse.pl -v $novo_file -m n -f chr=1 -f su=4 -f dp=10 -f rdr=0.1 -f sq=10 $s -e $exclude_file -o $out_dir -p"
-    perl $script_bin/svParse.pl -v $novo_file -m n -f chr=1 -f su=4 -f dp=10 -f rdr=0.1 -f sq=10 $s -e $exclude_file -p -o $out_dir
+    echo "perl "$script_bin"/svParse.pl -v $novo_file -m n -f chr=1 -f su=4 -f dp=10 -f rdr=0.1 -f sq=10 $s -e $exclude_file -o $out_dir -p"
+    perl "$script_bin"/svParse.pl -v $novo_file -m n -f chr=1 -f su=4 -f dp=10 -f rdr=0.1 -f sq=10 $s -e $exclude_file -p -o $out_dir
   done
 
   for freec_file in $data_dir/freec/*.txt
   do
-    echo "perl $script_bin/parseCF.pl -c $freec_file -o $out_dir/summary"
-    perl $script_bin/parseCF.pl -c $freec_file -o $out_dir/summary
+    echo "perl "$script_bin"/parseCF.pl -c $freec_file -o $out_dir/summary"
+    perl "$script_bin"/parseCF.pl -c $freec_file -o $out_dir/summary
   done
 
   for cnv_file in $data_dir/cnv/*.txt
   do
-    echo "perl $script_bin/parseCNV.pl -c $cnv_file -o $out_dir/summary"
-    perl $script_bin/parseCNV.pl -c $cnv_file -o $out_dir/summary
+    echo "perl "$script_bin"/parseCNV.pl -c $cnv_file -o $out_dir/summary"
+    perl "$script_bin"/parseCNV.pl -c $cnv_file -o $out_dir/summary
   done
 
 fi
@@ -123,8 +123,8 @@ then
     then
       echo " -> ! No corresponding CNV file for ${samples[i]} in $cnv_dir"
     else
-      echo "perl $script_bin/findCNV.pl -c $cnv_dir/${samples[i]}.*.cnv -v $out_dir/summary/${samples[i]}*.filtered.summary.txt"
-      perl $script_bin/findCNV.pl -c $cnv_dir/${samples[i]}.*.cnv -v $out_dir/summary/${samples[i]}*.filtered.summary.txt
+      echo "perl "$script_bin"/findCNV.pl -c $cnv_dir/${samples[i]}.*.cnv -v $out_dir/summary/${samples[i]}*.filtered.summary.txt"
+      perl "$script_bin"/findCNV.pl -c $cnv_dir/${samples[i]}.*.cnv -v $out_dir/summary/${samples[i]}*.filtered.summary.txt
     fi
   done
 fi
@@ -144,8 +144,8 @@ then
     echo -e "Error: mergevcf was not found. Please set in path\n`pip install mergevcf`"
     exit 1
   fi
-  echo "perl $script_bin/merge_vcf.pl"
-  #perl $script_bin/merge_vcf.pl
+  echo "perl "$script_bin"/merge_vcf.pl"
+  #perl "$script_bin"/merge_vcf.pl
 fi
 
 cd $out_dir/summary
@@ -156,8 +156,8 @@ then
   samples+=( $(ls -1 *.summary.cnv.txt | cut -d '.' -f 1 | sort -u ) )
   for ((i=0;i<${#samples[@]};++i))
   do
-    echo "perl $script_bin/svMerger.pl -f ${samples[i]}.*.summary.cnv.txt"
-    perl $script_bin/svMerger.pl -f ${samples[i]}.*.summary.cnv.txt -o "$out_dir/summary/merged"
+    echo "perl "$script_bin"/svMerger.pl -f ${samples[i]}.*.summary.cnv.txt"
+    perl "$script_bin"/svMerger.pl -f ${samples[i]}.*.summary.cnv.txt -o "$out_dir/summary/merged"
   done
 
 fi
@@ -168,8 +168,8 @@ if [[ $merge -eq 1 ]]
 then
   for f in *_merged_SVs.txt
   do
-    echo "perl $script_bin/svClusters.pl -v $f -d 500"
-    perl $script_bin/svClusters.pl -v $f -d 500
+    echo "perl "$script_bin"/svClusters.pl -v $f -d 500"
+    perl "$script_bin"/svClusters.pl -v $f -d 500
     rm $f
   done
 fi
@@ -205,7 +205,7 @@ then
   #   #   then
   #   #     echo "Updating 'all_samples_blacklist.txt' with false positive calls from $annofile"
   #   #     echo "Updating 'all_samples_whitelist.txt' with whitelisted calls from $annofile"
-  #   #     python $script_bin/clean.py -f $annofile
+  #   #     python "$script_bin"/clean.py -f $annofile
   #   #   fi
   #   # done
   #     rm *cleaned_SVs.txt
@@ -218,19 +218,19 @@ then
     # Should check both files individually
     if [ -f $blacklist ] && [ -f $whitelist ]
     then
-      echo "perl $script_bin/sv2gene.pl -f $features -i $clustered_file -b $blacklist -w $whitelist -s -m"
-      perl $script_bin/sv2gene.pl -f $features -i $clustered_file -b $blacklist -w $whitelist -s -m
+      echo "perl "$script_bin"/sv2gene.pl -f $features -i $clustered_file -b $blacklist -w $whitelist -s -m"
+      perl "$script_bin"/sv2gene.pl -f $features -i $clustered_file -b $blacklist -w $whitelist -s -m
     elif [ -f $blacklist ]
     then
-      echo "perl $script_bin/sv2gene.pl -f $features -i $clustered_file -b $blacklist -s -m"
-      perl $script_bin/sv2gene.pl -f $features -i $clustered_file -b $blacklist -s -m
+      echo "perl "$script_bin"/sv2gene.pl -f $features -i $clustered_file -b $blacklist -s -m"
+      perl "$script_bin"/sv2gene.pl -f $features -i $clustered_file -b $blacklist -s -m
     elif [ -f $whitelist ]
     then
-      echo "perl $script_bin/sv2gene.pl -f $features -i $clustered_file -w $whitelist -s -m"
-      perl $script_bin/sv2gene.pl -f $features -i $clustered_file -w $whitelist -s -m
+      echo "perl "$script_bin"/sv2gene.pl -f $features -i $clustered_file -w $whitelist -s -m"
+      perl "$script_bin"/sv2gene.pl -f $features -i $clustered_file -w $whitelist -s -m
     else
-      echo "perl $script_bin/sv2gene.pl -f $features -i $clustered_file -s -m"
-      perl $script_bin/sv2gene.pl -f $features -i $clustered_file -s -m
+      echo "perl "$script_bin"/sv2gene.pl -f $features -i $clustered_file -s -m"
+      perl "$script_bin"/sv2gene.pl -f $features -i $clustered_file -s -m
     fi
     rm $clustered_file
   done
@@ -242,13 +242,13 @@ then
     # echo "Adding any new CNV calls to data/cnv'"
     # for annofile in *_annotated_SVs.txt
     # do
-    #   python $script_bin/getCNVs.py -f $annofile
+    #   python "$script_bin"/getCNVs.py -f $annofile
     # done
 
   echo "Removing calls marked as false positives in 'all_samples_blacklist.txt'"
   for annofile in *_annotated_SVs.txt
   do
-    perl $script_bin/clean_files.pl -v $annofile -o $out_dir/summary/merged -b $blacklist -w $whitelist
+    perl "$script_bin"/clean_files.pl -v $annofile -o $out_dir/summary/merged -b $blacklist -w $whitelist
   done
 
   if [ -f "all_genes_filtered.txt" ] && [ -f "all_bps_filtered.txt" ]
@@ -266,7 +266,7 @@ then
     else
       # Annotate un-annotated (manually added) calls
       # Append any new hit genes to 'all_genes.txt'
-      perl $script_bin/sv2gene.pl -r -f $features -i $clean_file -s
+      perl "$script_bin"/sv2gene.pl -r -f $features -i $clean_file -s
       rm $clean_file
     fi
   done
@@ -276,17 +276,17 @@ then
   # for reanno_file in *reannotated_SVs.txt
   # do
   #   # Grab some of the fields from these newly annotated files, and write them to 'all_bps_cleaned.txt'
-  #   python $script_bin/getbps.py -f $reanno_file
+  #   python "$script_bin"/getbps.py -f $reanno_file
   # done
   #
   # # This shouldn't be neccessary. All calls in this file are taken from 'reannotated' files, which should have FP removed already...
   # echo "Removing false positives from bp file 'all_bps_cleaned.txt', writing new bp file to 'all_bps_filtered.txt'"
-  # python $script_bin/update_bps.py
+  # python "$script_bin"/update_bps.py
   # rm 'all_bps_cleaned.txt'
 
   # Merge all samples
   echo "Merging all samples into single file..."
-  perl $script_bin/merge_samples.pl *reannotated_SVs.txt
+  perl "$script_bin"/merge_samples.pl *reannotated_SVs.txt
 
 fi
 
