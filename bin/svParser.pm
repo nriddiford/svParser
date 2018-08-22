@@ -631,7 +631,7 @@ sub summarise_variants {
   my ($dels, $dups, $trans, $invs, $filtered) = (0,0,0,0,0);
   my ($tds, $CNVs, $ins) = (0,0,0);
 
-  my ( $chromosome, $query_start, $query_stop, $specified_region) = parseChrom($region) if $region;
+  my ($chromosome, $query_start, $query_stop, $specified_region) = parseChrom($region) if $region;
   my %support_by_chrom;
   my $read_support;
   my %filtered_sv;
@@ -807,9 +807,8 @@ sub get_variant {
 
 
 sub dump_variants {
-  my ( $SVs, $info, $filter_flag, $region, $type, $PON_print ) = @_;
-
-  my ( $chromosome, $query_start, $query_stop, $specified_region) = parseChrom($region) if $region;
+  my ($SVs, $info, $filter_flag, $region, $type, $PON_print) = @_;
+  my ($chromosome, $query_start, $query_stop, $specified_region) = parseChrom($region) if $region;
 
   say "Running in filter mode - not displaying filtered calls" if $filter_flag;
   say "\nEnter any key to start cycling through calls or enter 'q' to exit";
@@ -818,16 +817,16 @@ sub dump_variants {
         @{ $SVs->{$a}}[1] <=> @{ $SVs->{$b}}[1]
       }  keys %{ $SVs } ){
 
-    my ( $chr, $start, $id, $ref, $alt, $quality_score, $filt, $info_block, $format_block, $tumour_info_block, $normal_info_block, $sv_type, $SV_length, $stop, $chr2, $SR, $PE, $ab, $filters, $genotype, $samples ) = @{ $SVs->{$_} };
+    my ($chr, $start, $id, $ref, $alt, $quality_score, $filt, $info_block, $format_block, $tumour_info_block, $normal_info_block, $sv_type, $SV_length, $stop, $chr2, $SR, $PE, $ab, $filters, $genotype, $samples) = @{ $SVs->{$_} };
 
     $id = $_;
 
-    if ( $chromosome ){
+    if ($chromosome){
       next if $chr ne $chromosome;
     }
 
-    if ( $specified_region ){
-      if ( ( $start < $query_start or $start > $query_stop ) and ( $stop < $query_stop or $stop > $query_stop ) ){
+    if ($specified_region){
+      if ( ($start < $query_start or $start > $query_stop ) and ( $stop < $query_stop or $stop > $query_stop) ){
         next;
       }
     }
@@ -850,18 +849,18 @@ sub dump_variants {
         $PON_print = scalar @samples - 2;
     }
 
-    if ( scalar @filter_reasons > 0 ){
+    if (scalar @filter_reasons > 0){
       next if $filter_flag;
     }
 
     my $next_line = <>;
     say "Displaying info for variant '$id'. Enter any key to go to the next variant or type 'q' to exit\n";
 
-    if ( $next_line ){
+    if ($next_line){
       chomp($next_line);
       exit if $next_line eq 'q';
 
-      if (scalar @filter_reasons > 0 ){
+      if (scalar @filter_reasons > 0){
         say "_______________________________________________________";
         say "Variant '$id' will be filtered for the following reasons:";
         say "* $_" foreach @filter_reasons;
@@ -933,8 +932,7 @@ sub dump_variants {
 
 
 sub print_variants {
-
-  my ( $SVs, $filtered_SVs, $name, $output_dir, $germline ) = @_;
+  my ($SVs, $filtered_SVs, $name, $output_dir, $germline) = @_;
   my $outfile =  $name . ".filtered.vcf";
   my $outpath = File::Spec->catdir( $output_dir, $outfile );
   open my $out, '>', $outpath or die $!;
@@ -962,7 +960,7 @@ sub print_variants {
 
 
 sub write_summary {
-  my ( $SVs, $name, $summary_out, $type) = @_;
+  my ($SVs, $name, $summary_out, $type) = @_;
   my $outfile =  $name . ".filtered.summary.txt";
   my $outpath = File::Spec->catdir( $summary_out, $outfile );
 
@@ -981,9 +979,9 @@ sub write_summary {
   for ( sort { @{ $SVs->{$a}}[0] cmp @{ $SVs->{$b}}[0] or
         @{ $SVs->{$a}}[1] <=> @{ $SVs->{$b}}[1]
       }  keys %{ $SVs } ){
-    my ( $chr, $start, $id, $ref, $alt, $quality_score, $filt, $info_block, $format_block, $tumour_info_block, $normal_info_block, $sv_type, $SV_length, $stop, $chr2, $SR, $PE, $ab, $filters, $genotype, $samples ) = @{ $SVs->{$_} };
+    my ($chr, $start, $id, $ref, $alt, $quality_score, $filt, $info_block, $format_block, $tumour_info_block, $normal_info_block, $sv_type, $SV_length, $stop, $chr2, $SR, $PE, $ab, $filters, $genotype, $samples) = @{ $SVs->{$_} };
 
-    if ( @$filters == 0){
+    if (@$filters == 0){
 
       my $bp_id = $_;
       if ($bp_id =~ /_/){
@@ -1050,10 +1048,10 @@ sub write_summary {
 sub parseChrom {
   my $region = shift;
 
-  if ( $region =~ /:/ ){
+  if ($region =~ /:/){
     my ($chromosome, $query_region) = split(/:/, $region);
 
-    if ( $query_region !~ /-/ ){
+    if ($query_region !~ /-/){
       die "Error parsing the specified region.\nPlease specify chromosome regions using the folloing format:\tchrom:start-stop\n";
     }
 
@@ -1071,7 +1069,7 @@ sub parseChrom {
 # Exclude variants where either breakpoint is withing +/- 250 bps of an unmappable region
 # returns @filter_reasons
 sub region_exclude_filter {
-  my ( $chr1, $bp1, $chr2, $bp2, $exclude_regions, $filter_reasons ) = @_;
+  my ($chr1, $bp1, $chr2, $bp2, $exclude_regions, $filter_reasons) = @_;
 
   my $slop = 250;
 
@@ -1079,7 +1077,7 @@ sub region_exclude_filter {
 
   my @bed = @{ $exclude_regions };
 
-  foreach(@bed){
+  foreach (@bed){
     my ($chromosome, $start, $stop) = split;
     next if $stop - $start < 200; # don't consider unmappable regions < 200 bps
 
@@ -1104,7 +1102,7 @@ sub read_support_filter {
   my @filter_reasons = @{ $filter_reasons };
 
   # Filter if tum reads below specified threshold [default=4]
-  if ( $tumour_read_support < $read_support_flag ){
+  if ($tumour_read_support < $read_support_flag){
     push @filter_reasons, "Read support in '$sample'<" . $read_support_flag . '=' . $tumour_read_support;
   }
   return(\@filter_reasons);
@@ -1116,11 +1114,11 @@ sub read_depth_filter {
 
   my @filter_reasons = @{ $filter_reasons };
 
-  if ( $norm_depth < $depth_threshold ){
+  if ($norm_depth < $depth_threshold){
     push @filter_reasons, "$control has depth < " . $depth_threshold . '=' . $norm_depth;
   }
 
-  if ( $tum_depth < $depth_threshold ){
+  if ($tum_depth < $depth_threshold){
     push @filter_reasons, "$tumour_name has depth < " . $depth_threshold . '=' . $tum_depth;
   }
 
@@ -1131,7 +1129,7 @@ sub read_depth_filter {
 sub genotype_filter {
   my ($id, $genotype, $filter_reasons, $selected_genotype ) = @_;
   my @filter_reasons = @{ $filter_reasons };
-    if ( $genotype ne $selected_genotype ){
+    if ($genotype ne $selected_genotype){
       push @filter_reasons,  "Not $selected_genotype: genotype=" . $genotype;
     }
   return(\@filter_reasons);
@@ -1139,7 +1137,7 @@ sub genotype_filter {
 
 
 sub genotype {
-  my ( $id, $t_hq_alt_reads, $c_alt_reads, $n_sq, $n_hq_alt_reads, $PON, $filter_reasons ) = @_;
+  my ($id, $t_hq_alt_reads, $c_alt_reads, $n_sq, $n_hq_alt_reads, $PON, $filter_reasons) = @_;
   my $genotype = 'NA';
   $n_sq = 20 if $n_sq eq "NA";
   $n_sq = 0 if  $n_sq eq ".";
@@ -1149,10 +1147,10 @@ sub genotype {
   my $norm = 0;
   my @filter_reasons = @{ $filter_reasons };
 
-  if ( $t_hq_alt_reads > 0){
+  if ($t_hq_alt_reads > 0){
     $tum = 1;
   }
-  if ( $n_hq_alt_reads > 0 and $n_sq > 1 ){
+  if ($n_hq_alt_reads > 0 and $n_sq > 1){
     $norm = 1;
   }
   # What was this for ?
@@ -1162,7 +1160,7 @@ sub genotype {
 
   my %PON_alt_reads = %{ $PON };
 
-  for my $n ( keys %PON_alt_reads ){
+  for my $n (keys %PON_alt_reads){
     if ( $PON_alt_reads{$n} > 0){
       $germline_recurrent = 1;
     }
@@ -1190,7 +1188,7 @@ sub genotype {
 
 
 sub chrom_filter {
-  my ( $chr, $chr2, $filters, $chrom_keys ) = @_;
+  my ($chr, $chr2, $filters, $chrom_keys) = @_;
   my @keys = @{ $chrom_keys };
   my %chrom_filt;
 
@@ -1201,15 +1199,14 @@ sub chrom_filter {
     $chr2 = $chr;
   }
 
-  if ( not $chrom_filt{$chr} ){
+  if (not $chrom_filt{$chr}){
     push @filter_reasons, 'chrom1=' . $chr;
   }
 
-  elsif ( not $chrom_filt{$chr2} ){
+  elsif (not $chrom_filt{$chr2}){
     push @filter_reasons, 'chrom2=' . $chr2;
   }
   return (\@filter_reasons);
 }
-
 
 1;

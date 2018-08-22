@@ -36,10 +36,10 @@ if (not $sv_calls and not $features ){
   exit usage();
 }
 
-if($somatic){
+if ($somatic){
   say "Running in somatic mode - will annotate all germline events as 'NA'";
 }
-if($mark){
+if ($mark){
   say "Running in mark mode. Somatic dels and dups with abs(log2(FC) < 0.26) will be marked as F in T/F column";
 }
 
@@ -106,7 +106,8 @@ sub annotate_SVs {
   my $in = shift;
   open my $SV_in, '<', $in;
   my ( $name, $extention ) = split(/\.([^.]+)$/, basename($in), 2);
-  ($sample) = split(/_/, $name, 3);
+  ($sample) = (split(/_/, $name))[0];
+  say $sample;
 
   if ($reannotate){
     open $annotated_svs, '>', $sample . "_reannotated_SVs.txt";
