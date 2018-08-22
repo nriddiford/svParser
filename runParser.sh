@@ -53,7 +53,7 @@ fi
 # Change to the 'script' dir in svParser
 dir=$(dirname "$0")
 script_bin="$dir/script"
-script_bin="$( cd ""$script_bin"" ; pwd -P )"
+script_bin="$( cd "$script_bin" ; pwd -P )"
 
 echo "Reading data from '$data_dir'"
 echo "Writing data to '$out_dir'"
