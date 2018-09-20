@@ -10,6 +10,7 @@ options:
   -c    directory containing read depth information to annotate calls with
 
   -f    filter
+  -s    only operate on somatic tumour variants
   -m    merge
   -a    annotate
   -r    remove false positives anad reannotate
@@ -60,7 +61,7 @@ echo "Writing data to '$out_dir'"
 echo "Exclude file set to '$exclude_file'"
 
 mkdir -p "$out_dir/summary"
-s=
+s=''
 # Run svParser for each type of variant file
 if [[ $filter -eq 1 ]]
 then
