@@ -14,6 +14,7 @@ def get_file_name(variants_file):
     outfile = out_base + "_" + "stitched_SVs.txt"
     return(outfile)
 
+
 def parse_vars(options):
     out_file = get_file_name(options.inFile)
 
@@ -21,32 +22,24 @@ def parse_vars(options):
     print("Writing stitched variants to: %s" % out_file)
 
     df = pd.read_csv(options.inFile, delimiter="\t")
+    df = df[['event', 'chromosome1', 'bp1', 'chromosome2', 'bp2']]
+    df = df.sort_values(['event', 'chromosome1', 'bp1', 'chromosome2', 'bp2'])
 
     right_end = defaultdict(lambda: defaultdict(dict))
     left_end = defaultdict(lambda: defaultdict(dict))
-    vars = {}
-
-    df = df[['event', 'chromosome1', 'bp1', 'chromosome2', 'bp2']]
-
-    df = df.sort_values(['event', 'chromosome1', 'bp1', 'chromosome2', 'bp2'])
 
     seen_l = defaultdict(lambda: defaultdict(dict))
     seen_r = defaultdict(lambda: defaultdict(dict))
 
-    # TODO : Change back to real data names
-    for index in df.index:
-        event = df.loc[index, 'event']
-        c1 = df.loc[index, 'chromosome1']
-        b1 = int(df.loc[index, 'bp1'])
-        c2 = df.loc[index, 'chromosome2']
-        b2 = int(df.loc[index, 'bp2'])
+    vars = {}
 
+
+    for row in df.itertuples():
+        idx, event, c1, b1, c2, b2 = row
         for i in range(b1-10, b1+10):
             for j in range(b2-10, b2+10):
                 if i in seen_l[c1] and j in seen_r[c2]:
-
                     index = sameIndex(seen_l[c1][i], seen_r[c2][j])
-
                     if index is not None:
                         if seen_l[c1][i][index] == seen_r[c2][j][index]:
                             if event != seen_l[c1][i][index]:
@@ -61,10 +54,6 @@ def parse_vars(options):
         left_end[c1].setdefault(b1, []).append([event, c1, b1, c2, b2])
         right_end[c2].setdefault(b2, []).append([event, c1, b1, c2, b2])
 
-        # left_end[c1][b1] = [event, c1, b1, c2, b2]
-        # right_end[c2][b2] = [event, c1, b1, c2, b2]
-
-
     return(vars, right_end, left_end)
 
 
@@ -73,11 +62,8 @@ def sameIndex(l1, l2):
         if l1[i] == l2[i]: return i
 
 
-
 def stitch(options):
     vars, right_end, left_end = parse_vars(options)
-
-    # print(json.dumps(left_end, indent=4))
 
     complex_events = {}
 
@@ -96,6 +82,7 @@ def stitch(options):
 
 
     print(json.dumps(complex_events, indent=4, sort_keys=True))
+
     return right_end, left_end
 
 
