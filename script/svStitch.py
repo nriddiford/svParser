@@ -6,23 +6,16 @@ import pandas as pd
 from optparse import OptionParser
 from collections import defaultdict
 import json
-
-
-def get_file_name(variants_file):
-    base_name = (os.path.splitext(variants_file)[0])
-    out_base = base_name.split('_')[0]
-    outfile = out_base + "_" + "stitched_SVs.txt"
-    return outfile
-
+import ntpath
+from collections import OrderedDict
 
 def parse_vars(options):
-    out_file = get_file_name(options.inFile)
-
     print("Stitching together variants for: %s" % options.inFile)
-    print("Writing stitched variants to: %s" % out_file)
+
+    sample = ntpath.basename(options.inFile).split("_")[0]
+    temp = sample + '_temp.txt'
 
     df = pd.read_csv(options.inFile, delimiter="\t")
-    df = df[['event', 'chromosome1', 'bp1', 'chromosome2', 'bp2']]
     df = df.sort_values(['event', 'chromosome1', 'bp1', 'chromosome2', 'bp2'])
 
     right_end = defaultdict(lambda: defaultdict(dict))
@@ -33,8 +26,10 @@ def parse_vars(options):
 
     variants = {}
 
-    for row in df.itertuples():
-        idx, event, c1, b1, c2, b2 = row
+
+    for idx, row in df.iterrows():
+        event, c1, b1, c2, b2, notes = row[['event', 'chromosome1', 'bp1', 'chromosome2', 'bp2', 'notes']]
+
         for i in range(b1-10, b1+10):
             for j in range(b2-10, b2+10):
                 if i in seen_l[c1] and j in seen_r[c2]:
@@ -44,45 +39,50 @@ def parse_vars(options):
                             if event != seen_l[c1][i][index]:
                                 print("Seen: %s %s in event %s" % (event, [c1, b1, c2, b2], seen_l[c1][i][index]))
                                 event = seen_l[c1][i][index]
+                                df.loc[idx, 'event'] = event
 
         seen_l[c1].setdefault(b1, []).append(event)
         seen_r[c2].setdefault(b2, []).append(event)
 
-        variants.setdefault(event, []).extend([c1, b1, c2, b2])
+        variants.setdefault(event, []).append([c1, b1, c2, b2])
 
         left_end[c1].setdefault(b1, []).extend([event, c1, b1, c2, b2])
         right_end[c2].setdefault(b2, []).extend([event, c1, b1, c2, b2])
 
-    return variants, right_end, left_end
+    df = df.sort_values(['event', 'chromosome1', 'bp1', 'chromosome2', 'bp2'])
+    df.to_csv(temp, sep="\t", index=False)
+
+    return variants, right_end, left_end, temp
 
 
 def same_index(l1, l2):
     for i, v in enumerate(l1):
-        if l1[i] == l2[i]:
-            return i
+        try:
+            if l1[i] == l2[i]:
+                return i
+        except IndexError:
+            pass
 
 
-def stitch(options):
+def stitch(variants, right_end, left_end, options):
     """Tie together events where right edge and left edge are within 250 bases"""
-    variants, right_end, left_end = parse_vars(options)
     complex_events = {}
 
-    for c in sorted(right_end.keys()):
+    window = options.window
+
+    for c, b1 in sorted(right_end.iteritems()):
         for b1 in sorted(right_end[c].keys()):
-            for i in range(b1-250, b1+250):
+            for i in range(b1-window, b1+window):
                 if i in left_end[c]:
                     e1 = right_end[c][b1][0]
                     e2 = left_end[c][i][0]
                     if e1 == e2:
                         continue
-                    if e1 not in complex_events:
-                        complex_events.setdefault(e1, []).extend([e1, e2])
-                        print("Overlap between right event %s [%s] and left event %s [%s]" % (e1, b1, e2, i))
+                    # if e1 not in complex_events:
+                    print("Overlap between right event %s [%s] and left event %s [%s]" % (e1, b1, e2, i))
+                    complex_events.setdefault(e1, []).extend([e1, e2])
 
-
-    pack_complex_vars(complex_events)
-
-    return complex_events
+    return pack_complex_vars(complex_events)
 
 
 def rec_dd():
@@ -92,33 +92,31 @@ def rec_dd():
 def pack_complex_vars(complex):
     """Join complex events where the value is also a key
        Delete keys where values combined into prior event"""
-    # print(json.dumps(complex, indent=4, sort_keys=True))
+
     extended = join_events(complex)
 
-    for old in sorted(complex.keys()): # For old keys
+    for old in sorted(complex.keys()):
         for new, joined in sorted(extended.iteritems()): # And new keys/values
             if new != old:
                 for j in joined:
                     if j in complex[old] and old in extended:
-                        print("Event %s and %s have value %s" % (old, new, j))
+                        # print("Event %s and %s have value %s" % (old, new, j))
                         extended.setdefault(old, []).extend(complex[new])
+                        extended.pop(new, None)
 
-    # extended = join_events(complex)
-
-
-        # for new in extended[k]:
-        #     if new in extended:
-        #         extended.setdefault(k, []).extend(extended[new])
-        #         # del extended[new]
-        #         break
-        # extended[k] = list(set(extended[k]))
-
-    # extended = flatten(extended)
+    for k, v in sorted(extended.iteritems()):
+        extended[k] = list(set(v))
+        # extended = list(OrderedDict.fromkeys(extended))
+        extended[k].sort()
 
     print(json.dumps(extended, indent=4, sort_keys=True))
 
+    return extended
+
 
 def join_events(d):
+    """If a value in d is also a key, add values from older event into
+      later event"""
     extended = {}
     seen = []
     for k, l in sorted(d.iteritems()):
@@ -134,10 +132,47 @@ def join_events(d):
 
     return extended
 
+def print_complex(complex, options, temp):
+    sample = ntpath.basename(options.inFile).split("_")[0]
+    out_file = sample + '_stitched.txt'
+
+    print("Writing stitched variants to: %s" % out_file)
+
+    df = pd.read_csv(temp, delimiter="\t")
+    df = df.sort_values(['event', 'chromosome1', 'bp1', 'chromosome2', 'bp2'])
+
+    for index, row in df.iterrows():
+        event, type, notes = row[['event', 'type', 'notes']]
+
+        # if notes == 'F':
+        #     continue
+
+        for e, j in sorted(complex.iteritems()):
+            if event == e:
+                linked_events = "_".join(map(str, complex[event]))
+                # linked_events = "_".join(map(str, [e, linked_events]))
+                configuration = ":".join(map(str, [e, linked_events]))
+                # configuration = '_'.join([ df.loc[index, 'configuration'], df.loc[index, 'type'] ])
+                df.loc[index, 'configuration'] = configuration
+                df.loc[index, 'type'] = '_'.join(["COMPLEX", type])
+            for joined in j:
+                if event == joined:
+                    # print("Event %s is in %s - key: %s" % (event, joined, e))
+                    linked_events = "_".join(map(str, complex[e]))
+                    # linked_events = "_".join(map(str, [e, linked_events]))
+                    configuration = ":".join(map(str, [event, linked_events]))
+                    df.loc[index, 'configuration'] = configuration
+                    df.loc[index, 'type'] = '_'.join(["COMPLEX", type])
+                    df.loc[index, 'event'] = e
+
+
+    df = df.sort_values(['event', 'chromosome1', 'bp1', 'chromosome2', 'bp2'])
+    os.remove(temp)
+    df.to_csv(out_file, sep="\t", index=False)
+
 
 def main():
     parser = OptionParser()
-
     parser.add_option("-i",
         "--inFile", dest="inFile",
         help="An annotated variants file produced by sv2gene "
@@ -145,15 +180,25 @@ def main():
              "'_reannotated_SVs.txt' files",
         metavar="FILE")
 
+    parser.add_option("-w",
+        "--window", dest="window", action="store",
+        type=int,
+        help="The distance to search for connected breakpoints")
+
+    parser.set_defaults(window=1000)
+
     options, args = parser.parse_args()
+
+    print("Tying variants +/- %s" % (options.window))
 
     if options.inFile is None:
         parser.print_help()
         print()
     else:
         try:
-            stitch(options)
-
+            variants, right_end, left_end, temp_out = parse_vars(options)
+            complex_events = stitch(variants, right_end, left_end, options)
+            print_complex(complex_events, options, temp_out)
         except IOError as err:
             sys.stderr.write("IOError " + str(err) + "\n")
             return
