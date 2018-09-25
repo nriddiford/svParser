@@ -13,7 +13,7 @@ def parse_vars(options):
     print("Stitching together variants for: %s" % options.inFile)
 
     sample = ntpath.basename(options.inFile).split("_")[0]
-    temp = sample + '_temp.txt'
+    temp = os.path.join(options.out_dir, sample + '_temp.txt')
 
     df = pd.read_csv(options.inFile, delimiter="\t")
     df = df.sort_values(['event', 'chromosome1', 'bp1', 'chromosome2', 'bp2'])
@@ -134,7 +134,7 @@ def join_events(d):
 
 def print_complex(complex, options, temp):
     sample = ntpath.basename(options.inFile).split("_")[0]
-    out_file = sample + '_stitched.txt'
+    out_file = os.path.join(options.out_dir, sample + '_stitched.txt')
 
     print("Writing stitched variants to: %s" % out_file)
 
@@ -143,9 +143,6 @@ def print_complex(complex, options, temp):
 
     for index, row in df.iterrows():
         event, type, notes = row[['event', 'type', 'notes']]
-
-        # if notes == 'F':
-        #     continue
 
         for e, j in sorted(complex.iteritems()):
             if event == e:
@@ -185,7 +182,14 @@ def main():
         type=int,
         help="The distance to search for connected breakpoints")
 
-    parser.set_defaults(window=1000)
+    parser.add_option("-o",
+                      "--out_dir",
+                      dest="out_dir",
+                      action="store",
+                      help="Directory to write output to " +
+                           "[Default: '.']")
+
+    parser.set_defaults(window=1000, out_dir = os.getcwd())
 
     options, args = parser.parse_args()
 
