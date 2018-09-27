@@ -91,9 +91,7 @@ def stitch(right_end, left_end, options):
 
 
 def join_in_window(d, window, complex_events):
-
     seen = []
-
     for c, data in sorted(d.iteritems()):
         for b1 in sorted(d[c].keys()):
             seen.append(b1)
@@ -101,11 +99,9 @@ def join_in_window(d, window, complex_events):
             for i, l in enumerate(sorted(d[c][b1])):
                 if first_event != l[0]:
                     complex_events.setdefault(first_event, []).extend([first_event, l[0]])
-
             for i in range(b1-window, b1+window):
-               if i in d[c] and i not in seen:
-                   # print("This is the same: %s, %s" % (first_event, d[c][i][0][0]))
-                   complex_events.setdefault(first_event, []).extend([first_event, d[c][i][0][0]])
+                if i in d[c] and i not in seen:
+                    complex_events.setdefault(first_event, []).extend([first_event, d[c][i][0][0]])
 
     return complex_events
 
