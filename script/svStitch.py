@@ -79,14 +79,12 @@ def stitch(right_end, left_end, options):
                     e2 = left_end[c][i][0][0]
                     if e1 == e2:
                         continue
-
                     seen_key = '_'.join(map(str, [e1,e2]))
                     if seen_key not in seen: print ("Overlap between right event %s [%s] and left event %s [%s]" % (e1, b1, e2, i))
                     seen.append(seen_key)
                     complex_events.setdefault(e1, []).extend([e1, e2])
 
     # print(json.dumps(complex_events, indent=4, sort_keys=True))
-
     return pack_complex_vars(complex_events)
 
 
