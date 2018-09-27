@@ -9,6 +9,7 @@ import json
 import ntpath
 from collections import OrderedDict
 
+
 def parse_vars(options):
     print("Stitching together variants for: %s" % options.inFile)
 
@@ -23,9 +24,7 @@ def parse_vars(options):
 
     seen_l = defaultdict(lambda: defaultdict(dict))
     seen_r = defaultdict(lambda: defaultdict(dict))
-
-    variants = {}
-
+    seen = []
 
     for idx, row in df.iterrows():
         event, c1, b1, c2, b2, notes = row[['event', 'chromosome1', 'bp1', 'chromosome2', 'bp2', 'notes']]
@@ -37,22 +36,21 @@ def parse_vars(options):
                     if index is not None:
                         if seen_l[c1][i][index] == seen_r[c2][j][index]:
                             if event != seen_l[c1][i][index]:
-                                print("Seen: %s %s in event %s" % (event, [c1, b1, c2, b2], seen_l[c1][i][index]))
+                                if event not in seen: print("Seen: %s %s in event %s" % (event, [c1, b1, c2, b2], seen_l[c1][i][index]))
+                                seen.append(event)
                                 event = seen_l[c1][i][index]
                                 df.loc[idx, 'event'] = event
 
         seen_l[c1].setdefault(b1, []).append(event)
         seen_r[c2].setdefault(b2, []).append(event)
 
-        variants.setdefault(event, []).append([c1, b1, c2, b2])
-
-        left_end[c1].setdefault(b1, []).extend([event, c1, b1, c2, b2])
-        right_end[c2].setdefault(b2, []).extend([event, c1, b1, c2, b2])
+        left_end[c1].setdefault(b1, []).append([event, c1, b1, c2, b2])
+        right_end[c2].setdefault(b2, []).append([event, c1, b1, c2, b2])
 
     df = df.sort_values(['event', 'chromosome1', 'bp1', 'chromosome2', 'bp2'])
     df.to_csv(temp, sep="\t", index=False)
 
-    return variants, right_end, left_end, temp
+    return right_end, left_end, temp
 
 
 def same_index(l1, l2):
@@ -64,29 +62,52 @@ def same_index(l1, l2):
             pass
 
 
-def stitch(variants, right_end, left_end, options):
+def stitch(right_end, left_end, options):
     """Tie together events where right edge and left edge are within 250 bases"""
-    complex_events = {}
-
     window = options.window
+    complex_events = {}
+    seen = []
+
+    complex_events = join_in_window(left_end, window, complex_events)
+    complex_events = join_in_window(right_end, window, complex_events)
 
     for c, b1 in sorted(right_end.iteritems()):
         for b1 in sorted(right_end[c].keys()):
             for i in range(b1-window, b1+window):
                 if i in left_end[c]:
-                    e1 = right_end[c][b1][0]
-                    e2 = left_end[c][i][0]
+                    e1 = right_end[c][b1][0][0]
+                    e2 = left_end[c][i][0][0]
                     if e1 == e2:
                         continue
-                    # if e1 not in complex_events:
-                    print("Overlap between right event %s [%s] and left event %s [%s]" % (e1, b1, e2, i))
+
+                    seen_key = '_'.join(map(str, [e1,e2]))
+                    if seen_key not in seen: print ("Overlap between right event %s [%s] and left event %s [%s]" % (e1, b1, e2, i))
+                    seen.append(seen_key)
                     complex_events.setdefault(e1, []).extend([e1, e2])
+
+    # print(json.dumps(complex_events, indent=4, sort_keys=True))
 
     return pack_complex_vars(complex_events)
 
 
-def rec_dd():
-    return defaultdict(rec_dd)
+def join_in_window(d, window, complex_events):
+
+    seen = []
+
+    for c, data in sorted(d.iteritems()):
+        for b1 in sorted(d[c].keys()):
+            seen.append(b1)
+            first_event = d[c][b1][0][0]
+            for i, l in enumerate(sorted(d[c][b1])):
+                if first_event != l[0]:
+                    complex_events.setdefault(first_event, []).extend([first_event, l[0]])
+
+            for i in range(b1-window, b1+window):
+               if i in d[c] and i not in seen:
+                   # print("This is the same: %s, %s" % (first_event, d[c][i][0][0]))
+                   complex_events.setdefault(first_event, []).extend([first_event, d[c][i][0][0]])
+
+    return complex_events
 
 
 def pack_complex_vars(complex):
@@ -109,8 +130,6 @@ def pack_complex_vars(complex):
         # extended = list(OrderedDict.fromkeys(extended))
         extended[k].sort()
 
-    print(json.dumps(extended, indent=4, sort_keys=True))
-
     return extended
 
 
@@ -126,11 +145,12 @@ def join_events(d):
                     extended.setdefault(k, []).extend(d[event])
                     if k != event: # Delete key if we're adding its contents to another key
                         extended.pop(event, None)
-                    else: # else the event and key are the same, so we can remove it from list
-                        extended[k].remove(event)
+                    # else: # else the event and key are the same, so we can remove it from list
+                    #     extended[k].remove(event)
                 seen.append(event)
 
     return extended
+
 
 def print_complex(complex, options, temp):
     sample = ntpath.basename(options.inFile).split("_")[0]
@@ -143,20 +163,16 @@ def print_complex(complex, options, temp):
 
     for index, row in df.iterrows():
         event, type, notes = row[['event', 'type', 'notes']]
-
         for e, j in sorted(complex.iteritems()):
             if event == e:
                 linked_events = "_".join(map(str, complex[event]))
-                # linked_events = "_".join(map(str, [e, linked_events]))
                 configuration = ":".join(map(str, [e, linked_events]))
-                # configuration = '_'.join([ df.loc[index, 'configuration'], df.loc[index, 'type'] ])
                 df.loc[index, 'configuration'] = configuration
                 df.loc[index, 'type'] = '_'.join(["COMPLEX", type])
             for joined in j:
                 if event == joined:
                     # print("Event %s is in %s - key: %s" % (event, joined, e))
                     linked_events = "_".join(map(str, complex[e]))
-                    # linked_events = "_".join(map(str, [e, linked_events]))
                     configuration = ":".join(map(str, [event, linked_events]))
                     df.loc[index, 'configuration'] = configuration
                     df.loc[index, 'type'] = '_'.join(["COMPLEX", type])
@@ -200,8 +216,8 @@ def main():
         print()
     else:
         try:
-            variants, right_end, left_end, temp_out = parse_vars(options)
-            complex_events = stitch(variants, right_end, left_end, options)
+            right_end, left_end, temp_out = parse_vars(options)
+            complex_events = stitch(right_end, left_end, options)
             print_complex(complex_events, options, temp_out)
         except IOError as err:
             sys.stderr.write("IOError " + str(err) + "\n")
