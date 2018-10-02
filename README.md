@@ -30,7 +30,7 @@ Install cpanm for easy installation of requirements:
 wget -O- http://cpanmin.us | perl - -l ~/perl5 App::cpanminus local::lib
 ```
 
-To avoid issues with root access, I recommended using a local Perl library, which can be setup as follows (following (this)[https://stackoverflow.com/questions/2980297/how-can-i-use-cpan-as-a-non-root-user]):
+To avoid issues with root access, I recommended using a local Perl library, which can be setup as follows (following [this](https://stackoverflow.com/questions/2980297/how-can-i-use-cpan-as-a-non-root-user)):
 
 ```
 eval `perl -I ~/perl5/lib/perl5 -Mlocal::lib`
@@ -66,10 +66,10 @@ The defualt behaviour of svParser is to consider all variants present in a VCF f
 * somatic_normal - variants with high quality read support in normal sample, but not in tumour sample
 * somatic_tumour - variants with high quality read support in tumour sample, but not in normal sample
 
-Genotypes can also be selcted for using the genotype filters outlined in the [filter section](#filters-available)
+Genotypes can also be filtered in using the genotype filters outlined in the [filter section](#filters-available)
 
 **IMPORTANT:**
-*  Variants called by LUMPY must also be genotyped by [SVTyper](https://github.com/hall-lab/svtyper)  
+*  Variants called by LUMPY must also be genotyped by [SVTyper](https://github.com/hall-lab/svtyper)
 *  Genotyping requires that the samples in the VCF are ordered as follows: `TUMOUR NORMAL PON.1 ... PON.N`
 
 
@@ -132,7 +132,7 @@ If the variant is affected by supplied filters this will be reported in the summ
 
 
 ## Browse variants
-Browse variants using the `--dump` flag. This cycles through each line of the VCF file, printing an easy-mo-read breakdown for each variant.
+Browse variants using the `--dump` flag. This cycles through each line of the VCF file, printing an easy-to-read breakdown for each variant.
 Press any key to move to the next variant, or `q` to quit
 
 `perl script/svParse.pl -v data/Droso_R7.lumpy.vcf -d`
@@ -202,7 +202,7 @@ perl ../../script/svMerger.pl -f input1.*
 ```
 for f in *_merged_SVs.txt
 do
-  perl ../../script/svClusters.pl $f
+  perl ../../script/svClusters.pl $f -d 50
   rm $f
 done
 ```
