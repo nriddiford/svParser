@@ -12,7 +12,7 @@ use svParser;
 
 use feature qw/ say /;
 use Data::Dumper;
-use Data::Printer;
+# use Data::Printer;
 use File::Basename;
 use File::Path qw/ make_path / ;
 use File::Slurp;

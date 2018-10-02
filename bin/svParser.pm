@@ -6,7 +6,7 @@ use warnings;
 use autodie;
 
 use feature qw/ say /;
-use Data::Printer;
+# use Data::Printer;
 
 use Exporter;
 our @ISA = 'Exporter';
