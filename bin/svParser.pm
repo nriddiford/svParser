@@ -20,47 +20,42 @@ sub typer {
   if ( $type eq 'l' or $type =~ m/lumpy/i ){
     say "Specified $file as a Lumpy file";
     $type = 'lumpy';
-    parse($file, $type, $exclude_regions, $chrom_keys, $filters);
   }
 
   elsif ( $type eq 'd' or $type =~ m/delly/i ){
     say "Specified $file as a Delly file";
     $type = 'delly';
-    parse($file, $type, $exclude_regions, $chrom_keys, $filters);
   }
 
   elsif ( $type eq 'n' or $type =~ m/novobreak/i ){
     say "Specified $file as a novoBreak file";
     $type = 'novobreak';
-    parse($file, $type, $exclude_regions, $chrom_keys, $filters);
   }
 
   elsif ($type eq 'snp'){
     say "Forcing parsing of $file";
     $type = 'snp';
-    parse($file, $type, $exclude_regions, $chrom_keys, $filters);
   }
 
   elsif ( $type eq 'guess' ){
     if ( `grep "source=LUMPY" $file` ){
       say "Recognised $file as a Lumpy file";
       $type = 'lumpy';
-      parse($file, $type, $exclude_regions, $chrom_keys, $filters);
     }
     elsif ( `grep "DELLY" $file` ){
       say "Recognised $file as a Delly file";
       $type = 'delly';
-      parse($file, $type, $exclude_regions, $chrom_keys, $filters);
     }
     elsif ( `grep "bamsurgeon spike-in" $file` ){
       say "Recognised $file as a novoBreak file";
       $type = 'novobreak';
-      parse($file, $type, $exclude_regions, $chrom_keys, $filters);
+
     }
   }
   else {
     die "This VCF can not be parsed. Try specfiying type '-t' explicitly. See -h for details. Abort";
   }
+  parse($file, $type, $exclude_regions, $chrom_keys, $filters);
 }
 
 
