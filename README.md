@@ -55,7 +55,7 @@ A good place to start is with a summary of variants called in VCF file:
 
 #### Read vcf file from lumpy (or delly/novobreak) and see summary of variants called:
 `perl script/svParse.pl -v data/Droso_R7.lumpy.vcf`
-It's reccomended to explicity tag files on the caller that has produced them using the `--method` flag:
+It's reccomended to explicity tag files on the caller that has produced them using the `--method` flag:   
 `perl script/svParse.pl -v data/Droso_R7.lumpy.vcf -m l`
 
 
