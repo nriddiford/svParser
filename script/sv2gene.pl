@@ -36,10 +36,10 @@ if (not $sv_calls and not $features ){
   exit usage();
 }
 
-if($somatic){
+if ($somatic){
   say "Running in somatic mode - will annotate all germline events as 'NA'";
 }
-if($mark){
+if ($mark){
   say "Running in mark mode. Somatic dels and dups with abs(log2(FC) < 0.26) will be marked as F in T/F column";
 }
 
@@ -106,7 +106,7 @@ sub annotate_SVs {
   my $in = shift;
   open my $SV_in, '<', $in;
   my ( $name, $extention ) = split(/\.([^.]+)$/, basename($in), 2);
-  ($sample) = split(/_/, $name, 3);
+  ($sample) = (split(/_/, $name))[0];
 
   if ($reannotate){
     open $annotated_svs, '>', $sample . "_reannotated_SVs.txt";
@@ -119,7 +119,6 @@ sub annotate_SVs {
     print "Annotating SV calls from $sample\n";
     open $genes_out, '>>', 'all_genes.txt';
     open $bp_out, '>>', 'all_bps.txt';
-
   }
 
   my $call = 1;
@@ -142,10 +141,10 @@ sub annotate_SVs {
         next;
       }
     }
+
     my ($event, $source, $type, $chrom1, $bp1, $chrom2, $bp2, $sr, $pe, $genotype, undef, $length, undef, undef, undef, undef, $af, $cnv) = @cells[0..17];
     # Check to see if the SV has already been annotated - print and skip if next
-
-    if ($genotype =~ 'germline' and $somatic){
+    if ($genotype !~ 'somatic_tumour' and $somatic){
       print $annotated_svs join("\t", $_, "NA", "NA", "-", "", "") . "\n" if not $reannotate;
       print $annotated_svs "$_\n" if $reannotate;
       next;
@@ -189,6 +188,8 @@ sub annotate_SVs {
       no warnings;
       $_ = join("\t", @cells[0..17]);
     }
+
+    # p(%vars);
 
     my (%hits, $hits);
     my @hit_genes;

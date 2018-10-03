@@ -12,7 +12,7 @@ use svParser;
 
 use feature qw/ say /;
 use Data::Dumper;
-use Data::Printer;
+# use Data::Printer;
 use File::Basename;
 use File::Path qw/ make_path / ;
 use File::Slurp;
@@ -301,15 +301,15 @@ arguments:
 
   -f key=val, --filter
                             filter options:
-                              -f su=INT    [number of tumour reads supporting var]
-                              -f dp=INT    [minimum depth for both tumour normal at variant site]
-                              -f rdr=FLOAT [fraction of supporting reads/tumour depth - a value of 1 would mean all reads support variant]
-                              -f sq=INT    [phred-scaled variant likelihood]
-                              -f chr=1     [only show chromosomes in 'chroms.txt'. [Default use Drosophila chroms: 2L 2R 3L 3R 4 X Y]
-                              -f st=1      [only keep somatic tumour events]
-                              -f sn=1      [only keep somatic normal events]
-                              -f gp=1      [only keep germline private events]
-                              -f gr=1      [only keep germline recurrent events]
-                              -f, -f a     [apply default filters: -f su=4 -f dp=10 -f rdr=0.1 -f sq=10 -f chr=1 ]
+                              -f su=INT     number of tumour reads supporting var
+                              -f dp=INT     minimum depth for both tumour normal at variant site
+                              -f rdr=FLOAT  fraction of supporting reads/tumour depth - a value of 1 would mean all reads support variant
+                              -f sq=INT     phred-scaled variant likelihood
+                              -f chr=1      only show chromosomes in 'chroms.txt'. [Default use Drosophila chroms: 2L 2R 3L 3R 4 X Y]
+                              -f st=1       only keep somatic tumour events
+                              -f sn=1       only keep somatic normal events
+                              -f gp=1       only keep germline private events
+                              -f gr=1       only keep germline recurrent events
+                              -f, -f a      apply default filters: -f su=4 -f dp=10 -f rdr=0.1 -f sq=10 -f chr=1
 "
 }

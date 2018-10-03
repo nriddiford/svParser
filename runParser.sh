@@ -10,6 +10,7 @@ options:
   -c    directory containing read depth information to annotate calls with
 
   -f    filter
+  -s    only operate on somatic tumour variants
   -m    merge
   -a    annotate
   -r    remove false positives anad reannotate
@@ -53,14 +54,14 @@ fi
 # Change to the 'script' dir in svParser
 dir=$(dirname "$0")
 script_bin="$dir/script"
-script_bin="$( cd ""$script_bin"" ; pwd -P )"
+script_bin="$( cd "$script_bin" ; pwd -P )"
 
 echo "Reading data from '$data_dir'"
 echo "Writing data to '$out_dir'"
 echo "Exclude file set to '$exclude_file'"
 
 mkdir -p "$out_dir/summary"
-s=
+s=''
 # Run svParser for each type of variant file
 if [[ $filter -eq 1 ]]
 then
@@ -92,7 +93,7 @@ done
     perl "$script_bin"/svParse.pl -v $novo_file -m n -f chr=1 -f su=4 -f dp=10 -f rdr=0.1 -f sq=10 $s -e $exclude_file -p -o $out_dir
   done
 
-  for freec_file in $data_dir/freec/*.txt
+  for freec_file in $data_dir/freec/*filt_cnvs.txt
   do
     echo "perl "$script_bin"/parseCF.pl -c $freec_file -o $out_dir/summary"
     perl "$script_bin"/parseCF.pl -c $freec_file -o $out_dir/summary
@@ -195,23 +196,6 @@ then
     rm "all_bps.txt"
   fi
 
-  # if [ -f $blacklist ]
-  # then
-  #   # if [ -f *_annotated_SVs.txt ]
-  #   # then
-  #   # for annofile in *_annotated_SVs.txt
-  #   # do
-  #   #   if [ -e "$annofile" ]
-  #   #   then
-  #   #     echo "Updating 'all_samples_blacklist.txt' with false positive calls from $annofile"
-  #   #     echo "Updating 'all_samples_whitelist.txt' with whitelisted calls from $annofile"
-  #   #     python "$script_bin"/clean.py -f $annofile
-  #   #   fi
-  #   # done
-  #     rm *cleaned_SVs.txt
-  #   # fi
-  # fi
-
   for clustered_file in *clustered_SVs.txt
   do
     echo "Annotating $clustered_file"
@@ -271,7 +255,7 @@ then
     fi
   done
 
-  echo "Writing bp info for cleaned, reannotated SV calls to 'all_bps_filtered.txt')"
+  echo "Writing bp info for cleaned, reannotated SV calls to 'all_bps_filtered.txt'"
 
   # for reanno_file in *reannotated_SVs.txt
   # do
