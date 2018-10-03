@@ -18,17 +18,14 @@ sub typer {
   my ($file, $type, $exclude_regions, $chrom_keys, $filters ) = @_;
 
   if ( $type eq 'l' or $type =~ m/lumpy/i ){
-    say "Specified $file as a Lumpy file";
     $type = 'lumpy';
   }
 
   elsif ( $type eq 'd' or $type =~ m/delly/i ){
-    say "Specified $file as a Delly file";
     $type = 'delly';
   }
 
   elsif ( $type eq 'n' or $type =~ m/novobreak/i ){
-    say "Specified $file as a novoBreak file";
     $type = 'novobreak';
   }
 
@@ -39,15 +36,12 @@ sub typer {
 
   elsif ( $type eq 'guess' ){
     if ( `grep "source=LUMPY" $file` ){
-      say "Recognised $file as a Lumpy file";
       $type = 'lumpy';
     }
     elsif ( `grep "DELLY" $file` ){
-      say "Recognised $file as a Delly file";
       $type = 'delly';
     }
     elsif ( `grep "bamsurgeon spike-in" $file` ){
-      say "Recognised $file as a novoBreak file";
       $type = 'novobreak';
 
     }
@@ -55,6 +49,7 @@ sub typer {
   else {
     die "This VCF can not be parsed. Try specfiying type '-t' explicitly. See -h for details. Abort";
   }
+  say "Specified $file as a $type file";
   parse($file, $type, $exclude_regions, $chrom_keys, $filters);
 }
 
