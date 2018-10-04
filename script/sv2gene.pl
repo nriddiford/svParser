@@ -259,14 +259,21 @@ sub annotate_SVs {
     }
 
     if ($mark and $cnv ne '-') {
+      my $mult = 2;
+      if ($chrom1 eq 'X' or $chrom1 eq 'Y'){
+        $mult = 1;
+      }
+      say "$chrom1, $chrom2, $mult";
       # If called by a CN approach then mark as FP unless > log2(1.5)
-      if ( (abs($cnv) < 0.58) and $sr eq '-' and $pe eq '-' ){
+      if ( (abs($cnv)*$mult < 0.58) and $sr eq '-' and $pe eq '-' ){
+        say "Mark as FP: abs($cnv)*$mult < 0.58 with no sr";
         print $annotated_svs join("\t", $_, $hit_bp1, $hit_bp2, $joined_genes2print, "F", "Low FC in $type called by CN") . "\n";
         $call++;
         next;
       }
       # Unless there's read support, in which case only mark if < log2(1.2)
-      elsif ( (abs($cnv) < 0.26) and ($type eq 'DEL' or $type eq 'DUP') and $length > 1 ) {
+      elsif ( (abs($cnv)*$mult < 0.26) and ($type eq 'DEL' or $type eq 'DUP') and $length > .8 ) {
+        say "Mark as FP: abs($cnv)*$mult < 0.26 with sr";
         print $annotated_svs join("\t", $_, $hit_bp1, $hit_bp2, $joined_genes2print, "F", "Low FC in $type") . "\n";
         $call++;
         next;
