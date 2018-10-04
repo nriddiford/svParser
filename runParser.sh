@@ -77,20 +77,20 @@ then
   for lumpy_file in $data_dir/lumpy/*.vcf
   do
     echo $lumpy_file
-    echo "perl "$script_bin"/svParse.pl -v $lumpy_file -m l -f chr=1 -f su=4 -f dp=10 -f rdr=0.1 -f sq=10 $s -e $exclude_file -o $out_dir -p"
-    perl "$script_bin"/svParse.pl -v $lumpy_file -m l -f chr=1 -f su=4 -f dp=10 -f rdr=0.1 -f sq=10 $s -e $exclude_file -p -o $out_dir
+    echo "perl "$script_bin"/svParse.pl -v $lumpy_file -m l -f chr=1 -f su=3 -f dp=10  $s -e $exclude_file -o $out_dir -p"
+    perl "$script_bin"/svParse.pl -v $lumpy_file -m l -f chr=1 -f su=3 -f dp=10  $s -e $exclude_file -p -o $out_dir
   done
 
   for delly_file in $data_dir/delly/*.vcf
   do
-    echo "perl "$script_bin"/svParse.pl -v $delly_file -m d -f chr=1 -f su=4 -f dp=10 -f rdr=0.1 -f sq=10 $s -e $exclude_file -o $out_dir -p"
-    perl "$script_bin"/svParse.pl -v $delly_file -m d -f chr=1 -f su=4 -f dp=10 -f rdr=0.1 -f sq=10 $s -e $exclude_file -p -o $out_dir
+    echo "perl "$script_bin"/svParse.pl -v $delly_file -m d -f chr=1 -f su=4 -f dp=10  $s -e $exclude_file -o $out_dir -p"
+    perl "$script_bin"/svParse.pl -v $delly_file -m d -f chr=1 -f su=4 -f dp=10  $s -e $exclude_file -p -o $out_dir
 done
 
   for novo_file in $data_dir/novobreak/*.vcf
   do
-    echo "perl "$script_bin"/svParse.pl -v $novo_file -m n -f chr=1 -f su=4 -f dp=10 -f rdr=0.1 -f sq=10 $s -e $exclude_file -o $out_dir -p"
-    perl "$script_bin"/svParse.pl -v $novo_file -m n -f chr=1 -f su=4 -f dp=10 -f rdr=0.1 -f sq=10 $s -e $exclude_file -p -o $out_dir
+    echo "perl "$script_bin"/svParse.pl -v $novo_file -m n -f chr=1 -f su=4 -f dp=10  $s -e $exclude_file -o $out_dir -p"
+    perl "$script_bin"/svParse.pl -v $novo_file -m n -f chr=1 -f su=4 -f dp=10  $s -e $exclude_file -p -o $out_dir
   done
 
   for freec_file in $data_dir/freec/*filt_cnvs.txt
