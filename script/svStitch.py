@@ -16,6 +16,12 @@ def parse_vars(options):
     temp = os.path.join(options.out_dir, sample + '_temp.txt')
 
     df = pd.read_csv(options.inFile, delimiter="\t")
+
+    if not 'event' in df:
+        print("No event column")
+        df['event'] = df.index
+        df['notes'] = ""
+
     df = df.sort_values(['event', 'chromosome1', 'bp1', 'chromosome2', 'bp2'])
 
     right_end = defaultdict(lambda: defaultdict(dict))
@@ -26,7 +32,8 @@ def parse_vars(options):
     seen = []
 
     for idx, row in df.iterrows():
-        event, c1, b1, c2, b2, notes = row[['event', 'chromosome1', 'bp1', 'chromosome2', 'bp2', 'notes']]
+        event, c1, b1, c2, b2, notes, genotype = row[['event', 'chromosome1', 'bp1', 'chromosome2', 'bp2', 'notes', 'genotype']]
+        if genotype != 'somatic_tumour': continue
 
         for i in range(b1 - 10, b1 + 10):
             for j in range(b2 - 10, b2 + 10):
