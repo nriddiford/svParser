@@ -1190,7 +1190,6 @@ sub chrom_filter {
   }
   # One of the two breakpoints must be on a 'native' chroomosome
   unless ($chrom_filt{$chr} or $chrom_filt{$chr2} ){
-    say "$chr, $chr2";
     push @filter_reasons, 'chrom1=' . $chr . ';chrom2=' . $chr2;
   }
   return (\@filter_reasons);
