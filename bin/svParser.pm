@@ -983,7 +983,7 @@ sub write_summary {
 
       my ($length_in_kb) = sprintf("%.1f", abs($SV_length)/1000);
 
-      $ab = sprintf("%.2f", $ab) unless $type eq 'novobreak' or $ab eq '.';
+      $ab = sprintf("%.2f", $ab) unless $type eq 'novobreak' or $ab =~ '.|-';
 
       my ($consensus, $mh_length, $ct, $rdr, $rde );
 
@@ -1189,12 +1189,8 @@ sub chrom_filter {
     $chr2 = $chr;
   }
 
-  if (not $chrom_filt{$chr}){
-    push @filter_reasons, 'chrom1=' . $chr;
-  }
-
-  elsif (not $chrom_filt{$chr2}){
-    push @filter_reasons, 'chrom2=' . $chr2;
+  if (not $chrom_filt{$chr} and $chrom_filt{$chr2} ){
+    push @filter_reasons, 'chrom1=' . $chr . ';chrom2=' . $chr2;
   }
   return (\@filter_reasons);
 }
