@@ -258,7 +258,7 @@ sub annotate_SVs {
       next;
     }
 
-    if ($mark) {
+    if ($mark and $cnv ne '-') {
       # If called by a CN approach then mark as FP unless > log2(1.5)
       if ( (abs($cnv) < 0.58) and $sr eq '-' and $pe eq '-' ){
         print $annotated_svs join("\t", $_, $hit_bp1, $hit_bp2, $joined_genes2print, "F", "Low FC in $type called by CN") . "\n";
