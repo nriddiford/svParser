@@ -76,31 +76,35 @@ then
 
   for lumpy_file in $data_dir/lumpy/*.vcf
   do
-    echo $lumpy_file
+    [ -f $lumpy_file ] || continue
     echo "perl "$script_bin"/svParse.pl -v $lumpy_file -m l -f chr=1 -f su=3 -f dp=10  $s -e $exclude_file -o $out_dir -p"
     perl "$script_bin"/svParse.pl -v $lumpy_file -m l -f chr=1 -f su=3 -f dp=10  $s -e $exclude_file -p -o $out_dir
   done
 
   for delly_file in $data_dir/delly/*.vcf
   do
+  [ -f $delly_file ] || continue
     echo "perl "$script_bin"/svParse.pl -v $delly_file -m d -f chr=1 -f su=4 -f dp=10  $s -e $exclude_file -o $out_dir -p"
     perl "$script_bin"/svParse.pl -v $delly_file -m d -f chr=1 -f su=4 -f dp=10  $s -e $exclude_file -p -o $out_dir
 done
 
   for novo_file in $data_dir/novobreak/*.vcf
   do
+    [ -f $novo_file ] || continue
     echo "perl "$script_bin"/svParse.pl -v $novo_file -m n -f chr=1 -f su=4 -f dp=10  $s -e $exclude_file -o $out_dir -p"
     perl "$script_bin"/svParse.pl -v $novo_file -m n -f chr=1 -f su=4 -f dp=10  $s -e $exclude_file -p -o $out_dir
   done
 
   for freec_file in $data_dir/freec/*filt_cnvs.txt
   do
+    [ -f $freec_file ] || continue
     echo "perl "$script_bin"/parseCF.pl -c $freec_file -o $out_dir/summary"
     perl "$script_bin"/parseCF.pl -c $freec_file -o $out_dir/summary
   done
 
   for cnv_file in $data_dir/cnv/*.txt
   do
+    [ -f $cnv_file ] || continue
     echo "perl "$script_bin"/parseCNV.pl -c $cnv_file -o $out_dir/summary"
     perl "$script_bin"/parseCNV.pl -c $cnv_file -o $out_dir/summary
   done
@@ -154,13 +158,24 @@ cd $out_dir/summary
 if [[ $merge -eq 1 ]]
 then
   mkdir -p "$out_dir/summary/merged/"
-  samples+=( $(ls -1 *.summary.cnv.txt | cut -d '.' -f 1 | sort -u ) )
-  for ((i=0;i<${#samples[@]};++i))
-  do
-    echo "perl "$script_bin"/svMerger.pl -f ${samples[i]}.*.summary.cnv.txt"
-    perl "$script_bin"/svMerger.pl -f ${samples[i]}.*.summary.cnv.txt -o "$out_dir/summary/merged"
-  done
+  if [[ $cnv_dir ]]
+  then
+    samples+=( $(ls -1 *.summary.cnv.txt | cut -d '.' -f 1 | sort -u ) )
 
+    for ((i=0;i<${#samples[@]};++i))
+    do
+      echo "perl "$script_bin"/svMerger.pl -f ${samples[i]}.*.summary.cnv.txt"
+      perl "$script_bin"/svMerger.pl -f ${samples[i]}.*.summary.cnv.txt -o "$out_dir/summary/merged"
+    done
+  else
+    samples+=( $(ls -1 *.summary.txt | cut -d '.' -f 1 | sort -u ) )
+
+    for ((i=0;i<${#samples[@]};++i))
+    do
+      echo "perl "$script_bin"/svMerger.pl -f ${samples[i]}.*.summary.txt"
+      perl "$script_bin"/svMerger.pl -f ${samples[i]}.*.summary.txt -o "$out_dir/summary/merged"
+    done
+  fi
 fi
 
 cd $out_dir/summary/merged
@@ -230,7 +245,7 @@ then
     # done
 
   echo "Removing calls marked as false positives in 'all_samples_blacklist.txt'"
-  for annofile in *_annotated_SVs.txt
+  for annofile in *_stitched.txt
   do
     perl "$script_bin"/clean_files.pl -v $annofile -o $out_dir/summary/merged -b $blacklist -w $whitelist
   done
