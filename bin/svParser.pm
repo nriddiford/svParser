@@ -241,6 +241,7 @@ sub lumpy {
 
     ($genotype, $filters) = genotype( $id, $t_hq_alt_reads, $c_alt_reads, $n_sq, $n_hq_alt_reads, \%PON_alt_reads, $filters );
   }
+  else { $genotype = 'NA'}
   # if genotype is set to 'NA' (this should be because there are no quality reads,
   # but some supporting reads) then re-genotype using supporting reads
   if ($genotype eq "NA" or not exists $sample_info{$id}{$tumour}{'QA'}){
