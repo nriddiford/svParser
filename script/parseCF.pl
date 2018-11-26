@@ -33,7 +33,7 @@ my $outfile =  $name_fields[0] . ".freec.filtered.summary.txt";
 my $outpath = File::Spec->catdir( $output_dir, $outfile );
 open my $out, '>', $outpath;
 
-my @header = qw/ source type chromosome1 bp1 chromosome2 bp2 split_reads disc_reads genotype id length(Kb) position consensus microhomology configuration allele_frequency log2(cnv) /;
+my @header = qw/ source type chromosome1 bp1 chromosome2 bp2 split_reads disc_reads genotype id length(Kb) position consensus microhomology configuration allele_frequency mechanism log2(cnv) status	notes /;
 print $out join("\t", @header) . "\n";
 
 my @lines = @{$cnv_ref};
@@ -63,11 +63,15 @@ sub extractVars {
                             '-',                   # id
                             $length,               # length
                             "$chrom:$start-$stop", # IGV
-                            '-',                   # misc1 (type)
+                            '-',                   # consensus
                             '-',                   # microhomology
                             '-',                   # configuration
                             '-',                   # allele frequency
-                            '-');                  # misc (cnv)
+                            '-',                   # mechanism
+                            '-',                    # log2(cnv)
+                            '-',                   # status
+                            '-',                   # notes
+                            );
 
   }
   return(\@cnv);

@@ -83,7 +83,6 @@ sub run {
         for my $ev (@{ $events[$i - 1] }) {
             print $out join("\t", $i, @{$ev}{@header}), "\n";
         }
-
     }
 }
 

@@ -200,7 +200,7 @@ def main():
     parser.add_option("-i", "--inFile", dest="inFile", help="An annotated variants file produced by sv2gene "
                                                             "accepts both '_annotated_SVs.txt' and "
                                                             "'_reannotated_SVs.txt' files", metavar="FILE")
-    parser.add_option("-w", "--window", dest="window", action="store", type=int, help="The distance to search for connected breakpoints")
+    parser.add_option("-w", "--window", dest="window", action="store", type=int, help="The distance to search for connected breakpoints [Default: 1kb]")
     parser.add_option("-o", "--out_dir", dest="out_dir", action="store", help="Directory to write output to " + "[Default: '.']")
     parser.set_defaults(window=1000, out_dir=os.getcwd())
     options, args = parser.parse_args()

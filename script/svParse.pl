@@ -212,11 +212,12 @@ sub explainFilters {
   my ($legals, $filter_given, $exclude, $chroms, $filters) = @_;
   my %legalFilters = %{ $legals };
   my %selectedFilters = %{ $filters };
+  my @chroms = keys %{$chroms};
       say " o Read support >= $selectedFilters{'su'}" if $filter_given eq 'su';
       say " o Read depth (in both tumour and normal) > $selectedFilters{'dp'}" if $filter_given eq 'dp';
       say " o Read support / depth > $selectedFilters{'rdr'}" if $filter_given eq 'rdr';
       say " o SQ quality > $selectedFilters{'sq'}" if $filter_given eq 'sq';
-      say " o Chromosomes: " . join(' ', @{$chroms}) if $filter_given eq 'chr';
+      say " o Chromosomes: " . join(' ', @chroms) if $filter_given eq 'chr';
       say " o Running in germline PRIVATE mode" if $filter_given eq 'gp';
       say " o Running in germline RECURRANT mode" if $filter_given eq 'gr';
       say " o Running in somatic TUMOUR mode" if $filter_given eq 'st';
@@ -242,14 +243,16 @@ sub getChroms {
     say "\nFiltering for Drosophila chroms: 2L 2R 3L 3R 4 X Y ";
     @keys = qw / 2L 2R 3L 3R 4 X Y /;
   }
-  return(\@keys);
+  my %chroms = map { $_ => 1 } @keys;
+
+  return(\%chroms);
 }
 
 
 sub readUnmappable {
   my ($x, $f, $c) = @_;
   my %filts = %{$f};
-  my @keys = @{$c};
+  my @keys = keys %{$c};
   my @exclude_regions;
   my @exclude = read_file($x, chomp=>1);
   if (exists $filts{'chr'}){
@@ -281,7 +284,7 @@ description: Browse vcf output from several SV callers LUMPY, DELLY and novobrea
 
 arguments:
   -h, --help                show this help message and exit
-  -v file, --vcf            VCF input    [required]
+  -v file, --vcf            VCF input [required]
   -o, --output_dir          Directory to write all output to [Default: 'filtered/']
   -p, --print               print filtered vcf and summary file to output_dir
   -m str, --method          specify input source [default: guess from input]
@@ -295,9 +298,11 @@ arguments:
 
   -n, --normalPrint         maximum number of PON members to print to screen when using -d or -i [default: 5]
   -c str, --chromosome      limit search to chromosome and/or region (e.g. X:10000-20000)
-                              can be used in conjunction with -d
+                            can be used in conjunction with -d
 
   -e file, --exclude        path to .bed file containing regions to exlcude
+
+  -t, --true_calls          See how a set of filters affect a set of true calls
 
   -f key=val, --filter
                             filter options:

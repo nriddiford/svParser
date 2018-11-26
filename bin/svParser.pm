@@ -149,17 +149,17 @@ sub parse {
     my ($SV_length, $chr2, $stop, $t_SR, $t_PE, $ab, $genotype, $filter_list);
 
     if ($type eq 'lumpy'){
-      ( $SV_length, $chr2, $stop, $t_SR, $t_PE, $ab, $genotype, $filter_list ) = lumpy( $id, $chr, $info_block, $SV_type, $alt, $start, \%sample_info, $tumour_name, $control, \@samples, \@normals, \@filter_reasons, \%filter_flags );
+      ( $SV_length, $chr2, $stop, $t_SR, $t_PE, $ab, $genotype, $filter_list ) = lumpy( $id, $chr, $info_block, $SV_type, $alt, $start, \%sample_info, $tumour_name, $control, \@samples, \@normals, \@filter_reasons, \%filter_flags, $chrom_keys );
     }
     elsif ($type eq 'delly'){
       next if $SV_type eq 'TRA'; # temp to resolve issues with svTyper...
 
-      ( $SV_length, $chr2, $stop, $t_SR, $t_PE, $ab, $genotype, $filter_list ) = delly( $id, $info_block, $start, $SV_type, $tumour_name, $control, \@normals, \@filter_reasons, \%filter_flags, \%sample_info );
+      ( $SV_length, $chr2, $stop, $t_SR, $t_PE, $ab, $genotype, $filter_list ) = delly( $id, $chr, $info_block, $start, $SV_type, $tumour_name, $control, \@normals, \@filter_reasons, \%filter_flags, \%sample_info, $chrom_keys );
     }
     elsif ($type eq 'novobreak'){
       @samples = qw/tumour normal/;
       my ( $sample_info_novo, $format_novo, $format_long_novo );
-      ( $SV_length, $chr2, $stop, $t_PE, $t_SR, $genotype, $filter_list, $sample_info_novo, $format_novo, $format_long_novo ) = novobreak( $id, $info_block, $start, $SV_type, $tumour_name, $control, \@sample_info, \@filter_reasons, \%filter_flags );
+      ( $SV_length, $chr2, $stop, $t_PE, $t_SR, $genotype, $filter_list, $sample_info_novo, $format_novo, $format_long_novo ) = novobreak( $id, $chr, $info_block, $start, $SV_type, $tumour_name, $control, \@sample_info, \@filter_reasons, \%filter_flags, $chrom_keys );
       %sample_info = %{ $sample_info_novo };
       $ab = "-";
       @format = @{ $format_novo };
@@ -214,7 +214,7 @@ sub parse {
 
 
 sub lumpy {
-  my ( $id, $chr, $info_block, $SV_type, $alt, $start, $sample_info, $tumour, $control, $samples, $normals, $filters, $filter_flags ) = @_;
+  my ( $id, $chr, $info_block, $SV_type, $alt, $start, $sample_info, $tumour, $control, $samples, $normals, $filters, $filter_flags, $chrom_keys ) = @_;
   my $genotype;
   my %filter_flags   = %{ $filter_flags };
   my @normals        = @{ $normals };
@@ -241,6 +241,7 @@ sub lumpy {
 
     ($genotype, $filters) = genotype( $id, $t_hq_alt_reads, $c_alt_reads, $n_sq, $n_hq_alt_reads, \%PON_alt_reads, $filters );
   }
+  else { $genotype = 'NA'}
   # if genotype is set to 'NA' (this should be because there are no quality reads,
   # but some supporting reads) then re-genotype using supporting reads
   if ($genotype eq "NA" or not exists $sample_info{$id}{$tumour}{'QA'}){
@@ -319,6 +320,16 @@ sub lumpy {
 
   my @filter_reasons = @{ $filters };
 
+  my ($chr2, $stop) = ($chr, 0);
+  if ($SV_type =~ /BND|TRA/){
+    $chr2 = $alt =~ s/[\[\]N]//g;
+    ($chr2, $stop) = $alt =~ /(.+)\:(\d+)/;
+    $SV_length = $stop - $start;
+  }
+  else {
+      ($stop) = $info_block =~ /;END=(.*?);/;
+  }
+
   ######################
   # Read depth filters #
   ######################
@@ -339,9 +350,10 @@ sub lumpy {
     # Subtract control reads from tumour reads
     # If this number of SU is less than 10% of tumour read_depth then filter
     if ( exists $filter_flags{'rdr'} and ( $tumour_read_support  / ( $t_DP + 0.01 ) ) < $filter_flags{'rdr'} ){
-    # This is quite harsh (particularly for germline recuurent if theres poor cov in tum/normal...)
-    # Modified 21.6.18 to print once if 'rdr' filter used
-      push @filter_reasons, "$tumour\_reads/$tumour\_depth<" . ($filter_flags{'rdr'}*100) . "%" . '=' . $tumour_read_support . "/" . $t_DP;
+      my %chroms = %{$chrom_keys};
+      if( exists($chroms{$chr}) and exists($chroms{$chr2}) ){
+        push @filter_reasons, "$tumour\_reads/$tumour\_depth<" . ($filter_flags{'rdr'}*100) . "%" . '=' . $tumour_read_support . "/" . $t_DP;
+      }
     }
   }
 
@@ -357,21 +369,12 @@ sub lumpy {
     }
   }
 
-  my ($chr2, $stop) = ($chr, 0);
-  if ($SV_type =~ /BND|TRA/){
-    $chr2 = $alt =~ s/[\[\]N]//g;
-    ($chr2, $stop) = $alt =~ /(.+)\:(\d+)/;
-    $SV_length = $stop - $start;
-  }
-  else {
-      ($stop) = $info_block =~ /;END=(.*?);/;
-  }
   return ($SV_length, $chr2, $stop, $t_SR, $t_PE, $ab, $genotype, \@filter_reasons);
 }
 
 
 sub novobreak {
-  my ( $id, $info_block, $start, $SV_type, $tumour_name, $control, $info, $filters, $filter_flags) = @_;
+  my ( $id, $chr1, $info_block, $start, $SV_type, $tumour_name, $control, $info, $filters, $filter_flags, $chrom_keys) = @_;
 
   my %filter_flags = %{ $filter_flags };
 
@@ -486,12 +489,19 @@ sub novobreak {
   my ($SV_length) = ($stop - $start);
   my ($chr2) = $info_block =~ /CHR2=(.*?);/;
 
+  if ( exists $filter_flags{'rdr'} and ( $tumour_read_support  / ( $t_DP + 0.01 ) ) < $filter_flags{'rdr'} ){
+    my %chroms = %{$chrom_keys};
+    if( exists($chroms{$chr1}) and exists($chroms{$chr2}) ){
+      push @{$filters}, "$tumour_name\_reads/$tumour_name\_depth<" . ($filter_flags{'rdr'}*100) . "%" . '=' . $tumour_read_support . "/" . $t_DP;
+    }
+  }
+
   return ($SV_length, $chr2, $stop, $t_PE, $t_SR, $genotype, $filters, \%sample_info, \@format, \%format_long );
 }
 
 
 sub delly {
-  my ($id, $info_block, $start, $SV_type, $tumour, $control, $normals, $filters, $filter_flags, $sample_ref) = @_;
+  my ($id, $chr1, $info_block, $start, $SV_type, $tumour, $control, $normals, $filters, $filter_flags, $sample_ref, $chrom_keys) = @_;
 
   my %filter_flags   = %{ $filter_flags };
   my %sample_info    = % { $sample_ref };
@@ -599,6 +609,13 @@ sub delly {
 
   if ( $filter_flags{'dp'}){
     $filters = read_depth_filter($tumour, $control, $tum_depth, $norm_depth, $filter_flags{'dp'}, $filters);
+  }
+
+  if ( exists $filter_flags{'rdr'} and ( $tumour_read_support  / ( $tum_depth + 0.01 ) ) < $filter_flags{'rdr'} ){
+    my %chroms = %{$chrom_keys};
+    if( exists($chroms{$chr1}) and exists($chroms{$chr2}) ){
+      push @{$filters}, "$tumour\_reads/$tumour\_depth<" . ($filter_flags{'rdr'}*100) . "%" . '=' . $tumour_read_support . "/" . $tum_depth;
+    }
   }
 
   ##################
@@ -963,7 +980,7 @@ sub write_summary {
 
   my %connected_bps;
 
-  my @header = qw/ source type chromosome1 bp1 chromosome2 bp2 split_reads disc_reads genotype id length(Kb) position consensus microhomology configuration allele_frequency log2(cnv) /;
+  my @header = qw/ source type chromosome1 bp1 chromosome2 bp2 split_reads disc_reads genotype id length(Kb) position consensus microhomology configuration allele_frequency mechanism log2(cnv) status	notes /;
   print $info_file join("\t", @header) . "\n";
 
   for ( sort { @{ $SVs->{$a}}[0] cmp @{ $SVs->{$b}}[0] or
@@ -1023,11 +1040,13 @@ sub write_summary {
         $ct = "-";
       }
 
+      my ($mech, $status, $notes) = ('-', '-', '-');
+
       if ( $chr2 and ($chr2 ne $chr) ){
-        print $info_file join("\t", $type, $sv_type, $chr, $start, $chr2, $stop, $SR, $PE, $genotype, $_, $length_in_kb, "$chr:$start $chr2:$stop", $consensus, $mh_length, $ct, $ab, $rdr ) . "\n";
+        print $info_file join("\t", $type, $sv_type, $chr, $start, $chr2, $stop, $SR, $PE, $genotype, $_, $length_in_kb, "$chr:$start $chr2:$stop", $consensus, $mh_length, $ct, $ab, $mech, $rdr, $status, $notes ) . "\n";
       }
       else {
-        print $info_file join("\t", $type, $sv_type, $chr, $start, $chr, $stop, $SR, $PE, $genotype, $_, $length_in_kb, "$chr:$start-$stop", $consensus, $mh_length, $ct, $ab, $rdr) . "\n";
+        print $info_file join("\t", $type, $sv_type, $chr, $start, $chr, $stop, $SR, $PE, $genotype, $_, $length_in_kb, "$chr:$start-$stop", $consensus, $mh_length, $ct, $ab, $mech, $rdr, $status, $notes ) . "\n";
       }
 
     }
@@ -1154,6 +1173,9 @@ sub genotype {
     if ( $PON_alt_reads{$n} > 0){
       $germline_recurrent = 1;
     }
+    elsif ($n_hq_alt_reads > 0 and $n_sq == 0){
+      $norm = 1;
+    }
   }
 
   if ( $tum and not ($norm or $germline_recurrent) ){
@@ -1179,10 +1201,8 @@ sub genotype {
 
 sub chrom_filter {
   my ($chr, $chr2, $filters, $chrom_keys) = @_;
-  my @keys = @{ $chrom_keys };
-  my %chrom_filt;
+  my %chrom_filt =  %{$chrom_keys};
 
-  $chrom_filt{$_} = 1 for (@keys);
   my @filter_reasons = @{ $filters };
 
   if ($chr2 eq '0'){
@@ -1190,7 +1210,6 @@ sub chrom_filter {
   }
   # One of the two breakpoints must be on a 'native' chroomosome
   unless ($chrom_filt{$chr} or $chrom_filt{$chr2} ){
-    say "$chr, $chr2";
     push @filter_reasons, 'chrom1=' . $chr . ';chrom2=' . $chr2;
   }
   return (\@filter_reasons);
