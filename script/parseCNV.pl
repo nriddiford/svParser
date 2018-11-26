@@ -34,7 +34,7 @@ my $outpath = File::Spec->catdir( $output_dir, $outfile );
 
 open my $out, '>', $outpath;
 
-my @header = qw/ source type chromosome1 bp1 chromosome2 bp2 split_reads disc_reads genotype id length(Kb) position consensus microhomology configuration allele_frequency log2(cnv) /;
+my @header = qw/ source type chromosome1 bp1 chromosome2 bp2 split_reads disc_reads genotype id length(Kb) position consensus microhomology configuration allele_frequency mechanism log2(cnv) status	notes /;
 print $out join("\t", @header) . "\n";
 
 my @lines = @{$cnv_ref};
@@ -65,7 +65,11 @@ sub extractVars {
                             '-',                   # microhomology
                             '-',                   # configuration
                             '-',                   # allele frequency
-                            $fc);                  # log2(cnv)
+                            '-',                   # mechanism
+                            $fc,                    # log2(cnv)
+                            '-',                   # status
+                            '-',                   # notes
+                            );
 
   }
   return(\@cnv);
