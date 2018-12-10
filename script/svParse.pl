@@ -107,7 +107,7 @@ if ($method ne 'snp') {
 
 elsif ($method eq 'snp') {
   # Dump all variants to screen
-  svParser::dump_variants( $SVs, $info, $filter_switch, $chromosome, $method) if $dump;
+  svParser::dump_variants( $SVs, $info, $filter_switch, $chromosome, $method, $PON_print) if $dump;
   if ($print or $id ){
     die "Print and get variants not supported for SNP data\n";
   }
