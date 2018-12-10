@@ -168,6 +168,8 @@ sub parse {
     elsif ($type eq 'snp'){
       $chr2 = $chr;
       $filter_list = \@filter_reasons;
+      $SV_length = length($ref);
+      $stop = $start + $SV_length;
     }
 
     if ( exists $filter_flags{'chr'} ){
