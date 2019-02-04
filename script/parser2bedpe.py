@@ -12,10 +12,12 @@ def get_fields(options):
     breakpoints = breakpoints.loc[breakpoints['status'] == '']
     sources = ['lumpy', 'delly', 'novobreak']
     breakpoints = breakpoints.loc[breakpoints['source'].isin(sources)]
-    breakpoints = breakpoints.drop_duplicates(subset='event', keep="last")
 
-    breakpoints['type'] = breakpoints['type'] + ":" + breakpoints['event'].map(str)
+    breakpoints['type'] = breakpoints['type'] + ":" + breakpoints['event'].map(str) + ":" + breakpoints['configuration'].map(str)
+    breakpoints = breakpoints.drop_duplicates(subset='type', keep="last")
+
     breakpoints = breakpoints.filter(items=['type', 'chromosome1', 'bp1', 'chromosome2', 'bp2'])
+
 
     return breakpoints
 

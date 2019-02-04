@@ -257,7 +257,6 @@ then
   #   perl "$script_bin"/clean_files.pl -v $annofile -o $out_dir/summary/merged -b $blacklist -w $whitelist
   # done
 
-  #
   # for clean_file in *cleaned_SVs.txt
   do
     # Delete file if empty
