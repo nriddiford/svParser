@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 from __future__ import print_function
-import sys, os
+import sys, os, re
 import pandas as pd
 
 from optparse import OptionParser
@@ -90,7 +90,6 @@ def stitch(right_end, left_end, options):
                     seen.append(seen_key)
                     complex_events.setdefault(e1, []).extend([e1, e2])
 
-    # print(json.dumps(complex_events, indent=4, sort_keys=True))
     return pack_complex_vars(complex_events)
 
 
@@ -179,14 +178,24 @@ def print_complex(complex_events, options, temp):
         events[df.loc[index, 'event']][df.loc[index, 'type']] += 1
 
     # Finally, substitute "COMPELX_" for "" in events that are the same event chained together (DEL/DUPs)
+
+    regex = re.compile(r'.*DUP')
     for event in events:
-        if len(events[event]) == 1:
+        if len(events[event]) == 1 and 'COMPLEX_BND' not in events[event]:
             # print("%s Not complex" % (event))
             val = events[event].keys()
             # print("Old value = %s" % (val))
             new = val[0].replace('COMPLEX_', '')
             # print("New value = %s" % (new) )
             df.loc[df['event'] == event, ['type']] = new
+        else:
+            val = events[event].keys()
+            stripped = [v.replace('COMPLEX_', '') for v in val]
+
+            if all([re.match(".*DUP", s) for s in stripped]):
+                # print("Yes")
+                new = val[0].replace('COMPLEX_', '')
+                df.loc[df['event'] == event, ['type']] = new
 
     # print(json.dumps(events, indent=4, sort_keys=True))
 
