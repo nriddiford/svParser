@@ -6,13 +6,18 @@ from optparse import OptionParser
 
 
 def merge_samples(options):
-
     if not options.directory:
         options.directory = os.getcwd()
 
     out_file = os.path.join(options.directory, options.out_file)
     print("Writing %s") % (out_file)
 
+    print(options.directory)
+    print(options.extension)
+    options.extension = "*" + options.extension
+    print(options.extension)
+
+    print(fnmatch.filter(os.listdir(options.directory), options.extension))
     files = fnmatch.filter(os.listdir(options.directory), options.extension)
     header = list(pd.read_csv(os.path.join(options.directory, files[0]), delimiter="\t", nrows=1).columns)
     header.insert(0, 'sample')
