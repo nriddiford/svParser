@@ -2,6 +2,7 @@
 import os, re, sys
 import pandas as pd
 import ntpath
+import json
 from optparse import OptionParser
 
 
@@ -31,11 +32,12 @@ def extract_vars(options):
 
     breakpoints['confidence'] = breakpoints.apply(assign_confidence, axis=1)
 
+    breakpoints.drop_duplicates(['event', 'chromosome1', 'bp1', 'chromosome2', 'bp2'], inplace=True)
+
     for index, row in breakpoints.iterrows():
         if row['status'] != 'F':
             bp1.append([row['event'], 'bp1', row['sample'], row['genotype'], row['chromosome1'], row['bp1'], row['gene1'], row['locus1'], row['chromosome2'], row['bp2'],  row['gene2'], row['locus2'], row['type'],  row['length(Kb)'], row['allele_frequency'], row['confidence'], row['microhomology'], row['mechanism']])
             bp2.append([row['event'], 'bp2', row['sample'], row['genotype'], row['chromosome2'], row['bp2'], row['gene2'], row['locus2'], row['chromosome1'], row['bp1'],  row['gene1'], row['locus1'], row['type'],  row['length(Kb)'], row['allele_frequency'], row['confidence'], row['microhomology'], row['mechanism']])
-
 
     if not options.out_file:
         sample = ntpath.basename(options.variants).split("_")[0]
