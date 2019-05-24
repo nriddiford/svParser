@@ -13,6 +13,9 @@ def select_cnvfile(sv_size, bp1, bp2, options):
 
     sample = ntpath.basename(options.variants).split("_")[0]
     pattern = sample + '*.cnv'
+    dir = "data/"
+    file_name = None
+
     if bp1 is None:
         bp1 = 0
     if float(sv_size) <= 300:
@@ -23,10 +26,8 @@ def select_cnvfile(sv_size, bp1, bp2, options):
         tick = 50000
 
         files = os.listdir(small_window)
-        for name in files:
-            if fnmatch.fnmatch(name, pattern):
-                name = "data/w500/" + name
-                return name, start, stop, tick
+        dir = os.path.join(dir, "w500")
+
     else:
         start = bp1 - 1000000
         if start < 0:
@@ -35,24 +36,34 @@ def select_cnvfile(sv_size, bp1, bp2, options):
         tick = 1000000
 
         files = os.listdir(big_window)
-        for name in files:
-            if fnmatch.fnmatch(name, pattern):
-                name = "data/" + name
-                return name, start, stop, tick
+
+    for f in files:
+        # if f.endswith(".cnv") and fnmatch.fnmatch(f, pattern):
+        if f.endswith(".cnv") and sample == f.split(".")[0]:
+            file_name = os.path.join(dir, f)
+
+    return file_name, start, stop, tick
 
 
 def print_R_command(options):
     """Generates R command that can be used to plot CNVs with https://github.com/nriddiford/cnvPlotteR"""
     df = pd.read_csv(options.variants, delimiter="\t", index_col=False)
     for idx, row in df.iterrows():
-        event, source, type, chrom1, bp1, chrom2, bp2, genotype, size, true = row[['event', 'source', 'type', 'chromosome1', 'bp1', 'chromosome2', 'bp2', 'genotype', 'length(Kb)', 'status']]
+        event, source, svtype, chrom1, bp1, chrom2, bp2, genotype, size, true = row[['event', 'source', 'type', 'chromosome1', 'bp1', 'chromosome2', 'bp2', 'genotype', 'length(Kb)', 'status']]
+
         if genotype != 'somatic_tumour': continue
         if options.true_only and true == 'F': continue
 
+        # if chrom1 == chrom2:
+        #     print(select_cnvfile(size, bp1, bp2, options), event)
+
         if chrom1 == chrom2:
             cnv_file, start, end, tick = select_cnvfile(size, bp1, bp2, options)
-            print("SV event: %s, type: %s, size: %s") % (event, type, size)
-            print("regionPlot(cnv_file=\"%s\", from=%s, to=%s, bp1=%s,bp2=%s,chrom=\"%s\", tick=%s, title=\"%sKb %s on %s\")") % (cnv_file, start, end, bp1, bp2, chrom1, tick, size, type, chrom1)
+            if cnv_file:
+                print("SV event: %s, type: %s, size: %s") % (event, svtype, size)
+                print("regionPlot(cnv_file=\"%s\", from=%s, to=%s, bp1=%s,bp2=%s,chrom=\"%s\", tick=%s, title=\"%sKb %s on %s\")") % (cnv_file, start, end, bp1, bp2, chrom1, tick, size, svtype, chrom1)
+            else:
+                print("Can't find CNV file")
 
 
 def write_notebook(options):

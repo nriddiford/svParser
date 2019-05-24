@@ -22,6 +22,7 @@ def extract_vars(options):
 
     bp1 = []
     bp2 = []
+    hit_genes = []
 
     breakpoints[['gene1', 'locus1']] = breakpoints['bp1_locus'].str.split(', ', n=2, expand=True)
     breakpoints[['gene2', 'locus2']] = breakpoints['bp2_locus'].str.split(', ', n=2, expand=True)
@@ -35,18 +36,30 @@ def extract_vars(options):
     breakpoints.drop_duplicates(['event', 'chromosome1', 'bp1', 'chromosome2', 'bp2'], inplace=True)
 
     for index, row in breakpoints.iterrows():
-        if row['status'] != 'F':
-            bp1.append([row['event'], 'bp1', row['sample'], row['genotype'], row['chromosome1'], row['bp1'], row['gene1'], row['locus1'], row['chromosome2'], row['bp2'],  row['gene2'], row['locus2'], row['type'],  row['length(Kb)'], row['allele_frequency'], row['confidence'], row['microhomology'], row['mechanism']])
-            bp2.append([row['event'], 'bp2', row['sample'], row['genotype'], row['chromosome2'], row['bp2'], row['gene2'], row['locus2'], row['chromosome1'], row['bp1'],  row['gene1'], row['locus1'], row['type'],  row['length(Kb)'], row['allele_frequency'], row['confidence'], row['microhomology'], row['mechanism']])
+        if row['status'] not in ['F', 'aF']:
+            if options.write_genes:
+                affected_genes = row['affected_genes'].split(", ")
+                for g in affected_genes:
+                    if 'DEL' in row['type'] and row['log2(cnv)'] < -0.2 or 'DUP' in row['type'] and row['log2(cnv)'] > 0.2:
+                        hit_genes.append([row['event'], row['sample'], row['genotype'], row['type'], row['allele_frequency'], row['length(Kb)'], row['log2(cnv)'], row['chromosome1'], g])
 
-    if not options.out_file:
-        sample = ntpath.basename(options.variants).split("_")[0]
-        options.out_file = os.path.join(sample + '_microhomology.txt')
+            if options.write_breakpoints:
+                bp1.append([row['event'], 'bp1', row['sample'], row['genotype'], row['chromosome1'], row['bp1'], row['gene1'], row['locus1'], row['chromosome2'], row['bp2'],  row['gene2'], row['locus2'], row['type'],  row['length(Kb)'], row['allele_frequency'], row['confidence'], row['microhomology'], row['mechanism']])
+                bp2.append([row['event'], 'bp2', row['sample'], row['genotype'], row['chromosome2'], row['bp2'], row['gene2'], row['locus2'], row['chromosome1'], row['bp1'],  row['gene1'], row['locus1'], row['type'],  row['length(Kb)'], row['allele_frequency'], row['confidence'], row['microhomology'], row['mechanism']])
 
-    with open(options.out_file, 'a') as extracted_vars:
-        for l, m in zip(bp1, bp2):
-            extracted_vars.write('\t'.join(map(str, l)) + '\n')
-            extracted_vars.write('\t'.join(map(str, m)) + '\n')
+
+    if options.write_genes:
+        genes_out = os.path.join(sample + "_hit_genes.txt")
+        with open(genes_out, 'w') as genes:
+            for l in hit_genes:
+                genes.write('\t'.join(map(str, l)) + '\n')
+
+    if options.write_breakpoints:
+        options.out_file = os.path.join(sample + "_" + options.file_name)
+        with open(options.out_file, 'a') as extracted_vars:
+            for l, m in zip(bp1, bp2):
+                extracted_vars.write('\t'.join(map(str, l)) + '\n')
+                extracted_vars.write('\t'.join(map(str, m)) + '\n')
 
 
 def get_args():
@@ -58,11 +71,31 @@ def get_args():
                       action="store",
                       help="svParser format file")
 
+    parser.add_option("--file_name",
+                      dest="file_name",
+                      action="store",
+                      help="generic file name for output. [Default: 'microhomology.txt'")
+
+    parser.add_option("-b",
+                      "--write_breakpoints",
+                      dest="write_breakpoints",
+                      action="store_true",
+                      help="Extract breakpoints.txt?")
+
+    parser.add_option("-g",
+                      "--write_genes",
+                      dest="write_genes",
+                      action="store_true",
+                      help="Also extract hit_genes.txt?")
+
     parser.add_option("-o",
                       "--out_file",
                       dest="out_file",
                       action="store",
                       help="File to write all_breakpoints.txt to")
+
+
+    parser.set_defaults(file_name = 'microhomology.txt')
 
     options, args = parser.parse_args()
 

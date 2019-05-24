@@ -25,7 +25,7 @@ annotate=0
 replace=0
 out_dir='filtered/'
 data_dir='data/'
-cnv_dir=
+cnv_dir=''
 exclude_file='/Users/Nick_curie/Documents/Curie/Data/Genomes/Dmel_v6.12/Mappability/dmel6_unmappable_100.bed'
 somatic=0
 
@@ -115,7 +115,7 @@ fi
 
 # If CNV-Seq has been run, the cnv directory can be specified with the -c flag
 # For each summary file, annotate somatic events with log2(FC) from .cnv file
-if [[ -n "$cnv_dir" && $filter -eq 1 ]]
+if [[ -n "$cnv_dir" ]]
 then
   echo "*******************************************************"
   echo "*** Annotating variants with read depth information ***"
@@ -287,7 +287,7 @@ then
   # Merge all samples
   cd $out_dir/summary/merged
   echo "Merging all samples into single file..."
-  perl "$script_bin"/merge_files.py
+  python "$script_bin"/merge_files.py
 fi
 
 

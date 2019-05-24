@@ -1,5 +1,6 @@
 #!/usr/bin/env python
-from __future__ import print_function
+from __future__ import print_function, division
+
 import sys, os, re
 import pandas as pd
 
@@ -32,14 +33,15 @@ def parse_vars(options):
     seen = []
 
     for idx, row in df.iterrows():
-        event, c1, b1, c2, b2, notes, genotype = row[['event', 'chromosome1', 'bp1', 'chromosome2', 'bp2', 'notes', 'genotype']]
+        event, c1, b1, c2, b2, notes, genotype, svtype, status, fc = row[['event', 'chromosome1', 'bp1', 'chromosome2', 'bp2', 'notes', 'genotype', 'type', 'status', 'log2(cnv)']]
         if genotype != 'somatic_tumour': continue
+        if status == 'F' and svtype in ["DEL", "DUP", "TANDUP"] and abs(fc < 0.2): continue
 
         for i in range(b1 - 10, b1 + 10):
             for j in range(b2 - 10, b2 + 10):
                 if i in seen_l[c1] and j in seen_r[c2]:
                     index = same_index(seen_l[c1][i], seen_r[c2][j])
-                    if index is not None:
+                    if index:
                         if seen_l[c1][i][index] == seen_r[c2][j][index]:
                             if event != seen_l[c1][i][index]:
                                 if event not in seen: print("Seen: %s %s in event %s" % (event, [c1, b1, c2, b2], seen_l[c1][i][index]))
@@ -69,7 +71,7 @@ def same_index(l1, l2):
 
 
 def stitch(right_end, left_end, options):
-    """Tie together events where right edge and left edge are within 250 bases"""
+    """Tie together events where right edge and left edge are within options.window"""
     window = options.window
     complex_events = {}
     seen = []
@@ -157,6 +159,14 @@ def print_complex(complex_events, options, temp):
     df = df.sort_values(['event', 'chromosome1', 'bp1', 'chromosome2', 'bp2'])
     events = defaultdict(lambda: defaultdict(int))
 
+    true_calls = defaultdict(int)
+
+    af_pass = defaultdict(int)
+
+    df['old_type'] = df['type']
+    df['old_config'] = df['configuration']
+    df['old_event'] = df['event']
+
     for index, row in df.iterrows():
         event, sv_type, notes = row[['event', 'type', 'notes']]
         for e, j in sorted(complex_events.iteritems()):
@@ -165,6 +175,7 @@ def print_complex(complex_events, options, temp):
             #     configuration = ":".join(map(str, [e, linked_events]))
             #     df.loc[index, 'configuration'] = configuration
             #     df.loc[index, 'type'] = '_'.join(["COMPLEX", sv_type])
+
             for joined in j:
                 if event == joined:
                     # print("Event %s is in %s - key: %s" % (event, joined, e))
@@ -174,35 +185,70 @@ def print_complex(complex_events, options, temp):
                         df.loc[index, 'configuration'] = configuration
                     df.loc[index, 'type'] = '_'.join(["COMPLEX", sv_type])
                     df.loc[index, 'event'] = e
+        if row['status'] != 'F':
+            true_calls[df.loc[index, 'event']] += 1
+        if row['allele_frequency'] >= 0.1:
+            af_pass[df.loc[index, 'event']] += 1
 
         events[df.loc[index, 'event']][df.loc[index, 'type']] += 1
 
-    # Finally, substitute "COMPELX_" for "" in events that are the same event chained together (DEL/DUPs)
+    # Finally, substitute "COMPLEX_" for "" in events that are the same event chained together (DEL/DUPs)
+    for index, row in df.iterrows():
+        event, sv_type, notes = row[['event', 'type', 'notes']]
+        val = events[event].keys()
+        total_events = sum(events[event].values())
+        # print(event, val, af_pass[event], events[event].values(), total_events, af_pass[event] / total_events)
 
-    regex = re.compile(r'.*DUP')
-    for event in events:
         if len(events[event]) == 1 and 'COMPLEX_BND' not in events[event]:
-            # print("%s Not complex" % (event))
-            val = events[event].keys()
-            # print("Old value = %s" % (val))
-            new = val[0].replace('COMPLEX_', '')
-            # print("New value = %s" % (new) )
-            df.loc[df['event'] == event, ['type']] = new
-        else:
-            val = events[event].keys()
-            stripped = [v.replace('COMPLEX_', '') for v in val]
+            _reset_vals(df, index)
 
-            if all([re.match(".*DUP", s) for s in stripped]):
+        elif len(events[event]) == 2 and "COMPLEX_-" in events[event]:
+            _reset_vals(df, index)
+
+            # for i, e in enumerate(val):
+            #     if '-' in e:
+            #         new = val[i].replace('COMPLEX_', '')
+            #         df.loc[df['event'] == event, ['type']] = new
+
+        elif float(af_pass[event] / total_events) <= 0.5:
+            _reset_vals(df, index)
+
+            # for i, e in enumerate(val):
+            #     new = val[i].replace('COMPLEX_', '')
+            #     df.loc[df['event'] == event, ['type']] = new
+
+        elif all([re.match(".*DUP", s) for s in val]):
+            _reset_vals(df, index)
+
+        elif true_calls[event] / total_events <= 0.5:
+            print(event, val, af_pass[event], events[event].values(), true_calls[event], total_events, af_pass[event] / total_events)
+            _reset_vals(df, index)
+
+            # for i, e in enumerate(val):
+            #     new = val[i].replace('COMPLEX_', '')
+            #     df.loc[df['event'] == event, ['type']] = new
+
+            # stripped = [v.replace('COMPLEX_', '') for v in val]
+
                 # print("Yes")
-                new = val[0].replace('COMPLEX_', '')
-                df.loc[df['event'] == event, ['type']] = new
+                # new = val[0].replace('COMPLEX_', '')
+                # df.loc[df['event'] == event, ['type']] = new
+
+
+
+
 
     # print(json.dumps(events, indent=4, sort_keys=True))
-
+    df.drop(columns=['old_type', 'old_config', 'old_event'], inplace=True)
     df = df.sort_values(['event', 'chromosome1', 'bp1', 'chromosome2', 'bp2'])
     os.remove(temp)
     df.to_csv(out_file, sep="\t", index=False)
 
+
+def _reset_vals(df, index):
+        df.loc[index, 'type'] = df.loc[index, 'old_type']
+        df.loc[index, 'event'] = df.loc[index, 'old_event']
+        df.loc[index, 'configuration'] = df.loc[index, 'old_config']
 
 def main():
     parser = OptionParser()
