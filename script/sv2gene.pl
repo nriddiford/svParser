@@ -236,7 +236,7 @@ sub annotate_SVs {
     my $hit_bp1 = "intergenic";
     my $hit_bp2 = "intergenic";
 
-    if ($type =~ 'DEL|DUP' or $type =~ 'BND' and abs($cnv) > 0.3){
+    if ($type =~ 'DEL|DUP' or $type =~ 'BND' and $cnv ne '-' and abs($cnv) > 0.3){
       ($hit_bp1, $hit_genes, $hits) = getbps('bp1', $event, $type, $genotype, $chrom1, $bp1, $hit_bp1, $length, \@hit_genes, \%hits);
       ($hit_genes, $hits)           = getgenes($chrom1, $bp1, $bp2, $hit_genes, $hits);
       ($hit_bp2, $hit_genes, $hits) = getbps('bp2', $event, $type, $genotype, $chrom2, $bp2, $hit_bp2, $length, $hit_genes, $hits);
