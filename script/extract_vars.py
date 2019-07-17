@@ -6,11 +6,12 @@ import json
 from optparse import OptionParser
 
 
-def assign_confidence (row):
-   if row['split_reads'] == '-' and row['disc_reads'] == '-':
-       return 'imprecise'
-   else:
-       return 'precise'
+def assign_confidence(row):
+    if row['source'] == "CNV-Seq" and row['chromosome1'] == 'X' and row['bp1'] >= 2500000 and row['bp2'] <= 3500000:
+        return 'precise'
+    if row['split_reads'] == '-' and row['disc_reads'] == '-':
+        return 'imprecise'
+    return 'precise'
 
 
 def extract_vars(options):
@@ -46,7 +47,6 @@ def extract_vars(options):
             if options.write_breakpoints:
                 bp1.append([row['event'], 'bp1', row['sample'], row['genotype'], row['chromosome1'], row['bp1'], row['gene1'], row['locus1'], row['chromosome2'], row['bp2'],  row['gene2'], row['locus2'], row['type'],  row['length(Kb)'], row['allele_frequency'], row['confidence'], row['microhomology'], row['mechanism']])
                 bp2.append([row['event'], 'bp2', row['sample'], row['genotype'], row['chromosome2'], row['bp2'], row['gene2'], row['locus2'], row['chromosome1'], row['bp1'],  row['gene1'], row['locus1'], row['type'],  row['length(Kb)'], row['allele_frequency'], row['confidence'], row['microhomology'], row['mechanism']])
-
 
     if options.write_genes:
         genes_out = os.path.join(sample + "_hit_genes.txt")
@@ -94,9 +94,7 @@ def get_args():
                       action="store",
                       help="File to write all_breakpoints.txt to")
 
-
-    parser.set_defaults(file_name = 'microhomology.txt')
-
+    parser.set_defaults(file_name='microhomology.txt')
     options, args = parser.parse_args()
 
     if not options.variants:
