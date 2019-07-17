@@ -4,7 +4,10 @@ from optparse import OptionParser
 import pandas as pd
 import os, sys
 
-
+##
+## Find manually annoated CNV calls in a variant summary file produced by svParser (e.g. 'sample.annotated.txt')
+## Outputs CNV position to specified directory
+##
 
 def getCNVs(calls):
     cnvs = []
