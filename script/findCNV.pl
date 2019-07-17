@@ -11,9 +11,11 @@ my $cnv_file;
 my $output_dir;
 my $help;
 my @variants_files;
+my $locus;
 
 GetOptions( 'cnvs=s'           =>   \$cnv_file,
             'variants=s{1,}'   =>   \@variants_files,
+            'locus=s'          =>   \$locus,
             'output_dir=s'     =>   \$output_dir,
             'help'             =>   \$help
 ) or die usage();
@@ -46,7 +48,7 @@ sub getFreec {
   return($r, $i);
 }
 
-sub readCNV {
+sub read_CNV {
   my ($file) = shift;
   open my $in, '<', $file;
   my ($name, $extention) = split(/\.([^.]+)$/, basename($file), 2);
@@ -81,7 +83,7 @@ sub findCNV {
   return($r, $i);
 }
 
-sub readParser {
+sub read_parser {
   my ($d, $variants_file) = @_;
   my ($name, $extention) = split(/\.([^.]+)$/, basename($variants_file), 2);
   my $outfile =  $name . '.cnv.txt';
@@ -109,10 +111,38 @@ sub readParser {
 
 }
 
-my $d = readCNV($cnv_file);
+
+sub get_locus {
+  my $locus = shift;
+  die "Error parsing the specified region.\nPlease specify chromosome regions using the folloing format:\tchrom:start-stop\n" if ($locus !~ /-/);
+
+  my ($chromosome, $query_region) = split(/:/, $locus);
+  my ($query_start, $query_stop) = split(/-/, $query_region);
+  die "Error: End of window must be larger than start:\tchrom:start-stop\n" if ($query_stop - $query_start < 0);
+
+  $query_start =~ s/,//g;
+  $query_stop =~ s/,//g;
+  say "Searching within region: '$chromosome:$query_start-$query_stop'";
+  return($chromosome, $query_start, $query_stop);
+}
+
+sub get_depth{
+  my ($d, $l) = @_;
+  my ($chromosome, $query_start, $query_stop) = get_locus($l);
+  ($r, $i) = findCNV($d, $chromosome, $query_start, $query_stop);
+  $av_r = sprintf("%.2f", $r/$i);
+  say "Average log2(FC) over region '$l': $av_r";
+}
+
+my $d = read_CNV($cnv_file);
 say "Read file '$cnv_file'";
+if($locus){
+  get_depth($d, $locus);
+  exit(1);
+}
+
 foreach(@variants_files){
-  readParser($d, $_)
+ read_parser($d, $_)
 }
 
 sub usage {
