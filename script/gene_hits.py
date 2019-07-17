@@ -117,11 +117,10 @@ def main():
     parser.add_option("--status", dest="status", action="store", type=str, help="Status for SNVS/indels")
     parser.add_option("-o", "--out_file", dest="out", action="store", type=str, help="File to write hits to")
 
-
     parser.set_defaults(min_cf=0.1, max_cf=1)
     options, args = parser.parse_args()
 
-    if (options.variants is None and options.snvs is None) or (options.bed_dir is None and options.bed_file is None) :
+    if (options.variants is None and options.snvs is None) or (options.bed_dir is None and options.bed_file is None):
         parser.print_help()
         print
     else:
