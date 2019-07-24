@@ -151,7 +151,7 @@ then
     echo -e "Error: mergevcf was not found. Please set in path\n`pip install mergevcf`"
     exit 1
   fi
-  echo "perl "$script_bin"/merge_vcf.pl"
+  # echo "perl "$script_bin"/merge_vcf.pl"
   #perl "$script_bin"/merge_vcf.pl
 fi
 
@@ -239,11 +239,11 @@ fi
 
 if [[ $replace -eq 1 ]]
 then
-    # echo "Adding any new CNV calls to data/cnv'"
-    # for annofile in *_annotated_SVs.txt
-    # do
-    #   python "$script_bin"/getCNVs.py -f $annofile
-    # done
+  echo "Adding any new CNV calls to '${data_dir}/cnv/'"
+  for annofile in *_annotated_SVs.txt
+  do
+    python "$script_bin"/getCNVs.py -f $annofile -d ${data_dir}/cnv/
+  done
 
   if [ -f "all_genes_filtered.txt" ] && [ -f "all_bps_filtered.txt" ]
   then
@@ -287,7 +287,7 @@ then
   # Merge all samples
   cd $out_dir/summary/merged
   echo "Merging all samples into single file..."
-  python "$script_bin"/merge_files.py
+  # python "$script_bin"/merge_files.py
 fi
 
 
