@@ -53,6 +53,7 @@ bash install_deps.sh
 ## Summarise variants
 A good place to start is with a summary of variants called in VCF file:
 
+
 #### Read vcf file from lumpy (or delly/novobreak) and see summary of variants called:
 `perl script/svParse.pl -v data/Droso_R7.lumpy.vcf`
 It's reccomended to explicity tag files on the caller that has produced them using the `--method` flag:   
@@ -76,6 +77,7 @@ Genotypes can also be filtered in using the genotype filters outlined in the [fi
 ## Filtering variants
 The real power of svParser comes from its ability to easily filter variant calls on anumber of different criteria, and quickly assess how this affects your callset.
 It is highly recommended to play around with differnt combinations of filters that suit your needs. Filter flags can be used with any of the other options aid in fine tuning
+
 
 #### Filters available:
 ```
@@ -104,8 +106,10 @@ perl script/svParse.pl \
 ### Filter-check-filter strategy to hone filters
 Filters can be used in combination with other features of svParser to experiment with filters that remove obvious false positives while retaining true positives. E.g:
 
+
 #### See summary of variants that have >= 4 reads supporting call in tumour (`-f su=4`)
 `perl script/svParse.pl -v data/Droso_R7.lumpy.vcf -m l -f su=4`
+
 
 #### See summary of variants that have >= 4 reads supporting call in tumour and have both breakpoints on chromosomes contained in `chroms.txt`
 `perl script/svParse.pl -v data/Droso_R7.lumpy.vcf -m l -f su=4 -f chr=1`
@@ -124,8 +128,9 @@ This allows you to see how adjusting filters affects your true positives.
 
 
 ## Inspect specific variant call
-Sometimes it's useful to see the information behind a spcific variant call. svParser makes it easy to dig out a variant using it's `id` (taken from the VCF column `ID`)
+Sometimes it's useful to see the information behind a specific variant call. svParser makes it easy to dig out a variant using it's `id` (taken from the VCF column `ID`)
 If the variant is affected by supplied filters this will be reported in the summary
+
 
 #### Investigate a specific variant (by ID) using the `--id` flag:
 `perl script/svParse.pl -v data/Droso_R7.lumpy.vcf -m l -i 1`
@@ -137,11 +142,14 @@ Press any key to move to the next variant, or `q` to quit
 
 `perl script/svParse.pl -v data/Droso_R7.lumpy.vcf -d`
 
+
 #### Browse all variants with su>=5 on X chromosome (`-c X -f su=5`):
 `perl script/svParse.pl -v data/Droso_R7.lumpy.vcf -m l -f su=5 -d -c X`
 
+
 #### Browse all variants within a specific window on X chromosome (`-c X:3000000-3500000`):
 `perl script/svParse.pl -v data/Droso_R7.lumpy.vcf -m l -d -c X:3000000-3500000`
+
 
 #### Browse all variants that passed read depth filter (`-f dp=20`) filter within a specific window on X chromosome:
 `perl script/svParse.pl -v data/Droso_R7.lumpy.vcf -m l -f dp=20 -d -c X:3000000-3500000`
@@ -150,12 +158,14 @@ Press any key to move to the next variant, or `q` to quit
 ## Print variants
 Write a new VCF file (`filtered/input.filtered.vcf`) and a summary txt file containing useful info (`filtered/summary/input.filtered.summary.txt`).
 
+
 #### Print (`-p`) all variants that passed all defualt filters (`-f a`):
 `perl script/svParse.pl -v data/Droso_R7.lumpy.vcf -f a -p`
 
 
 # Combining calls from multiple sources
 Another useful feature of svParser is its ability to combine calls made by multiple callers into a unified call set per sample
+
 
 ### Run on all samples
 #### Generate filtered vcf and summary file for calls made by delly, lumpy and novoBreak:
@@ -215,8 +225,7 @@ features=/path/to/annotations.gtf
 
 for clustered_file in *clustered_SVs.txt
 do
-    perl perl ../../script/sv2gene.pl -f $features -i $clustered_file
-  fi
+  perl ../../script/sv2gene.pl -f $features -i $clustered_file
   rm $clustered_file
 done
 ```
@@ -236,6 +245,3 @@ done
 
 # Plotting results
 See [svBreaks](https://github.com/nriddiford/svBreaks) for plotting functions. This takes as input the annotated SV calls per sample
-
-# To do
-- [ ] Improve merged VCF
