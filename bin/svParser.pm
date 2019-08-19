@@ -309,6 +309,7 @@ sub lumpy {
 
   # Create temp pseudo counts to avoid illegal division by 0
   my $pc_tumour_read_support         = $tumour_read_support + 0.001;
+  $direct_control_read_support  = '.' ? 0 : $direct_control_read_support;
   my $pc_direct_control_read_support = $direct_control_read_support + 0.001;
 
   if ( $filter_flags{'su'} ){
@@ -1158,10 +1159,11 @@ sub genotype {
   my $norm = 0;
   my @filter_reasons = @{ $filter_reasons };
 
-  if ($t_hq_alt_reads > 0){
+
+  if ($t_hq_alt_reads ne '.' and $t_hq_alt_reads > 0){
     $tum = 1;
   }
-  if ($n_hq_alt_reads > 0 and $n_sq > 1){
+  if ($n_hq_alt_reads ne '.' and $n_hq_alt_reads > 0 and $n_sq > 1){
     $norm = 1;
   }
   # What was this for ?
