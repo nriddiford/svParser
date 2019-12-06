@@ -12,7 +12,8 @@ sub getData {
     chomp;
     next if /sample/;
     next if /^\s+/;
-    my ($sample, $id, $source, $type, $ch1, $bp1, $ch2, $bp2, $genotype) = (split)[0..7, 10];
+    my @parts = split;
+    my ($sample, $id, $source, $type, $ch1, $bp1, $ch2, $bp2, $genotype) = @parts[0..7, 10];
     next unless $genotype eq 'somatic_tumour';
     push @{$tps{$sample}{$source}{$id}}, $type, $ch1, $bp1, $ch2, $bp2;
   }
@@ -22,6 +23,7 @@ sub getData {
 sub printFiles{
   my ($tps) = @_;
   my %data = %{ $tps };
+  p(%data);
   say "Printing data";
   for my $s (keys %data){
     for my $c (keys $data{$s}){
@@ -35,6 +37,7 @@ sub printFiles{
 }
 
 my $tps = getData($ARGV[0]);
+
 printFiles($tps);
 
 
