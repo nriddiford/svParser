@@ -106,13 +106,13 @@ def get_args():
 
 
 def main():
-        options, args = get_args()
-
-        try:
-            extract_vars(options)
-        except IOError as err:
-            sys.stderr.write("IOError " + str(err) + "\n")
-            return
+    """Extract files (all_bps.txt / all_genes.txt format) for a variants file"""
+    options, args = get_args()
+    try:
+        extract_vars(options)
+    except IOError as err:
+        sys.stderr.write("IOError " + str(err) + "\n")
+        return
 
 
 if __name__ == "__main__":
