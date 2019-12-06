@@ -11,6 +11,7 @@ def select_cnvfile(sv_size, bp1, bp2, options):
     big_window = options.big_window
     small_window = options.small_window
 
+
     sample = ntpath.basename(options.variants).split("_")[0]
     pattern = sample + '*.cnv'
     dir = "data/"
@@ -194,8 +195,8 @@ def main():
 
     parser.add_option("-f", "--variants", dest="variants", help="SV calls file")
     parser.add_option("-t", "--true_only", dest="true_only", action="store_true", help="Don't print calls marked as FP")
-    parser.add_option("--cnv_large", dest="big_window", action="store_true", help="CN file with large window")
-    parser.add_option("--cnv_small", dest="small_window", action="store_true", help="CN file with small window")
+    parser.add_option("--cnv_large", dest="big_window", action="store", help="CN file with large window")
+    parser.add_option("--cnv_small", dest="small_window", action="store", help="CN file with small window")
 
     parser.add_option("-n", "--notebook", dest="notebook", action="store_true", help="Write out a notebook")
     parser.set_defaults(big_window='/Users/Nick_curie/Desktop/script_test/cnvPlotteR/data',
