@@ -8,13 +8,9 @@ from collections import defaultdict
 
 
 def select_cnvfile(sv_size, bp1, bp2, options):
-    big_window = options.big_window
-    small_window = options.small_window
-
-
     sample = ntpath.basename(options.variants).split("_")[0]
     pattern = sample + '*.cnv'
-    dir = "data/"
+    dir = options.big_window
     file_name = None
 
     if bp1 is None:
@@ -26,8 +22,8 @@ def select_cnvfile(sv_size, bp1, bp2, options):
         stop = bp2 + 50000
         tick = 50000
 
-        files = os.listdir(small_window)
-        dir = os.path.join(dir, "w500")
+        files = os.listdir(options.small_window)
+        dir = options.small_window
 
     else:
         start = bp1 - 1000000
@@ -36,7 +32,7 @@ def select_cnvfile(sv_size, bp1, bp2, options):
         stop = bp2 + 1000000
         tick = 1000000
 
-        files = os.listdir(big_window)
+        files = os.listdir(options.big_window)
 
     for f in files:
         # if f.endswith(".cnv") and fnmatch.fnmatch(f, pattern):
@@ -53,7 +49,7 @@ def print_R_command(options):
         event, source, svtype, chrom1, bp1, chrom2, bp2, genotype, size, true = row[['event', 'source', 'type', 'chromosome1', 'bp1', 'chromosome2', 'bp2', 'genotype', 'length(Kb)', 'status']]
 
         if genotype != 'somatic_tumour': continue
-        if options.true_only and true == 'F': continue
+        if options.true_only and true in ['F', 'aF']: continue
 
         # if chrom1 == chrom2:
         #     print(select_cnvfile(size, bp1, bp2, options), event)
@@ -195,12 +191,12 @@ def main():
 
     parser.add_option("-f", "--variants", dest="variants", help="SV calls file")
     parser.add_option("-t", "--true_only", dest="true_only", action="store_true", help="Don't print calls marked as FP")
-    parser.add_option("--cnv_large", dest="big_window", action="store", help="CN file with large window")
-    parser.add_option("--cnv_small", dest="small_window", action="store", help="CN file with small window")
+    parser.add_option("--cnv_large", dest="big_window", action="store", help="Directory containing cnv files generated with a large (e.g. 10 Kb) window")
+    parser.add_option("--cnv_small", dest="small_window", action="store", help="Directory containing cnv files generated with a small (e.g. 500 bp) window")
 
     parser.add_option("-n", "--notebook", dest="notebook", action="store_true", help="Write out a notebook")
-    parser.set_defaults(big_window='/Users/Nick_curie/Desktop/script_test/cnvPlotteR/data',
-                        small_window='/Users/Nick_curie/Desktop/script_test/cnvPlotteR/data/w500')
+    parser.set_defaults(big_window='/Volumes/perso/Analysis/Analysis/CNV-Seq/big_window/',
+                        small_window='/Volumes/perso/Analysis/Analysis/CNV-Seq/small_window/')
 
     options, args = parser.parse_args()
 
