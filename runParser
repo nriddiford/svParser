@@ -152,22 +152,22 @@ fi
 
 cd $out_dir
 
-if [[ $merge -eq 1 ]]
-then
-  echo "************************"
-  echo "*** Merging variants ***"
-  echo "************************"
-
-  mergeVCF=`which mergevcf || true`
-  if [[ -z "$mergeVCF" ]]
-  then
-    usage
-    echo -e "Error: mergevcf was not found. Please set in path\n`pip install mergevcf`"
-    exit 1
-  fi
-  # echo "perl "$script_bin"/merge_vcf.pl"
-  #perl "$script_bin"/merge_vcf.pl
-fi
+# if [[ $merge -eq 1 ]]
+# then
+#   echo "************************"
+#   echo "*** Merging variants ***"
+#   echo "************************"
+#
+#   mergeVCF=`which mergevcf || true`
+#   if [[ -z "$mergeVCF" ]]
+#   then
+#     usage
+#     echo -e "Error: mergevcf was not found. Please set in path\n`pip install mergevcf`"
+#     exit 1
+#   fi
+#   # echo "perl "$script_bin"/merge_vcf.pl"
+#   #perl "$script_bin"/merge_vcf.pl
+# fi
 
 cd $out_dir/summary
 
