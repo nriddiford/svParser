@@ -18,7 +18,7 @@ def parse_vars(options):
 
     df = pd.read_csv(options.inFile, delimiter="\t")
 
-    if not 'event' in df:
+    if 'event' not in df.columns:
         print("No event column")
         df['event'] = df.index
         df['notes'] = ""
@@ -35,7 +35,9 @@ def parse_vars(options):
     for idx, row in df.iterrows():
         event, c1, b1, c2, b2, notes, genotype, svtype, status, fc = row[['event', 'chromosome1', 'bp1', 'chromosome2', 'bp2', 'notes', 'genotype', 'type', 'status', 'log2(cnv)']]
         if genotype != 'somatic_tumour': continue
-        if status == 'F' and svtype in ["DEL", "DUP", "TANDUP"] and abs(fc < 0.2): continue
+        if status == 'F' and svtype in ["DEL", "DUP", "TANDUP"] and abs(fc) < 0.2:
+            if options.debug: print("Skipping %s with fold change %s" % (event, fc))
+            continue
 
         for i in range(b1 - 10, b1 + 10):
             for j in range(b2 - 10, b2 + 10):
@@ -55,10 +57,12 @@ def parse_vars(options):
         left_end[c1].setdefault(b1, []).append([event, c1, b1, c2, b2])
         right_end[c2].setdefault(b2, []).append([event, c1, b1, c2, b2])
 
+    # print(json.dumps(left_end, indent=4, sort_keys=True))
+
     df = df.sort_values(['event', 'chromosome1', 'bp1', 'chromosome2', 'bp2'])
     df.to_csv(temp, sep="\t", index=False)
 
-    return right_end, left_end, temp
+    return left_end, right_end, temp
 
 
 def same_index(l1, l2):
@@ -70,7 +74,7 @@ def same_index(l1, l2):
             pass
 
 
-def stitch(right_end, left_end, options):
+def stitch(left_end, right_end, options):
     """Tie together events where right edge and left edge are within options.window"""
     window = options.window
     complex_events = {}
@@ -88,9 +92,11 @@ def stitch(right_end, left_end, options):
                     if e1 == e2:
                         continue
                     seen_key = '_'.join(map(str, [e1, e2]))
-                    if seen_key not in seen: print("Overlap between right event %s [%s] and left event %s [%s]" % (e1, b1, e2, i))
+                    if seen_key not in seen: print("Overlap between left event %s [%s] and right event %s [%s]" % (e2, i, e1, b1))
                     seen.append(seen_key)
                     complex_events.setdefault(e1, []).extend([e1, e2])
+
+    # if options.debug: print(json.dumps(complex_events, indent=4, sort_keys=True))
 
     return pack_complex_vars(complex_events)
 
@@ -122,7 +128,6 @@ def pack_complex_vars(complex_events):
             if new != old:
                 for j in joined:
                     if j in complex_events[old] and old in extended:
-                        # print("Event %s and %s have value %s" % (old, new, j))
                         extended.setdefault(old, []).extend(complex_events[new])
                         extended.pop(new, None)
 
@@ -130,14 +135,17 @@ def pack_complex_vars(complex_events):
         extended[k] = list(set(v))
         extended[k].sort()
 
+    # print(json.dumps(extended, indent=4, sort_keys=True))
+
     return extended
 
 
 def join_events(d):
     """If a value in d is also a key, add values from older event into
-      later event"""
+      earlier event"""
     extended = {}
     seen = []
+
     for k, l in sorted(d.iteritems()):
         for event in l:
             if event in d:  # Is this event also a key?
@@ -160,7 +168,6 @@ def print_complex(complex_events, options, temp):
     events = defaultdict(lambda: defaultdict(int))
 
     true_calls = defaultdict(int)
-
     af_pass = defaultdict(int)
 
     df['old_type'] = df['type']
@@ -192,17 +199,25 @@ def print_complex(complex_events, options, temp):
 
         events[df.loc[index, 'event']][df.loc[index, 'type']] += 1
 
+        # print(json.dumps(events, indent=4, sort_keys=True))
+
+    # if options.debug: print(json.dumps(events, indent=4, sort_keys=True))
+    df = df.sort_values(['event', 'chromosome1', 'bp1', 'chromosome2', 'bp2'])
     # Finally, substitute "COMPLEX_" for "" in events that are the same event chained together (DEL/DUPs)
     for index, row in df.iterrows():
         event, sv_type, notes = row[['event', 'type', 'notes']]
         val = events[event].keys()
         total_events = sum(events[event].values())
+
         # print(event, val, af_pass[event], events[event].values(), total_events, af_pass[event] / total_events)
 
-        if len(events[event]) == 1 and 'COMPLEX_BND' not in events[event]:
-            _reset_vals(df, index)
+        if len(events[event]) == 1 and total_events > 1 and 'COMPLEX_BND' not in events[event]:
+            if options.debug: print("Event %s reset at block 1" % (event))
+            df.loc[index, 'type'] = df.loc[index, 'old_type']
+            # _reset_vals(df, index)
 
         elif len(events[event]) == 2 and "COMPLEX_-" in events[event]:
+            if options.debug: print("Event %s reset at block 2" % (event))
             _reset_vals(df, index)
 
             # for i, e in enumerate(val):
@@ -211,6 +226,7 @@ def print_complex(complex_events, options, temp):
             #         df.loc[df['event'] == event, ['type']] = new
 
         elif float(af_pass[event] / total_events) <= 0.5:
+            if options.debug: print("Event %s reset at block 3" % (event))
             _reset_vals(df, index)
 
             # for i, e in enumerate(val):
@@ -218,10 +234,12 @@ def print_complex(complex_events, options, temp):
             #     df.loc[df['event'] == event, ['type']] = new
 
         elif all([re.match(".*DUP", s) for s in val]):
-            _reset_vals(df, index)
+            if options.debug: print("Event %s reset at block 4" % (event))
+            df.loc[index, 'type'] = df.loc[index, 'old_type']
+            # _reset_vals(df, index)
 
-        elif true_calls[event] / total_events <= 0.5:
-            print(event, val, af_pass[event], events[event].values(), true_calls[event], total_events, af_pass[event] / total_events)
+        elif true_calls[event] / total_events <= 0.2:
+            if options.debug: print("Event %s reset at block 5" % (event))
             _reset_vals(df, index)
 
             # for i, e in enumerate(val):
@@ -233,10 +251,6 @@ def print_complex(complex_events, options, temp):
                 # print("Yes")
                 # new = val[0].replace('COMPLEX_', '')
                 # df.loc[df['event'] == event, ['type']] = new
-
-
-
-
 
     # print(json.dumps(events, indent=4, sort_keys=True))
     df.drop(columns=['old_type', 'old_config', 'old_event'], inplace=True)
@@ -252,11 +266,11 @@ def _reset_vals(df, index):
 
 def main():
     parser = OptionParser()
-    parser.add_option("-i", "--inFile", dest="inFile", help="An annotated variants file produced by sv2gene "
-                                                            "accepts both '_annotated_SVs.txt' and "
-                                                            "'_reannotated_SVs.txt' files", metavar="FILE")
+    parser.add_option("-i", "--inFile", dest="inFile", help="An annotated variants file produced by sv2gene. Accepts both '_annotated_SVs.txt' and '_reannotated_SVs.txt' files", metavar="FILE")
     parser.add_option("-w", "--window", dest="window", action="store", type=int, help="The distance to search for connected breakpoints [Default: 1kb]")
     parser.add_option("-o", "--out_dir", dest="out_dir", action="store", help="Directory to write output to " + "[Default: '.']")
+    parser.add_option("-d", "--debug", dest="debug", action="store_true", help="Run in debug mode")
+
     parser.set_defaults(window=1000, out_dir=os.getcwd())
     options, args = parser.parse_args()
 
@@ -267,8 +281,8 @@ def main():
         print()
     else:
         try:
-            right_end, left_end, temp_out = parse_vars(options)
-            complex_events = stitch(right_end, left_end, options)
+            left_end, right_end, temp_out = parse_vars(options)
+            complex_events = stitch(left_end, right_end, options)
             print_complex(complex_events, options, temp_out)
         except IOError as err:
             sys.stderr.write("IOError " + str(err) + "\n")
