@@ -88,7 +88,7 @@ sub read_parser {
   my ($name, $extention) = split(/\.([^.]+)$/, basename($variants_file), 2);
   my $outfile =  $name . '.cnv.txt';
   my $outpath = File::Spec->catdir( dirname($variants_file), $outfile );
-  open my $in, '<', $variants_file;
+  open my $in, '<', "$variants_file";
   open my $out, '>', $outpath or die $!;
   my @header = qw/ source type chromosome1 bp1 chromosome2 bp2 split_reads disc_reads genotype id length(Kb) position consensus microhomology configuration allele_frequency mechanism log2(cnv) status	notes /;
   print $out join("\t", @header) . "\n";
@@ -142,7 +142,7 @@ if($locus){
 }
 
 foreach(@variants_files){
- read_parser($d, $_)
+  read_parser($d, $_)
 }
 
 sub usage {
