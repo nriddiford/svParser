@@ -18,7 +18,6 @@ def get_fields(options):
 
     breakpoints = breakpoints.filter(items=['type', 'chromosome1', 'bp1', 'chromosome2', 'bp2'])
 
-
     return breakpoints
 
 
