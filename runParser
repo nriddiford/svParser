@@ -22,34 +22,37 @@ options:
   -o    output directory
   -c    directory containing read depth information to annotate calls with
 
+  -p    prefix - operate on one sample with this prefix e.g. 'sample1'
   -f    filter
-  -s    only operate on somatic tumour variants
   -m    merge
   -a    annotate
   -r    remove false positives anad reannotate
+  -s    only operate on somatic tumour variants
+
   -e    exclude bed file
   -h    show this message
 "
 }
 
-
 filter=0
 merge=0
 annotate=0
 replace=0
-out_dir='filtered/'
+out_dir="$(pwd)/filtered/"
 data_dir='data/'
 cnv_dir=''
 exclude_file='/Users/Nick_curie/Documents/Curie/Data/Genomes/Dmel_v6.12/Mappability/dmel6_unmappable_100.bed'
 somatic=0
+prefix='*'
 
-while getopts 'fmarsho:d:c:e:' flag; do
+while getopts 'fmarshp:o:d:c:e:' flag; do
   case "${flag}" in
     f)  filter=1 ;;
     m)  merge=1 ;;
     a)  annotate=1 ;;
     r)  replace=1 ;;
     s)  somatic=1 ;;
+    p)  prefix="$OPTARG*" ;;
     d)  data_dir="$OPTARG" ;;
     o)  out_dir="$OPTARG" ;;
     c)  cnv_dir="$OPTARG" ;;
@@ -58,6 +61,8 @@ while getopts 'fmarsho:d:c:e:' flag; do
         exit 0 ;;
   esac
 done
+
+echo "Searching for files with following regex: $prefix"
 
 if [[ $# -eq 0 ]]
 then
@@ -90,35 +95,35 @@ then
   echo "*** Filtering variants ***"
   echo "**************************"
 
-  for lumpy_file in $data_dir/lumpy/*.vcf
+  for lumpy_file in $data_dir/lumpy/${prefix}.vcf
   do
     [ -f $lumpy_file ] || continue
     echo "perl "$script_bin"/svParse.pl -v $lumpy_file -m l -f chr=1 -f su=3 -f dp=10 -f sq=0.1 -f rdr=0.05 $s -e $exclude_file -o $out_dir -p"
     perl "$script_bin"/svParse.pl -v $lumpy_file -m l -f chr=1 -f su=3 -f dp=10 -f sq=0.1 -f rdr=0.05 $s -e $exclude_file -p -o $out_dir
   done
 
-  for delly_file in $data_dir/delly/*.vcf
+  for delly_file in $data_dir/delly/${prefix}.vcf
   do
   [ -f $delly_file ] || continue
     echo "perl "$script_bin"/svParse.pl -v $delly_file -m d -f chr=1 -f su=3 -f dp=10 -f sq=0.1 -f rdr=0.05 $s -e $exclude_file -o $out_dir -p"
     perl "$script_bin"/svParse.pl -v $delly_file -m d -f chr=1 -f su=3 -f dp=10 -f sq=0.1 -f rdr=0.05 $s -e $exclude_file -p -o $out_dir
 done
 
-  for novo_file in $data_dir/novobreak/*.vcf
+  for novo_file in $data_dir/novobreak/${prefix}.vcf
   do
     [ -f $novo_file ] || continue
     echo "perl "$script_bin"/svParse.pl -v $novo_file -m n -f chr=1 -f su=3 -f dp=10 -f sq=0.1 -f rdr=0.05 $s -e $exclude_file -o $out_dir -p"
     perl "$script_bin"/svParse.pl -v $novo_file -m n -f chr=1 -f su=3 -f dp=10 -f sq=0.1 -f rdr=0.05 $s -e $exclude_file -p -o $out_dir
   done
 
-  for freec_file in $data_dir/freec/*filt_cnvs.txt
+  for freec_file in $data_dir/freec/${prefix}filt_cnvs.txt
   do
     [ -f $freec_file ] || continue
     echo "perl "$script_bin"/parseCF.pl -c $freec_file -o $out_dir/summary"
     perl "$script_bin"/parseCF.pl -c $freec_file -o $out_dir/summary
   done
 
-  for cnv_file in $data_dir/cnv/*.txt
+  for cnv_file in $data_dir/cnv/${prefix}.txt
   do
     [ -f $cnv_file ] || continue
     echo "perl "$script_bin"/parseCNV.pl -c $cnv_file -o $out_dir/summary"
@@ -136,7 +141,7 @@ then
   echo "*******************************************************"
 
   cd $out_dir/summary
-  samples+=( $(ls -1 *.filtered.summary.txt | cut -d '.' -f 1 | sort -u ) )
+  samples+=( $(ls -1 ${prefix}.filtered.summary.txt | cut -d '.' -f 1 | sort -u ) )
 
   for ((i=0;i<${#samples[@]};++i))
   do
@@ -176,7 +181,7 @@ then
   mkdir -p "$out_dir/summary/merged/"
   if [[ $cnv_dir ]]
   then
-    samples+=( $(ls -1 *.summary.cnv.txt | cut -d '.' -f 1 | sort -u ) )
+    samples+=( $(ls -1 ${prefix}.summary.cnv.txt | cut -d '.' -f 1 | sort -u ) )
 
     for ((i=0;i<${#samples[@]};++i))
     do
@@ -198,7 +203,7 @@ cd $out_dir/summary/merged
 
 if [[ $merge -eq 1 ]]
 then
-  for f in *_merged_SVs.txt
+  for f in ${prefix}_merged_SVs.txt
   do
     echo "perl "$script_bin"/svClusters.pl -v $f -d 500"
     perl "$script_bin"/svClusters.pl -v $f -d 500
@@ -226,7 +231,7 @@ then
     rm "all_bps.txt"
   fi
 
-  for clustered_file in *clustered_SVs.txt
+  for clustered_file in ${prefix}clustered_SVs.txt
   do
     echo "Annotating $clustered_file"
     # Should check both files individually
@@ -254,7 +259,7 @@ fi
 if [[ $replace -eq 1 ]]
 then
   echo "Adding any new CNV calls to '${data_dir}/cnv/'"
-  for annofile in *_annotated_SVs.txt
+  for annofile in ${prefix}_annotated_SVs.txt
   do
     python "$script_bin"/getCNVs.py -f $annofile -d ${data_dir}/cnv/
   done
@@ -266,7 +271,7 @@ then
   fi
 
   echo "Removing calls marked as false positives in 'all_samples_blacklist.txt'"
-  for annofile in *_stitched.txt
+  for annofile in ${prefix}_stitched.txt
   # do
   #   perl "$script_bin"/clean_files.pl -v $annofile -o $out_dir/summary/merged -b $blacklist -w $whitelist
   # done
@@ -300,7 +305,7 @@ then
 
   # Merge all samples
   cd $out_dir/summary/merged
-  echo "Merging all samples into single file..."
+  # echo "Merging all samples into single file..."
   # python "$script_bin"/merge_files.py
 fi
 
