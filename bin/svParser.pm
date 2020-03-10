@@ -6,7 +6,7 @@ use warnings;
 use autodie;
 
 use feature qw/ say /;
-# use Data::Printer;
+#use Data::Printer;
 
 use Exporter;
 our @ISA = 'Exporter';
@@ -110,12 +110,19 @@ sub parse {
     }
 
     my %sample_parts;
-
+#    for(0..$#samples){
+#      # say "$_ - $sample_info[$_]";
+#      # say("*****000000000*******");
+#      my @parts = split(/:/, $sample_info[$_]);
+#      # p(@parts);
+#      push @{$sample_parts{$samples[$_]}}, @parts;
+#    }
+#    # print(split(/:/, $sample_info[$_]));
     push @{$sample_parts{$samples[$_]}}, split(/:/, $sample_info[$_]) for 0..$#samples;
 
     my @tumour_parts   = split(/:/, $sample_info[0]);
     my @normal_parts   = split(/:/, $sample_info[1]) if @samples > 1; # In case there are no control samples...
-
+    
     my @format        = split(/:/, $format_block);
     my @info_parts    = split(/;/, $info_block);
 
