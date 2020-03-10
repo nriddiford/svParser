@@ -55,7 +55,7 @@ def extract_vars(options):
                 genes.write('\t'.join(map(str, l)) + '\n')
 
     if options.write_breakpoints:
-        options.out_file = os.path.join(sample + "_" + options.file_name)
+        # options.out_file = os.path.join(sample + "_" + options.out_file)
         with open(options.out_file, 'a') as extracted_vars:
             for l, m in zip(bp1, bp2):
                 extracted_vars.write('\t'.join(map(str, l)) + '\n')
