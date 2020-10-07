@@ -36,8 +36,13 @@ def extract_vars(options):
 
     breakpoints.drop_duplicates(['event', 'chromosome1', 'bp1', 'chromosome2', 'bp2'], inplace=True)
 
+    false_calls = ['F', 'aF']
+    if options.normal:
+        print("This sample is non-tumour. Only removing calls marked as 'F'")
+        false_calls = ['F']
+
     for index, row in breakpoints.iterrows():
-        if row['status'] not in ['F', 'aF']:
+        if row['status'] not in false_calls:
             if options.write_genes:
                 affected_genes = row['affected_genes'].split(", ")
                 for g in affected_genes:
@@ -93,6 +98,8 @@ def get_args():
                       dest="out_file",
                       action="store",
                       help="File to write all_breakpoints.txt to")
+
+    parser.add_option("-n", "--normal", dest="normal", action="store_true", help="This is a normal tissue")
 
     parser.set_defaults(file_name='microhomology.txt')
     options, args = parser.parse_args()

@@ -10,7 +10,9 @@ def merge_samples(options):
         options.directory = os.getcwd()
 
     out_file = os.path.join(options.directory, options.out_file)
-    print("Writing '%s'") % (out_file)
+
+    print("Writing '%s'" % out_file)
+
     options.extension = "*" + options.extension
     print(fnmatch.filter(os.listdir(options.directory), options.extension))
     files = fnmatch.filter(os.listdir(options.directory), options.extension)
@@ -39,8 +41,12 @@ def merge_samples(options):
             # df = df.drop([0])
             # df.to_csv(all_out, sep="\t", index=False)
 
+            false_calls = ['F', 'aF']
+            if options.normal:
+                false_calls = ['F']
+
             for idx, row in df.iterrows():
-                if row['status'] not in ['F', 'aF']:
+                if row['status'] not in false_calls:
                     all_out.write('\t'.join(map(str, row)) + '\n')
 
 
@@ -50,6 +56,8 @@ def get_args():
     parser.add_option("-e", "--extension", dest="extension", action="store", help="extension to merge on")
     parser.add_option("-d", "--directory", dest="directory", action="store", help="Directory to write output to " + "[Default: '.']")
     parser.add_option("-o", "--out_file", dest="out_file", action="store", help="File to write annotated variants to")
+    parser.add_option("-n", "--normal", dest="normal", action="store_true", help="This is a normal tissue")
+
     parser.set_defaults(out_file='all_samples.txt')
 
     options, args = parser.parse_args()
