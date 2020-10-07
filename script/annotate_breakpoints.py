@@ -7,6 +7,7 @@ import ntpath
 from optparse import OptionParser
 # import xlwt
 from difflib import SequenceMatcher
+import pysam
 
 
 def parse_svParser(options):
@@ -14,6 +15,14 @@ def parse_svParser(options):
     breakpoints['type'] = breakpoints['type'] + ":" + breakpoints['event'].map(str) + ":" + breakpoints['configuration'].map(str)
 
     return breakpoints
+
+
+def get_ref_seq(c, start, end, options):
+    genome = pysam.Fastafile(options.genome)
+    reference_seq = genome.fetch(c, start, end)
+
+    return reference_seq
+
 
 
 def parse_splitvision(options):
@@ -27,7 +36,16 @@ def parse_splitvision(options):
     annotated = annotated.fillna('-')
 
     for index, row in annotated.iterrows():
+        c1 = row['ChrA']
+        c2 = row['ChrB']
+        b1 = row['PosA']
+        b2 = row['PosB']
+
         mh, ins, upstream_seq, downstream_seq = row[['microhomology', 'inserted_seq', 'regionA_sequence', 'regionB_sequence']]
+        upstream_ref = get_ref_seq(c1, b1-100, b1, options)
+        downstream_ref = get_ref_seq(c1, b2, b2+100, options)
+
+        print(row['type'])
         mh_len = len(mh)
         if mh == '-':
             mh_len = 0
@@ -38,8 +56,9 @@ def parse_splitvision(options):
         templated_up = 0
         templated_down = 0
         if ins_len >= 3:
-            templated_up, t_up_seq = templated_search(ins, upstream_seq, 'up')
-            templated_down, t_down_seq = templated_search(ins, downstream_seq, 'down')
+            print("Insered seq %s (length: %s)" % (ins, ins_len))
+            templated_up, t_up_seq = templated_search(ins, upstream_ref, 'up')
+            templated_down, t_down_seq = templated_search(ins, downstream_ref, 'down')
 
         templated_length = max(templated_up, templated_down)
         annotated.loc[index, 'mechanism'] = getMechanism(mh_len, ins_len, templated_length)
@@ -169,11 +188,19 @@ def get_args():
                       action="store",
                       help="Breakpoints annotated by SplitVision")
 
+    parser.add_option("-g",
+                      "--genome",
+                      dest="genome",
+                      action="store",
+                      help="Genome Fasta file")
+
     parser.add_option("-o",
                       "--out_file",
                       dest="out_file",
                       action="store",
                       help="File to write annotated variants to")
+
+    parser.set_defaults(genome = "/Users/Nick_curie/Documents/Curie/Data/Genomes/Dmel_v6.12/Dmel_6.12.fasta")
 
     options, args = parser.parse_args()
 
