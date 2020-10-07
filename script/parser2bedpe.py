@@ -49,7 +49,7 @@ def get_args():
                       "--out_file",
                       dest="out_file",
                       action="store",
-                      help="Directory to write bed files to")
+                      help="bedectory to write bed files to")
 
     options, args = parser.parse_args()
 
