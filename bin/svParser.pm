@@ -122,7 +122,7 @@ sub parse {
 
     my @tumour_parts   = split(/:/, $sample_info[0]);
     my @normal_parts   = split(/:/, $sample_info[1]) if @samples > 1; # In case there are no control samples...
-    
+
     my @format        = split(/:/, $format_block);
     my @info_parts    = split(/;/, $info_block);
 
@@ -1022,15 +1022,15 @@ sub write_summary {
         $consensus = "-";
       }
 
+      $rdr = '-';
       # Read depth ratio (delly)
       if ($info_block =~ /RDRATIO=(\d+\.?\d*)/){
-        $rdr = log($1)/log(2);
-        $rdr = sprintf("%.2f", $rdr)
+        if($1 != 0){
+          $rdr = log($1)/log(2);
+          $rdr = sprintf("%.2f", $rdr)
+        }
       }
-      else{
-        $rdr = '-';
-      }
-
+      
       # Microhology length (delly)
       if ($info_block =~ /HOMLEN=(\d+);/){
         $mh_length = $1;
