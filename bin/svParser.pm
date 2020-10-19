@@ -359,6 +359,10 @@ sub lumpy {
 
     # Subtract control reads from tumour reads
     # If this number of SU is less than 10% of tumour read_depth then filter
+    if ($t_DP eq '.'){
+      $t_DP = 0;
+    }
+    
     if ( exists $filter_flags{'rdr'} and ( $tumour_read_support  / ( $t_DP + 0.01 ) ) < $filter_flags{'rdr'} ){
       my %chroms = %{$chrom_keys};
       if( exists($chroms{$chr}) and exists($chroms{$chr2}) ){
@@ -1030,7 +1034,7 @@ sub write_summary {
           $rdr = sprintf("%.2f", $rdr)
         }
       }
-      
+
       # Microhology length (delly)
       if ($info_block =~ /HOMLEN=(\d+);/){
         $mh_length = $1;
@@ -1133,11 +1137,10 @@ sub read_depth_filter {
 
   my @filter_reasons = @{ $filter_reasons };
 
-  if ($norm_depth < $depth_threshold){
+  if ( $norm_depth eq '.' || $norm_depth < $depth_threshold ){
     push @filter_reasons, "$control has depth < " . $depth_threshold . '=' . $norm_depth;
   }
-
-  if ($tum_depth < $depth_threshold){
+  if ( $tum_depth eq '.' || $tum_depth < $depth_threshold ){
     push @filter_reasons, "$tumour_name has depth < " . $depth_threshold . '=' . $tum_depth;
   }
 
