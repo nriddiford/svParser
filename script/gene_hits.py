@@ -32,7 +32,7 @@ def read_file(bed_file):
 
 def get_vars(options, all_files, genes):
     all_genes = pd.read_csv(options.variants, delimiter="\t", index_col=False, na_filter=False)
-    all_genes.columns = ['event', 'sample', 'genotype', 'type', 'allele_frequency', 'chromosome', 'gene']
+    all_genes.columns = ['event', 'sample', 'genotype', 'type', 'allele_frequency', 'length', 'cnv', 'chromosome', 'gene']
 
     all_genes['cell_fraction'] = np.where(all_genes['chromosome'] == "X", all_genes['allele_frequency'], all_genes['allele_frequency']*2)
 
@@ -58,6 +58,34 @@ def get_vars(options, all_files, genes):
 
     for h in sorted(ranked_hits, key=itemgetter(4), reverse=True):
         print(h)
+    return ranked_hits
+
+
+def get_muts(options, all_files, genes):
+    muts = pd.read_csv(options.muts, index_col=False, na_filter=False)
+
+    muts['event'] = 'NA'
+    sam = "all samples"
+
+    if options.sample:
+        sam = options.sample
+        muts = muts[(muts["sample_old"] == options.sample)]
+
+    print("Looking for protein coding mutations with cell fraction >= %s <= %s in %s") % (options.min_cf, options.max_cf, sam)
+
+    hit_genes = muts[(muts['cell_fraction'] >= options.min_cf) &
+                          (muts['cell_fraction'] <= options.max_cf)]
+
+
+    ranked_hits = []
+    for idx, row in hit_genes.iterrows():
+        hit_gene = row['gene'].lower()
+        if hit_gene in all_files:
+            ranked_hits.append([row['sample_old'], ':'.join([row['chr'], str(row['pos'])]), row['gene'], row['impact'], row['cell_fraction'], all_files[hit_gene]])
+
+    for h in sorted(ranked_hits, key=itemgetter(4), reverse=True):
+        print(h)
+
     return ranked_hits
 
 
@@ -109,6 +137,7 @@ def main():
     parser = OptionParser()
     parser.add_option("-v", "--variants", dest="variants", help="An annotated variants file produced by sv2gene ", metavar="FILE")
     parser.add_option("-s", "--snvs", dest="snvs", help="An annotated snvs file produced by snv2gene ", metavar="FILE")
+    parser.add_option("-m", "--muts", dest="muts", help="Protein coding mutations, annotated by dnds", metavar="FILE")
     parser.add_option("--sample", dest="sample", action="store", help="The sample to inspect")
     parser.add_option("-b", "--bed_dir", dest="bed_dir", help="The directory containing bed files")
     parser.add_option("-f", "--bed_file", dest="bed_file", help="A bed file to scan")
@@ -120,7 +149,7 @@ def main():
     parser.set_defaults(min_cf=0.1, max_cf=1)
     options, args = parser.parse_args()
 
-    if (options.variants is None and options.snvs is None) or (options.bed_dir is None and options.bed_file is None):
+    if (options.variants is None and options.snvs is None and options.muts is None) or (options.bed_dir is None and options.bed_file is None):
         parser.print_help()
         print
     else:
@@ -132,8 +161,11 @@ def main():
 
             if options.variants:
                 hits = get_vars(options, df, genes)
-            else:
+            elif options.snvs:
                 hits = get_snvs(options, df, genes)
+            else:
+                hits = get_muts(options, df, genes)
+
             print_hits(options, hits)
 
         except IOError as err:

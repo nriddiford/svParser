@@ -30,6 +30,7 @@ options:
   -s    only operate on somatic tumour variants
 
   -e    exclude bed file
+  -g    genome features file (.gtf)
   -h    show this message
 "
 }
@@ -42,10 +43,11 @@ out_dir="$(pwd)/filtered/"
 data_dir='data/'
 cnv_dir=''
 exclude_file='/Users/Nick_curie/Documents/Curie/Data/Genomes/Dmel_v6.12/Mappability/dmel6_unmappable_100.bed'
+features='/Users/Nick_curie/Documents/Curie/Data/Genomes/Dmel_v6.12/Features/dmel-all-r6.12.gtf' # work
 somatic=0
 prefix='*'
 
-while getopts 'fmarshp:o:d:c:e:' flag; do
+while getopts 'fmarshp:o:d:c:e:g:' flag; do
   case "${flag}" in
     f)  filter=1 ;;
     m)  merge=1 ;;
@@ -57,6 +59,7 @@ while getopts 'fmarshp:o:d:c:e:' flag; do
     o)  out_dir="$OPTARG" ;;
     c)  cnv_dir="$OPTARG" ;;
     e)  exclude_file="$OPTARG" ;;
+    g)  features="$OPTARG" ;;
     h)  usage
         exit 0 ;;
   esac
@@ -78,6 +81,7 @@ script_bin="$( cd "$script_bin" ; pwd -P )"
 echo -e "  o  Reading data from ${GREEN}'$data_dir'${NC}"
 echo -e "  o  Writing data to ${BLUE}'$out_dir'${NC}"
 echo -e "  o  Exclude file set to ${RED}'$exclude_file'${NC}"
+echo -e "  o  Features file set to ${BLUE}'$features'${NC}"
 
 mkdir -p "$out_dir/summary"
 s=''
@@ -212,7 +216,6 @@ then
 fi
 
 #features=/Users/Nick/Documents/Curie/Data/Genomes/Dmel_v6.12/Features/dmel-all-r6.12.gtf # home
-features=/Users/Nick_curie/Documents/Curie/Data/Genomes/Dmel_v6.12/Features/dmel-all-r6.12.gtf # work
 blacklist=${out_dir}/summary/merged/all_samples_blacklist.txt
 whitelist=${out_dir}/summary/merged/all_samples_whitelist.txt
 
