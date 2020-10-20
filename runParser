@@ -120,7 +120,7 @@ done
     perl "$script_bin"/svParse.pl -v $novo_file -m n -f chr=1 -f su=3 -f dp=10 -f sq=0.1 -f rdr=0.05 $s -e $exclude_file -p -o $out_dir
   done
 
-  for freec_file in $data_dir/freec/${prefix}filt_cnvs.txt
+  for freec_file in $data_dir/freec/${prefix}_filt_cnvs.txt
   do
     [ -f $freec_file ] || continue
     echo "perl "$script_bin"/parseCF.pl -c $freec_file -o $out_dir/summary"
