@@ -260,9 +260,10 @@ def print_complex(complex_events, options, temp):
 
 
 def _reset_vals(df, index):
-        df.loc[index, 'type'] = df.loc[index, 'old_type']
-        df.loc[index, 'event'] = df.loc[index, 'old_event']
-        df.loc[index, 'configuration'] = df.loc[index, 'old_config']
+    df.loc[index, 'type'] = df.loc[index, 'old_type']
+    df.loc[index, 'event'] = df.loc[index, 'old_event']
+    df.loc[index, 'configuration'] = df.loc[index, 'old_config']
+
 
 def main():
     parser = OptionParser()
