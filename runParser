@@ -263,6 +263,7 @@ then
   echo "Adding any new CNV calls to '${data_dir}/cnv/'"
   for annofile in ${prefix}_annotated_SVs.txt
   do
+    [ -f $annofile ] || continue
     python "$script_bin"/getCNVs.py -f $annofile -d ${data_dir}/cnv/
   done
 
